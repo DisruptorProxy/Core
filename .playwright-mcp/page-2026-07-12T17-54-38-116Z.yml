@@ -1,0 +1,9 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - paragraph [ref=e4]: Counter
+    - status [ref=e5]: "0"
+    - paragraph [ref=e6]: even &middot; step of 1
+    - generic [ref=e7]:
+      - button "Decrement" [ref=e8]
+      - button "Reset" [disabled] [ref=e10]
+      - button "Increment" [ref=e14]
