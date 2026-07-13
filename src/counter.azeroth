@@ -12,6 +12,24 @@ interface CounterProps
 
 const icon = (node: IconNode, size: string): HTMLElement => createElement(node, { class: size }) as unknown as HTMLElement;
 
+const createXrayConfig = (): Promise<string> => invoke('create_xray_config', {
+    config: {
+        "log": {
+            "loglevel": "debug"
+        },
+        inbounds: [
+            {
+                port: 1080,
+                protocol: 'socks',
+                settings: { udp: true },
+            },
+        ],
+        outbounds: [
+            { protocol: 'freedom' },
+        ],
+    },
+});
+
 export default component Counter(props: CounterProps)
 {
     state count = props.start ?? 0;
@@ -40,7 +58,12 @@ export default component Counter(props: CounterProps)
             <button
                 class="flex size-11 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-100 active:scale-95 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 title="Decrement"
-                onClick={ () => count -= step }
+                onClick={ async() => {
+
+                    const result = await invoke('end_xray_windows');
+
+                    console.log('result', result);
+                } }
             >
                 { minusIcon }
             </button>
@@ -60,7 +83,9 @@ export default component Counter(props: CounterProps)
                 title="Increment"
                 onClick={ async() => {
 
-                    const result = await invoke('run_xray_windows', { "configPath": "Salam QQ" });
+                    const configPath = await createXrayConfig();
+
+                    const result = await invoke('run_xray_windows', { configPath });
 
                     console.log('result', result);
                 } }
