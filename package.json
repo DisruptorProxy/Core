@@ -1,21 +1,17 @@
 {
-    "name": "guardian",
-    "private": true,
-    "version": "0.1.0",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "build": "azeroth-tsc && vite build",
         "typecheck": "azeroth-tsc",
-        "preview": "vite preview",
         "tauri": "tauri",
         "desktop": "npm run tauri dev",
         "desktop-build": "npm run tauri build"
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.3.2",
-        "@tauri-apps/api": "^2",
-        "@tauri-apps/plugin-opener": "^2",
+        "@tauri-apps/api": "^2.11.1",
+        "@tauri-apps/plugin-store": "^2.4.3",
         "azerothjs": "file:../AzerothJS/packages/azerothjs",
         "lucide": "^1.24.0",
         "tailwindcss": "^4.3.2"
@@ -26,12 +22,12 @@
         "@azerothjs/language-server": "file:../AzerothJS/packages/language-server",
         "@azerothjs/typescript-plugin": "file:../AzerothJS/packages/typescript-plugin",
         "@eslint/js": "^10.0.1",
-        "@tauri-apps/cli": "^2",
-        "eslint": "^10.6.0",
+        "@tauri-apps/cli": "^2.11.4",
+        "eslint": "^10.7.0",
         "globals": "^17.7.0",
         "jiti": "^2.7.0",
-        "typescript": "~5.6.2",
-        "typescript-eslint": "^8.62.1",
-        "vite": "^6.0.3"
+        "typescript": "^7.0.2",
+        "typescript-eslint": "^8.63.0",
+        "vite": "^8.1.4"
     }
 }

@@ -1,5 +1,8 @@
-import { createElement, Minus, Plus, RotateCcw } from 'lucide';
 import type { IconNode } from 'lucide';
+
+import { invoke } from '@tauri-apps/api/core';
+
+import { createElement, Minus, Plus, RotateCcw } from 'lucide';
 
 interface CounterProps
 {
@@ -55,7 +58,12 @@ export default component Counter(props: CounterProps)
             <button
                 class="flex size-11 items-center justify-center rounded-xl bg-slate-900 text-white transition hover:bg-slate-700 active:scale-95 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-200"
                 title="Increment"
-                onClick={ () => count += step }
+                onClick={ async() => {
+
+                    const result = await invoke('run_xray_windows', { "configPath": "Salam QQ" });
+
+                    console.log('result', result);
+                } }
             >
                 { plusIcon }
             </button>

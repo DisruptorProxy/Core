@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import azeroth from '@azerothjs/eslint-plugin';
+
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
