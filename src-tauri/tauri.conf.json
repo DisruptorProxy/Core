@@ -1,10 +1,10 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "guardian",
-    "version": "0.1.0",
-    "identifier": "com.intelligentquantum.guardian",
+    "productName": "Guardian",
+    "identifier": "io.guardian",
     "build":
     {
+        "frontendDist": "../dist",
         "beforeDevCommand": "npm run dev",
         "devUrl": "http://localhost:1420",
         "beforeBuildCommand": "npm run build",

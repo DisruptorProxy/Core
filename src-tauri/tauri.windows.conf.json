@@ -1,0 +1,62 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "identifier": "io.guardian.windows",
+    "app": {
+        "withGlobalTauri": false,
+        "windows": [
+            {
+                "title": "Guardian",
+                "decorations": true,
+                "maximizable": true,
+                "fullscreen": false,
+                "resizable": true,
+                "center": true,
+                "height": 640,
+                "width": 360
+            }
+        ],
+        "security": {
+            "csp": null,
+            "capabilities": [
+                {
+                    "identifier": "main-capability",
+                    "windows": [
+                        "main"
+                    ],
+                    "permissions": [
+                        "core:app:allow-default-window-icon",
+
+                        "core:window:allow-start-dragging",
+                        "core:window:allow-set-size",
+                        "core:window:allow-maximize",
+                        "core:window:allow-minimize",
+                        "core:window:allow-center",
+                        "core:window:allow-close",
+                        "core:window:allow-hide",
+                        "core:window:allow-show",
+
+                        "core:menu:allow-new",
+
+                        "core:tray:allow-new",
+
+                        "store:allow-load",
+                        "store:allow-save",
+                        "store:allow-get",
+                        "store:allow-set"
+                    ]
+                }
+            ]
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "resources": [
+            "assets/*"
+        ],
+        "icon": [
+            "icons/icon.png",
+            "icons/icon.ico"
+        ]
+    }
+}
