@@ -15,9 +15,9 @@
         "windows":
         [
             {
-                "title": "Euphoria Cheat",
-                "width": 1536,
-                "height": 864,
+                "title": "Guardian",
+                "width": 360,
+                "height": 640,
                 "resizable": false,
                 "maximizable": false,
                 "decorations": false

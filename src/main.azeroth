@@ -1,0 +1,9 @@
+import './dev';
+
+import { render } from 'azerothjs';
+
+import Shell from './app/shell.azeroth';
+
+document.title = import.meta.env.VITE_APP_NAME;
+
+render(() => Shell(), document.getElementById('root')!);

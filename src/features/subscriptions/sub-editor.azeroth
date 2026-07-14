@@ -1,0 +1,109 @@
+import Button from '../../lib/ui/button.azeroth';
+import Segmented from '../../lib/ui/segmented.azeroth';
+import type { SegmentedOption } from '../../lib/ui/segmented.azeroth';
+import Sheet from '../../lib/ui/sheet.azeroth';
+import type { SubscriptionRecord } from '../../lib/db/schema';
+import { useLocale } from '../../stores/locale';
+
+interface SubEditorProps
+{
+    open: () => boolean;
+    /** The record being edited, or null when adding. */
+    initial: () => SubscriptionRecord | null;
+    onClose: () => void;
+    onSubmit: (url: string, name: string, intervalMin: number) => void;
+}
+
+const FIELD = 'min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-text outline-none '
+    + 'placeholder:text-faint focus:border-accent';
+
+/**
+ * Add or edit a subscription. The URL is the only required field; a blank name
+ * defaults to the host at save time. Interval is a plain choice, not a number
+ * input - "hourly" is a decision, not a quantity to type.
+ */
+export default component SubEditor(props: SubEditorProps)
+{
+    const { t } = useLocale();
+
+    state url = '';
+    state name = '';
+    state interval = '0';
+
+    // Reseed the form each time the sheet opens, from the record being edited or
+    // blank for a new one - so a cancelled edit never leaks into the next open.
+    // Auto-tracked on props.open(); it writes the form state but never reads it,
+    // so typing does not retrigger a reseed.
+    effect {
+        if (props.open())
+        {
+            const record = props.initial();
+
+            url = record?.url ?? '';
+            name = record?.name ?? '';
+            interval = String(record?.intervalMin ?? 0);
+        }
+    }
+
+    const intervalOptions: SegmentedOption[] =
+    [
+        { value: '0', label: () => t().subscriptions.intervalManual },
+        { value: '60', label: () => t().subscriptions.intervalHourly },
+        { value: '1440', label: () => t().subscriptions.intervalDaily }
+    ];
+
+    const submit = (): void =>
+    {
+        if (url.trim() === '')
+        {
+            return;
+        }
+
+        props.onSubmit(url, name, Number.parseInt(interval, 10));
+    };
+
+    derived title = props.initial() === null ? t().subscriptions.addTitle : t().subscriptions.editTitle;
+
+    <Sheet open={ props.open } onClose={ props.onClose } title={ title }>
+        <form class="flex flex-col gap-4" onSubmit={ (event) => { event.preventDefault(); submit(); } }>
+            <label class="flex flex-col gap-1.5">
+                <span class="text-xs font-medium text-muted">{ t().subscriptions.urlLabel }</span>
+                <input
+                    class={ FIELD }
+                    type="url"
+                    inputmode="url"
+                    dir="ltr"
+                    placeholder={ t().subscriptions.urlPlaceholder }
+                    value={ url }
+                    onInput={ (event) => url = (event.target as HTMLInputElement).value }
+                />
+            </label>
+
+            <label class="flex flex-col gap-1.5">
+                <span class="text-xs font-medium text-muted">{ t().subscriptions.nameLabel }</span>
+                <input
+                    class={ FIELD }
+                    type="text"
+                    placeholder={ t().subscriptions.namePlaceholder }
+                    value={ name }
+                    onInput={ (event) => name = (event.target as HTMLInputElement).value }
+                />
+            </label>
+
+            <div class="flex flex-col gap-1.5">
+                <span class="text-xs font-medium text-muted">{ t().subscriptions.intervalLabel }</span>
+                <Segmented
+                    label={ t().subscriptions.intervalLabel }
+                    options={ intervalOptions }
+                    value={ interval }
+                    onSelect={ (value) => interval = value }
+                />
+            </div>
+
+            <div class="mt-1 flex gap-2">
+                <Button label={ t().subscriptions.cancel } variant="ghost" block={ true } onPress={ props.onClose } />
+                <Button label={ t().subscriptions.save } block={ true } disabled={ url.trim() === '' } onPress={ () => submit() } />
+            </div>
+        </form>
+    </Sheet>
+}

@@ -1,0 +1,53 @@
+import { Show } from 'azerothjs';
+import { X } from 'lucide';
+
+import { icon } from './icon';
+
+interface SheetProps
+{
+    open: () => boolean;
+    onClose: () => void;
+    title: string;
+    children: HTMLElement;
+}
+
+/**
+ * A modal sheet: a bottom sheet on phones, a centred card on wide screens. Mounts
+ * only while open. The backdrop and Escape both close it, and it traps nothing it
+ * does not need to - one job, one exit.
+ */
+export default component Sheet(props: SheetProps)
+{
+    <Show when={ props.open() }>
+        <div
+            class="fixed inset-0 z-40 flex items-end justify-center sm:items-center"
+            role="dialog"
+            aria-modal="true"
+            aria-label={ props.title }
+        >
+            <button
+                type="button"
+                class="animate-backdrop absolute inset-0 bg-black/50"
+                aria-label={ props.title }
+                onClick={ () => props.onClose() }
+            ></button>
+
+            <div class="animate-sheet pb-safe relative z-10 w-full max-w-md rounded-t-2xl border border-border bg-elevated p-5 shadow-card sm:rounded-2xl">
+                <div class="mb-4 flex items-center justify-between">
+                    <h2 class="text-base font-semibold text-text">{ props.title }</h2>
+
+                    <button
+                        type="button"
+                        class="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface"
+                        aria-label={ props.title }
+                        onClick={ () => props.onClose() }
+                    >
+                        { icon(X, 'size-4') }
+                    </button>
+                </div>
+
+                { props.children }
+            </div>
+        </div>
+    </Show>
+}

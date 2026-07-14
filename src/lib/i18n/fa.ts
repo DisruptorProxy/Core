@@ -1,0 +1,219 @@
+import type { Strings } from './types';
+
+export const fa: Strings =
+{
+    app:
+    {
+        name: 'گاردین',
+        tagline: 'سرورهای شما، اندازه‌گیری‌شده.'
+    },
+
+    nav:
+    {
+        home: 'اتصال',
+        servers: 'سرورها',
+        subscriptions: 'اشتراک‌ها',
+        routing: 'مسیریابی',
+        settings: 'تنظیمات'
+    },
+
+    home:
+    {
+        title: 'اتصال',
+        disconnected: 'متصل نیستید',
+        connectAction: 'اتصال',
+        noServerSelected: 'برای شروع یک سرور انتخاب کنید.',
+        connecting: 'در حال اتصال…',
+        connected: 'متصل',
+        disconnecting: 'در حال قطع…',
+        failed: 'اتصال ناموفق',
+        disconnect: 'قطع اتصال',
+        connectFastest: 'اتصال به سریع‌ترین',
+        duration: (text: string) => `متصل به مدت ${ text }`,
+        protocolLabel: 'پروتکل',
+        noneTested: 'سرورها را تست کنید تا سریع‌ترین پیدا شود.'
+    },
+
+    servers:
+    {
+        title: 'سرورها',
+        empty: 'هنوز سروری ندارید.',
+        emptyAction: 'یک اشتراک اضافه کنید یا لینک کانفیگ را بچسبانید.',
+        // Persian numerals: a count of servers is read text, not a measured value,
+        // so it is localized. Latency and ports stay Latin digits in the readouts.
+        countLabel: (count: number) => `${ count.toLocaleString('fa-IR') } سرور`,
+        searchPlaceholder: 'جستجوی نام، میزبان، کشور…',
+        noMatches: 'سروری با این فیلترها یافت نشد.',
+        sortName: 'نام',
+        sortLatency: 'تأخیر',
+        sortCountry: 'کشور',
+        select: 'انتخاب',
+        selectAll: 'انتخاب همه',
+        selectedLabel: (count: number) => `${ count.toLocaleString('fa-IR') } انتخاب‌شده`,
+        delete: 'حذف',
+        cancel: 'انصراف',
+        favoritesOnly: 'برگزیده‌ها',
+        test: 'تست',
+        testing: (done: number, total: number) =>
+            `تست ${ done.toLocaleString('fa-IR') } / ${ total.toLocaleString('fa-IR') }`,
+        stop: 'توقف'
+    },
+
+    importing:
+    {
+        progress: (parsed: number, total: number) =>
+            `خواندن ${ parsed.toLocaleString('fa-IR') } از ${ total.toLocaleString('fa-IR') } خط…`,
+        added: 'افزوده‌شده',
+        duplicates: 'تکراری',
+        invalid: 'ناخوانا',
+        elapsed: 'زمان',
+        duplicatesHint: 'سرورهای یکسان که با نام‌های متفاوت فهرست شده بودند، در یکی ادغام شدند.',
+        title: 'دریافت سرورها',
+        openAction: 'دریافت',
+        placeholder: 'لینک کانفیگ‌ها، نشانی اشتراک، یا فهرست base64 را بچسبانید…',
+        paste: 'چسباندن',
+        fromClipboard: 'از کلیپ‌بورد',
+        fromFile: 'از فایل',
+        scanQr: 'اسکن QR',
+        qrUnsupported: 'اسکن QR روی این دستگاه در دسترس نیست.',
+        qrScanning: 'دوربین را روی کد QR بگیرید…',
+        submit: 'دریافت',
+        invalidDetail: 'خط‌های ناخوانا',
+        lineLabel: (line: number) => `خط ${ line.toLocaleString('fa-IR') }`,
+        clipboardEmpty: 'کلیپ‌بورد خالی است.',
+        clipboardDenied: 'دسترسی به کلیپ‌بورد رد شد.'
+    },
+
+    subscriptions:
+    {
+        title: 'اشتراک‌ها',
+        empty: 'هنوز اشتراکی ندارید.',
+        emptyAction: 'یک لینک اشتراک اضافه کنید تا سرورها خودکار دریافت شوند.',
+        add: 'افزودن اشتراک',
+        addTitle: 'افزودن اشتراک',
+        editTitle: 'ویرایش اشتراک',
+        urlLabel: 'نشانی اشتراک',
+        urlPlaceholder: 'https://…',
+        nameLabel: 'نام',
+        namePlaceholder: 'اختیاری — به‌صورت پیش‌فرض میزبان',
+        intervalLabel: 'به‌روزرسانی خودکار',
+        intervalManual: 'دستی',
+        intervalHourly: 'ساعتی',
+        intervalDaily: 'روزانه',
+        save: 'ذخیره',
+        cancel: 'انصراف',
+        update: 'به‌روزرسانی',
+        updating: 'در حال به‌روزرسانی…',
+        delete: 'حذف',
+        countLabel: (count: number) => `${ count.toLocaleString('fa-IR') } سرور`,
+        statusNever: 'هرگز به‌روز نشده',
+        statusOk: 'به‌روز',
+        statusStale: 'قدیمی',
+        statusFailed: 'به‌روزرسانی ناموفق',
+        updatedAgo: (text: string) => `به‌روزرسانی ${ text }`,
+        justNow: 'همین حالا',
+        minutesAgo: (n: number) => `${ n.toLocaleString('fa-IR') } دقیقه پیش`,
+        hoursAgo: (n: number) => `${ n.toLocaleString('fa-IR') } ساعت پیش`,
+        daysAgo: (n: number) => `${ n.toLocaleString('fa-IR') } روز پیش`,
+        deleteTitle: 'حذف اشتراک',
+        deletePrompt: (name: string) => `سرورهای «${ name }» چه شوند؟`,
+        deleteRemoveConfigs: 'حذف سرورهایش',
+        deleteKeepConfigs: 'نگه‌داشتن به‌صورت بدون‌مدیریت',
+        added: 'افزوده',
+        removed: 'حذف‌شده',
+        unchanged: 'بدون‌تغییر',
+        keptFavorites: 'برگزیده‌های نگه‌داشته'
+    },
+
+    routing:
+    {
+        title: 'مسیریابی',
+        empty: 'انتخاب کنید ترافیک چگونه بین پروکسی و اتصال مستقیم تقسیم شود.',
+        subtitle: 'تعیین کنید چه چیزی از پروکسی عبور کند و چه چیزی مستقیم بماند.',
+        presets: 'حالت‌ها',
+        rulesHeader: 'قوانین',
+        rulesHint: 'از بالا به پایین بررسی می‌شود — نخستین قانون منطبق اعمال می‌شود.',
+        addRule: 'افزودن قانون',
+        editRule: 'ویرایش قانون',
+        matchType: 'تطبیق',
+        matchValue: 'مقدار',
+        matchValuePlaceholder: 'مثلاً ‎.ir‎، category-ads-all، 192.168.0.0/16',
+        action: 'اقدام',
+        actionProxy: 'پروکسی',
+        actionDirect: 'مستقیم',
+        actionBlock: 'مسدود',
+        save: 'ذخیره',
+        cancel: 'انصراف',
+        delete: 'حذف',
+        moveUp: 'بالا',
+        moveDown: 'پایین',
+        presetRulesName: 'هوشمند',
+        presetRulesDesc: 'مسدودسازی تبلیغات، سایت‌های محلی و ایرانی مستقیم، بقیه از پروکسی.',
+        presetBypassName: 'دور زدن ایران',
+        presetBypassDesc: 'سایت‌های ایرانی مستقیم، بقیه از پروکسی.',
+        presetGlobalName: 'سراسری',
+        presetGlobalDesc: 'همه ترافیک از پروکسی عبور کند.',
+        presetDirectLanName: 'شبکه محلی مستقیم',
+        presetDirectLanDesc: 'فقط شبکه محلی مستقیم؛ بقیه از پروکسی.',
+        presetCustomName: 'سفارشی',
+        typeDomainSuffix: 'دامنه پایان‌یابنده به',
+        typeDomain: 'دامنه دقیق',
+        typeDomainKeyword: 'دامنه شامل',
+        typeGeosite: 'دسته سایت',
+        typeGeoip: 'کشور IP',
+        typeIpCidr: 'محدوده IP',
+        typeProcess: 'برنامه',
+        descDomainsEndingIn: (value: string) => `دامنه‌های پایان‌یابنده به ${ value }`,
+        descExactDomain: (value: string) => value,
+        descDomainsContaining: (value: string) => `دامنه‌های شامل «${ value }»`,
+        descIranianSites: 'سایت‌های ایرانی',
+        descAdsTrackers: 'تبلیغات و ردیاب‌ها',
+        descChineseSites: 'سایت‌های چینی',
+        descIranianIps: 'نشانی‌های IP ایران',
+        descLocalNetwork: 'شبکه محلی',
+        descIpRange: (value: string) => `IPهای محدوده ${ value }`,
+        descGeosite: (value: string) => `سایت‌های ${ value }`,
+        descGeoip: (value: string) => `نشانی‌های IP ${ value.toUpperCase() }`,
+        descApp: (value: string) => `برنامه «${ value }»`,
+        descEverythingElse: 'بقیه موارد'
+    },
+
+    settings:
+    {
+        title: 'تنظیمات',
+        appearance: 'ظاهر',
+        theme: 'پوسته',
+        themeSystem: 'سیستم',
+        themeLight: 'روشن',
+        themeDark: 'تیره',
+        language: 'زبان',
+        languageEnglish: 'English',
+        languagePersian: 'فارسی'
+    },
+
+    detail:
+    {
+        protocol: 'پروتکل',
+        transport: 'انتقال',
+        security: 'امنیت',
+        latency: 'تأخیر',
+        successRate: 'نرخ موفقیت',
+        source: 'از',
+        unmanaged: 'بدون اشتراک',
+        health: 'سلامت',
+        untested: 'هنوز تست نشده.',
+        lastError: 'آخرین خطا',
+        connect: 'اتصال',
+        copyLink: 'کپی لینک',
+        copied: 'کپی شد',
+        addFavorite: 'افزودن به برگزیده‌ها',
+        removeFavorite: 'حذف از برگزیده‌ها',
+        delete: 'حذف'
+    },
+
+    common:
+    {
+        comingSoon: 'هنوز ساخته نشده.',
+        close: 'تمام'
+    }
+};

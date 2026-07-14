@@ -1,0 +1,55 @@
+import { Show } from 'azerothjs';
+
+import { cx } from '../../lib/ui/cx';
+import { useLocale } from '../../stores/locale';
+import type { UpdateDiff } from '../../lib/subs/diff';
+
+interface UpdateReportProps
+{
+    diff: UpdateDiff;
+}
+
+const CELL = 'flex flex-col gap-0.5 rounded-lg border border-border bg-surface px-2.5 py-1.5';
+const VALUE = 'readout text-base font-medium';
+const LABEL = 'text-[11px] text-muted';
+
+/**
+ * What an update changed, stated plainly. "Removed" is the number that matters:
+ * it is the answer to "I updated and now I have fewer servers - did it break?",
+ * and showing it is what turns a scary silent change into an understood one.
+ */
+export default component UpdateReport(props: UpdateReportProps)
+{
+    const { t } = useLocale();
+
+    <div class="flex flex-wrap gap-2">
+        <div class={ CELL }>
+            <span class={ cx(VALUE, props.diff.added > 0 ? 'text-good' : '') }>+{ props.diff.added }</span>
+            <span class={ LABEL }>{ t().subscriptions.added }</span>
+        </div>
+
+        <div class={ CELL }>
+            <span class={ cx(VALUE, props.diff.removed > 0 ? 'text-poor' : '') }>−{ props.diff.removed }</span>
+            <span class={ LABEL }>{ t().subscriptions.removed }</span>
+        </div>
+
+        <div class={ CELL }>
+            <span class={ VALUE }>{ props.diff.unchanged }</span>
+            <span class={ LABEL }>{ t().subscriptions.unchanged }</span>
+        </div>
+
+        <Show when={ props.diff.keptFavorites > 0 }>
+            <div class={ CELL }>
+                <span class={ cx(VALUE, 'text-fair') }>{ props.diff.keptFavorites }</span>
+                <span class={ LABEL }>{ t().subscriptions.keptFavorites }</span>
+            </div>
+        </Show>
+
+        <Show when={ props.diff.duplicates > 0 }>
+            <div class={ CELL }>
+                <span class={ VALUE }>{ props.diff.duplicates }</span>
+                <span class={ LABEL }>{ t().importing.duplicates }</span>
+            </div>
+        </Show>
+    </div>
+}

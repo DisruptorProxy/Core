@@ -1,0 +1,28 @@
+import { Routes } from 'azerothjs';
+
+import { useLocale } from '../stores/locale';
+import { useTheme } from '../stores/theme';
+import { router } from './router';
+import SideRail from './side-rail.azeroth';
+import TabBar from './tab-bar.azeroth';
+
+/**
+ * App shell: a rail on wide screens, a bottom bar on phones, and the routed
+ * screen in between. Both stores are instantiated here so the document's `dir`,
+ * `lang` and theme class are owned from the moment the app mounts.
+ */
+export default component Shell()
+{
+    useTheme();
+    useLocale();
+
+    <div class="flex min-h-dvh">
+        <SideRail />
+
+        <main class="min-w-0 flex-1">
+            <Routes router={ router } />
+        </main>
+
+        <TabBar />
+    </div>
+}

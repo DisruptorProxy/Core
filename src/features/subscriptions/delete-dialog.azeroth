@@ -1,0 +1,51 @@
+import { Show } from 'azerothjs';
+
+import Button from '../../lib/ui/button.azeroth';
+import Sheet from '../../lib/ui/sheet.azeroth';
+import type { SubscriptionRecord } from '../../lib/db/schema';
+import { useLocale } from '../../stores/locale';
+
+interface DeleteDialogProps
+{
+    sub: () => SubscriptionRecord | null;
+    onClose: () => void;
+    /** keepConfigs decides whether the subscription's servers survive. */
+    onConfirm: (keepConfigs: boolean) => void;
+}
+
+/**
+ * Deleting a subscription forces the choice other clients get wrong silently:
+ * take its servers with it, or keep them. Neither option can touch a favorited
+ * server - those are always preserved. There is no default; the user decides.
+ */
+export default component DeleteDialog(props: DeleteDialogProps)
+{
+    const { t } = useLocale();
+
+    const open = (): boolean => props.sub() !== null;
+
+    <Sheet open={ open } onClose={ props.onClose } title={ t().subscriptions.deleteTitle }>
+        <div class="flex flex-col gap-4">
+            <Show when={ props.sub() }>
+                <p class="text-sm leading-relaxed text-muted">
+                    { t().subscriptions.deletePrompt(props.sub()!.name) }
+                </p>
+            </Show>
+
+            <div class="flex flex-col gap-2">
+                <Button
+                    label={ t().subscriptions.deleteKeepConfigs }
+                    variant="ghost"
+                    block={ true }
+                    onPress={ () => props.onConfirm(true) }
+                />
+                <Button
+                    label={ t().subscriptions.deleteRemoveConfigs }
+                    variant="danger"
+                    block={ true }
+                    onPress={ () => props.onConfirm(false) }
+                />
+            </div>
+        </div>
+    </Sheet>
+}

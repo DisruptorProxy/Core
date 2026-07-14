@@ -1,0 +1,84 @@
+import { For } from 'azerothjs';
+import { Search } from 'lucide';
+
+import { cx } from '../../lib/ui/cx';
+import { icon } from '../../lib/ui/icon';
+import Segmented from '../../lib/ui/segmented.azeroth';
+import type { SegmentedOption } from '../../lib/ui/segmented.azeroth';
+import { useLocale } from '../../stores/locale';
+import { useServerQuery } from '../../stores/query';
+import type { SortKey } from '../../lib/search/filter';
+
+const CHIP = 'shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors';
+
+/**
+ * Search, facet chips, and sort - the tools that make 8000 servers navigable.
+ * Search is debounced in the store; chips and sort apply immediately. The chip row
+ * scrolls horizontally so a long list of protocols never wraps into a wall.
+ */
+export default component FiltersBar()
+{
+    const { t } = useLocale();
+    const query = useServerQuery();
+
+    const sortOptions: SegmentedOption[] =
+    [
+        { value: 'name', label: () => t().servers.sortName },
+        { value: 'latency', label: () => t().servers.sortLatency },
+        { value: 'country', label: () => t().servers.sortCountry }
+    ];
+
+    <div class="flex flex-col gap-3">
+        <label class="flex items-center gap-2 rounded-xl border border-border bg-surface px-3">
+            { icon(Search, 'size-4 text-faint') }
+
+            <input
+                type="search"
+                class="min-h-11 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint"
+                placeholder={ t().servers.searchPlaceholder }
+                value={ query.query() }
+                onInput={ (event) => query.setQuery((event.target as HTMLInputElement).value) }
+            />
+        </label>
+
+        <div class="-mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5">
+            <button
+                type="button"
+                class={ cx(
+                    CHIP,
+                    query.favoritesOnly()
+                        ? 'border-fair/50 bg-fair/10 text-fair'
+                        : 'border-border text-muted hover:bg-elevated'
+                ) }
+                onClick={ () => query.setFavoritesOnly(!query.favoritesOnly()) }
+            >
+                { t().servers.favoritesOnly }
+            </button>
+
+            <For each={ query.facets().protocols } key={ (protocol) => protocol }>
+                { (protocol) =>
+                    <button
+                        type="button"
+                        class={ cx(
+                            CHIP,
+                            'uppercase',
+                            query.protocols().has(protocol)
+                                ? 'border-accent bg-accent-soft text-accent'
+                                : 'border-border text-muted hover:bg-elevated'
+                        ) }
+                        onClick={ () => query.toggleProtocol(protocol) }
+                    >
+                        { protocol }
+                    </button>
+                }
+            </For>
+        </div>
+
+        <Segmented
+            label={ t().servers.sortName }
+            options={ sortOptions }
+            value={ query.sort() }
+            onSelect={ (value) => query.setSort(value as SortKey) }
+        />
+    </div>
+}

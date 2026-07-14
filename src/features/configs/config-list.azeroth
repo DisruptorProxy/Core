@@ -1,0 +1,66 @@
+import VirtualList from '../../lib/ui/virtual-list.azeroth';
+import { useConfigs } from '../../stores/configs';
+import { useConnection } from '../../stores/connection';
+import { useDetail } from '../../stores/detail';
+import { useHealth } from '../../stores/health';
+import { useServerQuery } from '../../stores/query';
+import { useSelection } from '../../stores/selection';
+import ConfigRow from './config-row.azeroth';
+
+/** Fixed row height - the whole virtual list depends on every row being this tall. */
+const ROW_HEIGHT = 72;
+
+/** A row whose data is momentarily gone renders as empty space, not a crash. */
+const placeholder = (): HTMLElement => document.createElement('div');
+
+/**
+ * The virtualized server list. Ties the query's visible ids to the windowed list,
+ * and looks each row up by id at render time - so scrolling never touches the
+ * 8000-item array, only the ~25 rows on screen.
+ */
+export default component ConfigList()
+{
+    const { rowById } = useConfigs();
+    const query = useServerQuery();
+    const selection = useSelection();
+    const connection = useConnection();
+    const detail = useDetail();
+    const health = useHealth();
+
+    const tap = (id: string): void =>
+    {
+        if (selection.active())
+        {
+            selection.toggle(id);
+
+            return;
+        }
+
+        // A tap opens the server's detail sheet, where Connect is one button among
+        // its full information - safer than connecting on an accidental tap.
+        detail.open(id);
+    };
+
+    // Block-body render so a row can be resolved and guarded: during a bulk delete
+    // the visible-id list and the row map update in separate reactive steps, so an
+    // id can briefly outlive its row. Rendering a placeholder is correct here - the
+    // next flush reconciles it away.
+    <VirtualList ids={ query.visibleIds } rowHeight={ ROW_HEIGHT } overscan={ 6 }>
+        { (id) =>
+        {
+            const row = rowById(id);
+
+            return row === undefined
+                ? placeholder()
+                : ConfigRow({
+                    row,
+                    selectMode: selection.active,
+                    isSelected: () => selection.isSelected(id),
+                    isActive: () => connection.isActive(id),
+                    latency: () => health.latencyOf(id),
+                    onTap: () => tap(id),
+                    onHold: () => selection.begin(id)
+                });
+        } }
+    </VirtualList>
+}

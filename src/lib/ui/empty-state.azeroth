@@ -1,0 +1,26 @@
+import type { IconNode } from 'lucide';
+
+import { icon } from './icon';
+
+interface EmptyStateProps
+{
+    glyph: IconNode;
+    /** What is missing, stated plainly. */
+    title: string;
+    /** The next action, phrased as an instruction - an empty screen is an invitation. */
+    hint: string;
+}
+
+export default component EmptyState(props: EmptyStateProps)
+{
+    const glyph = icon(props.glyph, 'size-6 text-faint');
+
+    <div class="flex flex-col items-center justify-center gap-3 px-8 py-16 text-center">
+        <div class="flex size-12 items-center justify-center rounded-2xl border border-border bg-surface">
+            { glyph }
+        </div>
+
+        <p class="text-sm font-medium text-text">{ props.title }</p>
+        <p class="max-w-xs text-sm leading-relaxed text-muted">{ props.hint }</p>
+    </div>
+}

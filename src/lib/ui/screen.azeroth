@@ -1,0 +1,34 @@
+interface ScreenProps
+{
+    title: string;
+    /** One line of orientation under the title. Omitted when the title says it all. */
+    subtitle?: string;
+    children: HTMLElement;
+}
+
+/**
+ * The page scaffold: a header that clears the notch, and a scrolling body that
+ * clears the bottom tab bar. Every screen uses it, so header rhythm and safe-area
+ * handling are decided once.
+ *
+ * Content sits in a centred max-w-3xl column - a settings control stretched
+ * across a 1280px window is unreadable, and list rows need a measure too.
+ */
+export default component Screen(props: ScreenProps)
+{
+    <section class="flex min-h-dvh flex-col">
+        <header class="pt-safe sticky top-0 z-10 border-b border-border bg-bg/85 backdrop-blur">
+            <div class="mx-auto flex w-full max-w-3xl flex-col gap-0.5 px-5 py-4">
+                <h1 class="text-lg font-semibold tracking-tight text-text">{ props.title }</h1>
+
+                <Show when={ props.subtitle }>
+                    <p class="text-sm text-muted">{ props.subtitle }</p>
+                </Show>
+            </div>
+        </header>
+
+        <div class="mx-auto w-full max-w-3xl flex-1 pb-24 md:pb-8">
+            { props.children }
+        </div>
+    </section>
+}
