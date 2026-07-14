@@ -1,25 +1,33 @@
-import { For } from 'azerothjs';
+import { Show } from 'azerothjs';
 import { Search } from 'lucide';
 
 import { cx } from '../../lib/ui/cx';
-import { icon } from '../../lib/ui/icon';
+import FilterMenu from '../../lib/ui/filter-menu.azeroth';
+import type { FilterOption } from '../../lib/ui/filter-menu.azeroth';
+import Input from '../../lib/ui/input.azeroth';
 import Segmented from '../../lib/ui/segmented.azeroth';
 import type { SegmentedOption } from '../../lib/ui/segmented.azeroth';
 import { useLocale } from '../../stores/locale';
 import { useServerQuery } from '../../stores/query';
+import { useSubscriptions } from '../../stores/subscriptions';
 import type { SortKey } from '../../lib/search/filter';
 
 const CHIP = 'shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors';
 
+/** Sentinel for the "All sources" row - maps to a null subscription filter. */
+const SOURCE_ALL = '';
+
 /**
- * Search, facet chips, and sort - the tools that make 8000 servers navigable.
- * Search is debounced in the store; chips and sort apply immediately. The chip row
- * scrolls horizontally so a long list of protocols never wraps into a wall.
+ * Search, facet pickers, and sort - the tools that make 8000 servers navigable.
+ * Search is debounced in the store; the pickers and sort apply immediately. Protocol
+ * and source are dropdowns rather than chip rails, so a hundred subscriptions stay
+ * usable instead of becoming an endless horizontal scroll.
  */
 export default component FiltersBar()
 {
     const { t } = useLocale();
     const query = useServerQuery();
+    const subscriptions = useSubscriptions();
 
     const sortOptions: SegmentedOption[] =
     [
@@ -28,20 +36,54 @@ export default component FiltersBar()
         { value: 'country', label: () => t().servers.sortCountry }
     ];
 
+    const protocolOptions = (): FilterOption[] =>
+        query.facets().protocols.map((protocol) => ({ value: protocol, label: protocol.toUpperCase() }));
+
+    const protocolSummary = (): string =>
+    {
+        const set = query.protocols();
+
+        if (set.size === 0)
+        {
+            return t().servers.all;
+        }
+
+        if (set.size === 1)
+        {
+            return [...set][0].toUpperCase();
+        }
+
+        return String(set.size);
+    };
+
+    const sourceOptions = (): FilterOption[] =>
+    [
+        { value: SOURCE_ALL, label: t().servers.allSources },
+        ...subscriptions.subs().map((sub) => ({ value: sub.id, label: sub.name }))
+    ];
+
+    const sourceSummary = (): string =>
+    {
+        const id = query.subId();
+
+        if (id === null)
+        {
+            return t().servers.all;
+        }
+
+        return subscriptions.subs().find((sub) => sub.id === id)?.name ?? t().servers.all;
+    };
+
     <div class="flex flex-col gap-3">
-        <label class="flex items-center gap-2 rounded-xl border border-border bg-surface px-3">
-            { icon(Search, 'size-4 text-faint') }
+        <Input
+            type="search"
+            leading={ Search }
+            placeholder={ t().servers.searchPlaceholder }
+            value={ query.query() }
+            onInput={ (value) => query.setQuery(value) }
+        />
 
-            <input
-                type="search"
-                class="min-h-11 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint"
-                placeholder={ t().servers.searchPlaceholder }
-                value={ query.query() }
-                onInput={ (event) => query.setQuery((event.target as HTMLInputElement).value) }
-            />
-        </label>
-
-        <div class="-mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5">
+        <div class="flex flex-wrap gap-2">
             <button
                 type="button"
                 class={ cx(
@@ -55,23 +97,28 @@ export default component FiltersBar()
                 { t().servers.favoritesOnly }
             </button>
 
-            <For each={ query.facets().protocols } key={ (protocol) => protocol }>
-                { (protocol) =>
-                    <button
-                        type="button"
-                        class={ cx(
-                            CHIP,
-                            'uppercase',
-                            query.protocols().has(protocol)
-                                ? 'border-accent bg-accent-soft text-accent'
-                                : 'border-border text-muted hover:bg-elevated'
-                        ) }
-                        onClick={ () => query.toggleProtocol(protocol) }
-                    >
-                        { protocol }
-                    </button>
-                }
-            </For>
+            <FilterMenu
+                label={ t().servers.protocol }
+                summary={ protocolSummary }
+                active={ () => query.protocols().size > 0 }
+                options={ protocolOptions }
+                selected={ (value) => query.protocols().has(value) }
+                onSelect={ (value) => query.toggleProtocol(value) }
+                multi={ true }
+            />
+
+            <Show when={ subscriptions.subs().length > 0 }>
+                <FilterMenu
+                    label={ t().servers.source }
+                    summary={ sourceSummary }
+                    active={ () => query.subId() !== null }
+                    options={ sourceOptions }
+                    selected={ (value) => (value === SOURCE_ALL ? query.subId() === null : query.subId() === value) }
+                    onSelect={ (value) => query.setSubId(value === SOURCE_ALL ? null : value) }
+                    searchable={ subscriptions.subs().length > 8 }
+                    searchPlaceholder={ t().servers.searchSource }
+                />
+            </Show>
         </div>
 
         <Segmented

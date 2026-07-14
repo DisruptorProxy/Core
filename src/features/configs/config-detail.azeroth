@@ -1,11 +1,12 @@
 import { Show } from 'azerothjs';
-import { Copy, Power, Star, Trash2 } from 'lucide';
+import { Activity, Copy, Power, Star, Trash2 } from 'lucide';
 
 import { getConfig } from '../../lib/db/repo';
 import { humanizeError } from '../../lib/health/humanize-error';
 import { bucketFor } from '../../lib/health/score';
 import type { ProxyConfig } from '../../lib/proxy/types';
 import { canConnect } from '../../lib/xray/config';
+import { service } from '../connection/engine/service';
 import Button from '../../lib/ui/button.azeroth';
 import { cx } from '../../lib/ui/cx';
 import { flagEmoji } from '../../lib/ui/flag';
@@ -47,6 +48,7 @@ export default component ConfigDetail()
 
     state config = null as ProxyConfig | null;
     state copied = false;
+    state pinging = false;
 
     // Load the full record (credentials, REALITY keys) only when a sheet opens - the
     // list only ever held the light row.
@@ -85,6 +87,23 @@ export default component ConfigDetail()
             detail.close();
             await connection.connect(config);
         }
+    };
+
+    // A real per-server probe (HTTP through the proxy), folded into this config's
+    // health so the latency and sparkline update in place.
+    const pingNow = async (): Promise<void> =>
+    {
+        if (config === null || pinging)
+        {
+            return;
+        }
+
+        pinging = true;
+
+        const result = await service.ping(config, new AbortController().signal);
+
+        await health.recordOne(config.id, result);
+        pinging = false;
     };
 
     const copyLink = async (): Promise<void> =>
@@ -127,7 +146,7 @@ export default component ConfigDetail()
                     <span class="readout truncate text-sm text-faint" dir="ltr">{ config!.host }:{ config!.port }</span>
                 </div>
 
-                <div class="rounded-xl border border-border bg-surface px-3">
+                <div class="glass rounded-xl px-3">
                     <div class={ FIELD }>
                         <span class={ KEY }>{ t().detail.protocol }</span>
                         <span class={ cx(VAL, 'uppercase') }>{ config!.protocol }</span>
@@ -146,8 +165,20 @@ export default component ConfigDetail()
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-2 rounded-xl border border-border bg-surface p-3">
-                    <span class="text-xs font-medium text-muted">{ t().detail.health }</span>
+                <div class="glass flex flex-col gap-2 rounded-xl p-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-muted">{ t().detail.health }</span>
+
+                        <button
+                            type="button"
+                            class="flex min-h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium text-muted hover:bg-elevated disabled:opacity-40"
+                            disabled={ pinging || !canConnect(config!.protocol) }
+                            onClick={ () => void pingNow() }
+                        >
+                            { icon(Activity, cx('size-3.5', pinging ? 'animate-pulse' : '')) }
+                            { pinging ? t().detail.pinging : t().detail.ping }
+                        </button>
+                    </div>
 
                     <Show
                         when={ record()?.ewmaMs !== undefined }

@@ -18,4 +18,7 @@ interface ImportMetaEnv
 
     /** `'true'` installs the AzerothJS devtools panel in dev. Never in prod. */
     readonly VITE_DEVTOOLS: string;
+
+    /** Update manifest URL (JSON `{ version, url }`); empty disables the update check. */
+    readonly VITE_UPDATE_URL: string;
 }

@@ -52,6 +52,18 @@ export const useHealth = createStore(() =>
     const latencyOf = (id: string): number | undefined => records().get(id)?.ewmaMs;
     const scoreOf = (id: string): number => score(records().get(id));
 
+    /** Folds a single probe into a config's health - the per-config Ping action. */
+    const recordOne = async (id: string, result: PingResult): Promise<void> =>
+    {
+        const folded: HealthRecord = { ...fold(records().get(id), result), configId: id };
+        const next = new Map(records());
+
+        next.set(id, folded);
+        setRecords(next);
+
+        await putHealth([folded]);
+    };
+
     /**
      * Tests a set of servers by id. Results are folded into health and flushed to
      * the signal in batches, so a 500-server test does a handful of re-renders, not
@@ -125,6 +137,7 @@ export const useHealth = createStore(() =>
         recordOf,
         latencyOf,
         scoreOf,
+        recordOne,
         test,
         cancel,
         reload: load

@@ -5,7 +5,6 @@ import type { ParseError, ProxyConfig } from '../lib/proxy/types';
 import { decodeSubscription } from '../lib/subs/decode';
 import { planUpdate } from '../lib/subs/diff';
 import type { UpdateDiff } from '../lib/subs/diff';
-import { fetchSubscription } from '../lib/subs/fetch';
 
 /**
  * All heavy config work runs here, off the main thread: parsing 8000 URIs is
@@ -27,7 +26,9 @@ export interface UpdateRequest
 {
     kind: 'update';
     subId: string;
-    url: string;
+    /** The already-fetched body. The fetch runs on the main thread (native, CORS-free);
+     *  a worker cannot reach Tauri's invoke, so it only parses and diffs. */
+    text: string;
 }
 
 export type WorkerRequest = ImportRequest | UpdateRequest;
@@ -204,8 +205,7 @@ const runUpdate = async (request: UpdateRequest): Promise<void> =>
 {
     const started = performance.now();
 
-    const text = await fetchSubscription(request.url);
-    const decoded = decodeSubscription(text);
+    const decoded = decodeSubscription(request.text);
 
     if (decoded.unsupported !== undefined && decoded.body === '')
     {

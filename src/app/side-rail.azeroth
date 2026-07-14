@@ -24,7 +24,7 @@ export default component SideRail()
     const isActive = createSelector(() => location().pathname);
 
     <nav
-        class="hidden w-56 shrink-0 border-e border-border bg-surface md:flex md:flex-col md:gap-1 md:p-3"
+        class="glass-bar hidden w-56 shrink-0 border-e border-border md:flex md:flex-col md:gap-1 md:p-3"
         aria-label={ t().app.name }
     >
         <div class="px-3 py-4">

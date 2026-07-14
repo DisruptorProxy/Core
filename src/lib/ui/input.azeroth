@@ -1,0 +1,45 @@
+import { Show } from 'azerothjs';
+import type { IconNode } from 'lucide';
+
+import { cx } from './cx';
+import { icon } from './icon';
+
+interface InputProps
+{
+    value: string;
+    onInput: (value: string) => void;
+    placeholder?: string;
+    /** `text` (default), `url`, or `search`. */
+    type?: string;
+    inputmode?: string;
+    /** Force LTR for technical values (URLs, hosts) even in an RTL layout. */
+    ltr?: boolean;
+    /** Optional leading glyph, e.g. a search icon. */
+    leading?: IconNode;
+}
+
+const FIELD = 'glass flex items-center gap-2 rounded-xl px-3 focus-within:border-accent';
+
+/**
+ * The one text input. Wraps the native control in a glass field with an optional
+ * leading icon, so search boxes, URL fields, and name fields all look and behave
+ * the same. Technical values (`ltr`) stay left-to-right inside an RTL layout.
+ */
+export default component Input(props: InputProps)
+{
+    <label class={ FIELD }>
+        <Show when={ props.leading }>
+            { icon(props.leading!, 'size-4 text-faint') }
+        </Show>
+
+        <input
+            class={ cx('min-h-11 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint', props.ltr ? 'text-start' : '') }
+            type={ props.type ?? 'text' }
+            inputmode={ props.inputmode ?? 'text' }
+            dir={ props.ltr ? 'ltr' : 'auto' }
+            placeholder={ props.placeholder ?? '' }
+            value={ props.value }
+            onInput={ (event) => props.onInput((event.target as HTMLInputElement).value) }
+        />
+    </label>
+}

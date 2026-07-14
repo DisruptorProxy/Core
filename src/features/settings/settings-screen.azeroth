@@ -1,3 +1,7 @@
+import { Show } from 'azerothjs';
+
+import Button from '../../lib/ui/button.azeroth';
+import Card from '../../lib/ui/card.azeroth';
 import Screen from '../../lib/ui/screen.azeroth';
 import Segmented from '../../lib/ui/segmented.azeroth';
 import type { SegmentedOption } from '../../lib/ui/segmented.azeroth';
@@ -5,19 +9,21 @@ import { useLocale } from '../../stores/locale';
 import type { Locale } from '../../stores/locale';
 import { useTheme } from '../../stores/theme';
 import type { ThemePreference } from '../../stores/theme';
+import { useVersion } from '../../stores/version';
+
+const HEADING = 'text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]';
 
 /**
- * Settings is where the theme and language actually live, so both are wired for
- * real from the first phase - they are the two choices that change every other
- * screen, and they are the two things this app must get right for a Persian user.
+ * Settings: appearance, language, and the About section (version + update check).
+ * Theme and language change every other screen, so they lead; About lets the user
+ * see their build and pull a newer one.
  */
 export default component SettingsScreen()
 {
     const { t, locale, setLocale } = useLocale();
     const { preference, setPreference } = useTheme();
+    const version = useVersion();
 
-    // Static arrays whose labels are getters: the options never change identity,
-    // and each label re-reads the dictionary when the locale does.
     const themeOptions: SegmentedOption[] =
     [
         { value: 'system', label: () => t().settings.themeSystem },
@@ -34,13 +40,10 @@ export default component SettingsScreen()
     <Screen title={ t().settings.title }>
         <div class="flex flex-col gap-8 px-5 py-6">
             <section class="flex flex-col gap-4">
-                <h2 class="text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]">
-                    { t().settings.appearance }
-                </h2>
+                <h2 class={ HEADING }>{ t().settings.appearance }</h2>
 
                 <div class="flex flex-col gap-2">
                     <p class="text-sm font-medium text-text">{ t().settings.theme }</p>
-
                     <Segmented
                         label={ t().settings.theme }
                         options={ themeOptions }
@@ -51,7 +54,6 @@ export default component SettingsScreen()
 
                 <div class="flex flex-col gap-2">
                     <p class="text-sm font-medium text-text">{ t().settings.language }</p>
-
                     <Segmented
                         label={ t().settings.language }
                         options={ localeOptions }
@@ -59,6 +61,51 @@ export default component SettingsScreen()
                         onSelect={ (value) => setLocale(value as Locale) }
                     />
                 </div>
+            </section>
+
+            <section class="flex flex-col gap-4">
+                <h2 class={ HEADING }>{ t().settings.about }</h2>
+
+                <Card class="flex flex-col gap-3 p-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-muted">{ t().settings.version }</span>
+                        <span class="readout text-sm font-medium text-text">{ version.current() }</span>
+                    </div>
+
+                    <Show when={ version.state() === 'available' }>
+                        <div class="flex flex-col gap-2 rounded-xl border border-accent/40 bg-accent-soft px-3 py-2">
+                            <span class="text-sm font-medium text-accent">
+                                { t().settings.updateAvailable(version.latest() ?? '') }
+                            </span>
+                            <Show when={ version.downloadUrl() }>
+                                <a
+                                    class="text-xs font-medium text-accent underline"
+                                    href={ version.downloadUrl()! }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    { t().settings.download }
+                                </a>
+                            </Show>
+                        </div>
+                    </Show>
+
+                    <Show when={ version.state() === 'current' }>
+                        <p class="text-xs text-good">{ t().settings.upToDate }</p>
+                    </Show>
+
+                    <Show when={ version.state() === 'error' }>
+                        <p class="text-xs text-poor">{ version.error() }</p>
+                    </Show>
+
+                    <Button
+                        label={ version.state() === 'checking' ? t().settings.checking : t().settings.checkUpdate }
+                        variant="ghost"
+                        block={ true }
+                        disabled={ version.state() === 'checking' }
+                        onPress={ () => void version.check() }
+                    />
+                </Card>
             </section>
         </div>
     </Screen>

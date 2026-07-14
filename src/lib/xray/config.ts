@@ -15,7 +15,7 @@ import type { Rule, RuleAction } from '../routing/types';
  */
 
 /** Local SOCKS inbound port for a live connection. */
-export const CONNECT_SOCKS_PORT = 10808;
+const CONNECT_SOCKS_PORT = 10808;
 /** Distinct port for the throwaway ping xray, so it never clashes with a live one. */
 export const PING_PORT = 10809;
 

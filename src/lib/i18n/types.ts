@@ -54,6 +54,11 @@ export interface Strings
         delete: string;
         cancel: string;
         favoritesOnly: string;
+        protocol: string;
+        source: string;
+        all: string;
+        allSources: string;
+        searchSource: string;
         test: string;
         testing: (done: number, total: number) => string;
         stop: string;
@@ -193,6 +198,13 @@ export interface Strings
         language: string;
         languageEnglish: string;
         languagePersian: string;
+        about: string;
+        version: string;
+        checkUpdate: string;
+        checking: string;
+        upToDate: string;
+        updateAvailable: (version: string) => string;
+        download: string;
     };
 
     detail:
@@ -213,6 +225,8 @@ export interface Strings
         addFavorite: string;
         removeFavorite: string;
         delete: string;
+        ping: string;
+        pinging: string;
         /** Shown when the core cannot run this protocol (hysteria2/tuic). */
         notSupported: string;
     };

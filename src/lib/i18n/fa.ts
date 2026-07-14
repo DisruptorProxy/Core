@@ -53,6 +53,11 @@ export const fa: Strings =
         delete: 'حذف',
         cancel: 'انصراف',
         favoritesOnly: 'برگزیده‌ها',
+        protocol: 'پروتکل',
+        source: 'منبع',
+        all: 'همه',
+        allSources: 'همه منابع',
+        searchSource: 'جستجوی منابع',
         test: 'تست',
         testing: (done: number, total: number) =>
             `تست ${ done.toLocaleString('fa-IR') } / ${ total.toLocaleString('fa-IR') }`,
@@ -188,7 +193,14 @@ export const fa: Strings =
         themeDark: 'تیره',
         language: 'زبان',
         languageEnglish: 'English',
-        languagePersian: 'فارسی'
+        languagePersian: 'فارسی',
+        about: 'درباره',
+        version: 'نسخه',
+        checkUpdate: 'بررسی به‌روزرسانی',
+        checking: 'در حال بررسی…',
+        upToDate: 'شما آخرین نسخه را دارید.',
+        updateAvailable: (version: string) => `نسخه ${ version } در دسترس است.`,
+        download: 'دریافت'
     },
 
     detail:
@@ -209,6 +221,8 @@ export const fa: Strings =
         addFavorite: 'افزودن به برگزیده‌ها',
         removeFavorite: 'حذف از برگزیده‌ها',
         delete: 'حذف',
+        ping: 'پینگ',
+        pinging: 'در حال پینگ…',
         notSupported: 'این پروتکل توسط هسته فعلی پشتیبانی نمی‌شود.'
     },
 

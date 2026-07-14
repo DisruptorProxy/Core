@@ -6,6 +6,7 @@ import { useTheme } from '../stores/theme';
 import { router } from './router';
 import SideRail from './side-rail.azeroth';
 import TabBar from './tab-bar.azeroth';
+import Titlebar from './titlebar.azeroth';
 
 /**
  * App shell: a rail on wide screens, a bottom bar on phones, and the routed
@@ -20,13 +21,17 @@ export default component Shell()
     useLocale();
     useSubscriptions();
 
-    <div class="flex min-h-dvh">
-        <SideRail />
+    <div class="flex h-dvh flex-col">
+        <Titlebar />
 
-        <main class="min-w-0 flex-1">
-            <Routes router={ router } />
-        </main>
+        <div class="flex min-h-0 flex-1">
+            <SideRail />
 
-        <TabBar />
+            <main class="min-w-0 flex-1 overflow-hidden">
+                <Routes router={ router } />
+            </main>
+
+            <TabBar />
+        </div>
     </div>
 }

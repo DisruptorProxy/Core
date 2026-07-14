@@ -51,6 +51,11 @@ export const en: Strings =
         delete: 'Delete',
         cancel: 'Cancel',
         favoritesOnly: 'Favorites',
+        protocol: 'Protocol',
+        source: 'Source',
+        all: 'All',
+        allSources: 'All sources',
+        searchSource: 'Search sources',
         test: 'Test',
         testing: (done: number, total: number) =>
             `Testing ${ done.toLocaleString('en-US') } / ${ total.toLocaleString('en-US') }`,
@@ -186,7 +191,14 @@ export const en: Strings =
         themeDark: 'Dark',
         language: 'Language',
         languageEnglish: 'English',
-        languagePersian: 'فارسی'
+        languagePersian: 'فارسی',
+        about: 'About',
+        version: 'Version',
+        checkUpdate: 'Check for updates',
+        checking: 'Checking…',
+        upToDate: 'You’re on the latest version.',
+        updateAvailable: (version: string) => `Version ${ version } is available.`,
+        download: 'Download'
     },
 
     detail:
@@ -207,6 +219,8 @@ export const en: Strings =
         addFavorite: 'Add to favorites',
         removeFavorite: 'Remove favorite',
         delete: 'Delete',
+        ping: 'Ping',
+        pinging: 'Pinging…',
         notSupported: 'This protocol is not supported by the current core.'
     },
 

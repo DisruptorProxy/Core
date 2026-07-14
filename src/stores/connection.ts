@@ -91,10 +91,21 @@ export const useConnection = createStore(() =>
      */
     const connectFastest = async (ids: string[]): Promise<boolean> =>
     {
-        const ranked = ids
-            .map((id) => ({ id, score: health.scoreOf(id) }))
-            .filter((entry) => Number.isFinite(entry.score))
-            .sort((a, b) => a.score - b.score);
+        const rank = (): { id: string; score: number }[] =>
+            ids
+                .map((id) => ({ id, score: health.scoreOf(id) }))
+                .filter((entry) => Number.isFinite(entry.score))
+                .sort((a, b) => a.score - b.score);
+
+        let ranked = rank();
+
+        // Nothing tested yet: probe a bounded sample so "fastest" has data to rank,
+        // rather than silently doing nothing. The user gets a connection either way.
+        if (ranked.length === 0)
+        {
+            await health.test(ids.slice(0, 80));
+            ranked = rank();
+        }
 
         if (ranked.length === 0)
         {

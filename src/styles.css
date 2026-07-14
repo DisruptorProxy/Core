@@ -21,57 +21,72 @@
    Persian-first tool, and deliberately not the green-on-black every VPN uses.
    Colour NEVER carries meaning alone: every health state also shows a number.
    --------------------------------------------------------------------------- */
+/* Light glass: bright frosted-white panels floating over a soft, tinted, glowing
+   canvas. The canvas is deliberately NOT near-white - if it were, white panels
+   would vanish into it - so it is a cool blue-grey with visible turquoise and
+   pomegranate glows for the frost to pick up. Panels lift with a clear hairline,
+   a bright top highlight, and a soft shadow. Text stays opaque and WCAG-AA. */
 :root
 {
-    --g-bg: oklch(0.97 0.006 250);
-    --g-surface: oklch(0.995 0.002 250);
-    --g-elevated: oklch(1 0 0);
-    --g-border: oklch(0.90 0.008 250);
-    --g-border-strong: oklch(0.80 0.012 250);
-    --g-text: oklch(0.24 0.02 258);
-    --g-muted: oklch(0.47 0.015 255);
-    /* Darkened to clear WCAG-AA (4.5:1) as small secondary text, not just large. */
-    --g-faint: oklch(0.53 0.015 255);
+    --g-bg: oklch(0.90 0.018 245);
+    --g-canvas-a: oklch(0.60 0.13 196 / 0.28);
+    --g-canvas-b: oklch(0.66 0.16 25 / 0.18);
+    --g-surface: oklch(1 0 0 / 0.62);
+    --g-elevated: oklch(1 0 0 / 0.82);
+    --g-border: oklch(0.30 0.02 258 / 0.14);
+    --g-border-strong: oklch(0.30 0.02 258 / 0.22);
+    --g-highlight: oklch(1 0 0 / 0.75);
+    --g-text: oklch(0.23 0.02 258);
+    --g-muted: oklch(0.42 0.015 255);
+    /* Darkened to clear WCAG-AA (4.5:1) as small secondary text over glass. */
+    --g-faint: oklch(0.48 0.015 255);
 
     --g-accent: oklch(0.52 0.10 196);
     --g-accent-hover: oklch(0.46 0.10 196);
     --g-accent-ink: oklch(0.99 0 0);
-    --g-accent-soft: oklch(0.94 0.03 196);
+    --g-accent-soft: oklch(0.62 0.10 196 / 0.16);
 
     --g-good: oklch(0.50 0.10 196);
     --g-fair: oklch(0.55 0.12 70);
     --g-poor: oklch(0.52 0.18 25);
-    --g-unknown: oklch(0.62 0.015 255);
+    --g-unknown: oklch(0.60 0.015 255);
 
-    --g-shadow: 0 1px 2px oklch(0.24 0.02 258 / 0.06), 0 8px 24px oklch(0.24 0.02 258 / 0.06);
+    --g-blur: 20px;
+    --g-shadow: 0 1px 1px oklch(0.24 0.02 258 / 0.04), 0 12px 32px oklch(0.24 0.02 258 / 0.10);
 
     --g-font-sans: 'IBM Plex Sans', 'Vazirmatn Variable', system-ui, sans-serif;
     --g-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
+/* Dark glass: deep ink canvas with turquoise/pomegranate ambient glows, dark
+   translucent panels, and a faint white edge highlight so each pane reads as glass. */
 .dark
 {
-    --g-bg: oklch(0.17 0.022 258);
-    --g-surface: oklch(0.21 0.024 258);
-    --g-elevated: oklch(0.25 0.026 258);
-    --g-border: oklch(0.30 0.020 258);
-    --g-border-strong: oklch(0.40 0.022 258);
-    --g-text: oklch(0.97 0.004 250);
-    --g-muted: oklch(0.73 0.015 252);
-    /* Lightened to clear WCAG-AA (4.5:1) as small secondary text, not just large. */
+    --g-bg: oklch(0.15 0.024 264);
+    --g-canvas-a: oklch(0.55 0.14 196 / 0.22);
+    --g-canvas-b: oklch(0.55 0.19 24 / 0.16);
+    --g-surface: oklch(0.30 0.03 262 / 0.44);
+    --g-elevated: oklch(0.32 0.032 262 / 0.72);
+    --g-border: oklch(1 0 0 / 0.10);
+    --g-border-strong: oklch(1 0 0 / 0.20);
+    --g-highlight: oklch(1 0 0 / 0.14);
+    --g-text: oklch(0.98 0.004 250);
+    --g-muted: oklch(0.75 0.015 252);
+    /* Lightened to clear WCAG-AA (4.5:1) as small secondary text over glass. */
     --g-faint: oklch(0.66 0.018 255);
 
-    --g-accent: oklch(0.82 0.12 196);
-    --g-accent-hover: oklch(0.88 0.11 196);
-    --g-accent-ink: oklch(0.19 0.03 230);
-    --g-accent-soft: oklch(0.30 0.05 210);
+    --g-accent: oklch(0.84 0.13 196);
+    --g-accent-hover: oklch(0.90 0.11 196);
+    --g-accent-ink: oklch(0.17 0.03 240);
+    --g-accent-soft: oklch(0.70 0.12 200 / 0.18);
 
-    --g-good: oklch(0.82 0.12 196);
-    --g-fair: oklch(0.83 0.13 78);
-    --g-poor: oklch(0.70 0.17 22);
-    --g-unknown: oklch(0.58 0.018 255);
+    --g-good: oklch(0.84 0.13 196);
+    --g-fair: oklch(0.84 0.13 78);
+    --g-poor: oklch(0.72 0.17 22);
+    --g-unknown: oklch(0.60 0.018 255);
 
-    --g-shadow: 0 1px 2px oklch(0 0 0 / 0.4), 0 8px 24px oklch(0 0 0 / 0.35);
+    --g-blur: 22px;
+    --g-shadow: 0 1px 1px oklch(0 0 0 / 0.4), 0 16px 40px oklch(0 0 0 / 0.45);
 }
 
 /* Persian leads in RTL: the Persian face becomes primary so mixed strings keep
@@ -114,8 +129,15 @@
 {
     html
     {
-        background-color: var(--g-bg);
         color-scheme: light;
+        background-color: var(--g-bg);
+        /* Ambient canvas: soft turquoise + pomegranate glows the glass panels blur
+           over. Fixed so it stays put behind the app's internal scrolls. */
+        background-image:
+            radial-gradient(120% 85% at 12% -5%, var(--g-canvas-a), transparent 58%),
+            radial-gradient(110% 85% at 105% 105%, var(--g-canvas-b), transparent 55%);
+        background-attachment: fixed;
+        background-repeat: no-repeat;
     }
 
     html.dark
@@ -125,12 +147,34 @@
 
     body
     {
-        background-color: var(--g-bg);
         color: var(--g-text);
         font-family: var(--g-font-sans);
         -webkit-font-smoothing: antialiased;
         text-rendering: optimizeLegibility;
         overscroll-behavior-y: none;
+        /* The app never scrolls sideways - only inner rows (chips) do, on purpose. */
+        overflow-x: hidden;
+    }
+
+    /* Mobile feel on the desktop: every surface scrolls by wheel, trackpad, or
+       touch, but no scrollbar is ever drawn. This is what makes the horizontal
+       chip rows and the long lists read like a phone app rather than a window. */
+    *
+    {
+        scrollbar-width: none;
+    }
+
+    *::-webkit-scrollbar
+    {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+
+    /* Momentum scrolling for the touch/trackpad gestures the hidden bars imply. */
+    :where(.overflow-y-auto, .overflow-x-auto)
+    {
+        -webkit-overflow-scrolling: touch;
     }
 
     /* Every measured value is a readout: fixed-width digits so a scrolling list
@@ -252,6 +296,36 @@
 @keyframes g-gate-spin
 {
     to { transform: rotate(360deg); }
+}
+
+/* Frosted glass. `glass` is the standard panel (cards, bars); `glass-strong` is
+   for modals that need more opacity to sit above the app. The inset top highlight
+   is what makes a translucent pane read as a lit sheet of glass rather than a
+   faded box. saturate() keeps the ambient colour lively through the blur. */
+@utility glass
+{
+    background-color: var(--g-surface);
+    -webkit-backdrop-filter: blur(var(--g-blur)) saturate(1.5);
+    backdrop-filter: blur(var(--g-blur)) saturate(1.5);
+    border: 1px solid var(--g-border);
+    box-shadow: inset 0 1px 0 0 var(--g-highlight), var(--g-shadow);
+}
+
+@utility glass-strong
+{
+    background-color: var(--g-elevated);
+    -webkit-backdrop-filter: blur(calc(var(--g-blur) * 1.2)) saturate(1.6);
+    backdrop-filter: blur(calc(var(--g-blur) * 1.2)) saturate(1.6);
+    border: 1px solid var(--g-border);
+    box-shadow: inset 0 1px 0 0 var(--g-highlight), var(--g-shadow);
+}
+
+/* A quieter glass for the bar chrome (titlebar, tab bar) - same frost, no shadow. */
+@utility glass-bar
+{
+    background-color: var(--g-surface);
+    -webkit-backdrop-filter: blur(var(--g-blur)) saturate(1.5);
+    backdrop-filter: blur(var(--g-blur)) saturate(1.5);
 }
 
 /* Safe areas: the bottom tab bar must clear the home indicator, and full-bleed

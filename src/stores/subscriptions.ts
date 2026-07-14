@@ -12,6 +12,7 @@ import {
 } from '../lib/db/repo';
 import type { SubscriptionRecord } from '../lib/db/schema';
 import type { UpdateDiff } from '../lib/subs/diff';
+import { fetchSubscription } from '../lib/subs/fetch';
 import { dueForUpdate } from '../lib/ui/relative-time';
 import type { UpdateRequest, WorkerResponse } from '../workers/parse-worker';
 import { useConfigs } from './configs';
@@ -101,63 +102,81 @@ export const useSubscriptions = createStore(() =>
                 return;
             }
 
-            const worker = new Worker(new URL('../workers/parse-worker.ts', import.meta.url), { type: 'module' });
-
             setError(null);
             markUpdating(id, true);
 
-            worker.onmessage = async (event: MessageEvent<WorkerResponse>): Promise<void> =>
+            const runWorker = (text: string): void =>
             {
-                const message = event.data;
+                const worker = new Worker(new URL('../workers/parse-worker.ts', import.meta.url), { type: 'module' });
 
-                markUpdating(id, false);
-                worker.terminate();
-
-                if (message.kind === 'failed')
+                worker.onmessage = async (event: MessageEvent<WorkerResponse>): Promise<void> =>
                 {
-                    await putSubscription({ ...record, status: 'failed', lastError: message.reason });
+                    const message = event.data;
+
+                    markUpdating(id, false);
+                    worker.terminate();
+
+                    if (message.kind === 'failed')
+                    {
+                        await putSubscription({ ...record, status: 'failed', lastError: message.reason });
+                        await refresh();
+                        setError(message.reason);
+                        reject(new Error(message.reason));
+
+                        return;
+                    }
+
+                    if (message.kind !== 'updated')
+                    {
+                        return;
+                    }
+
+                    const count = await idsForSubscription(id).then((ids) => ids.length);
+
+                    await putSubscription({
+                        ...record,
+                        status: 'ok',
+                        lastUpdatedAt: Date.now(),
+                        configCount: count,
+                        lastError: undefined
+                    });
+
                     await refresh();
-                    setError(message.reason);
-                    reject(new Error(message.reason));
+                    await configs.refresh();
 
-                    return;
-                }
+                    const outcome: UpdateOutcome = { subId: id, diff: message.diff };
 
-                if (message.kind !== 'updated')
+                    setLastOutcome(outcome);
+                    resolve(outcome);
+                };
+
+                worker.onerror = (event): void =>
                 {
-                    return;
-                }
+                    markUpdating(id, false);
+                    worker.terminate();
+                    setError(event.message);
+                    reject(new Error(event.message));
+                };
 
-                const count = await idsForSubscription(id).then((ids) => ids.length);
+                const request: UpdateRequest = { kind: 'update', subId: id, text };
 
-                await putSubscription({
-                    ...record,
-                    status: 'ok',
-                    lastUpdatedAt: Date.now(),
-                    configCount: count,
-                    lastError: undefined
+                worker.postMessage(request);
+            };
+
+            // Fetch on the main thread - native and CORS-free in the desktop app; a
+            // worker cannot reach Tauri's invoke, so it only parses what it is handed.
+            void fetchSubscription(record.url)
+                .then((text) => runWorker(text))
+                .catch(async (fetchError: unknown) =>
+                {
+                    const reason = fetchError instanceof Error ? fetchError.message : 'Could not reach the subscription URL';
+
+                    markUpdating(id, false);
+                    await putSubscription({ ...record, status: 'failed', lastError: reason });
+                    await refresh();
+                    setError(reason);
+                    reject(new Error(reason));
                 });
-
-                await refresh();
-                await configs.refresh();
-
-                const outcome: UpdateOutcome = { subId: id, diff: message.diff };
-
-                setLastOutcome(outcome);
-                resolve(outcome);
-            };
-
-            worker.onerror = (event): void =>
-            {
-                markUpdating(id, false);
-                worker.terminate();
-                setError(event.message);
-                reject(new Error(event.message));
-            };
-
-            const request: UpdateRequest = { kind: 'update', subId: id, url: record.url };
-
-            worker.postMessage(request);
         });
 
     /**
@@ -238,7 +257,6 @@ export const useSubscriptions = createStore(() =>
         lastOutcome,
         error,
         refresh,
-        runDue,
         add,
         edit,
         update,
