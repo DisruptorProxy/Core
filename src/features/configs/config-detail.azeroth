@@ -5,6 +5,7 @@ import { getConfig } from '../../lib/db/repo';
 import { humanizeError } from '../../lib/health/humanize-error';
 import { bucketFor } from '../../lib/health/score';
 import type { ProxyConfig } from '../../lib/proxy/types';
+import { canConnect } from '../../lib/xray/config';
 import Button from '../../lib/ui/button.azeroth';
 import { cx } from '../../lib/ui/cx';
 import { flagEmoji } from '../../lib/ui/flag';
@@ -171,8 +172,20 @@ export default component ConfigDetail()
                     </Show>
                 </div>
 
+                <Show when={ !canConnect(config!.protocol) }>
+                    <p class="rounded-xl border border-fair/40 bg-fair/5 px-3 py-2 text-xs text-fair">
+                        { t().detail.notSupported }
+                    </p>
+                </Show>
+
                 <div class="grid grid-cols-2 gap-2">
-                    <Button label={ t().detail.connect } leading={ Power } block={ true } onPress={ () => void connect() } />
+                    <Button
+                        label={ t().detail.connect }
+                        leading={ Power }
+                        block={ true }
+                        disabled={ !canConnect(config!.protocol) }
+                        onPress={ () => void connect() }
+                    />
 
                     <button
                         type="button"

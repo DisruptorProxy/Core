@@ -60,6 +60,13 @@ export interface ProxyConfig
     method?: string;
     alpn?: string;
 
+    /** vless `encryption`: `none`, or a modern post-quantum value (mlkem768...). */
+    encryption?: string;
+    /** xhttp transport mode: `auto`, `packet-up`, `stream-up`, `stream-one`. */
+    mode?: string;
+    /** xhttp `extra`: a JSON object string of advanced transport options. */
+    extra?: string;
+
     /** True when the provider asked clients to skip certificate verification. */
     allowInsecure: boolean;
 

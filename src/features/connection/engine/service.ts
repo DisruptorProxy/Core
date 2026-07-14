@@ -1,10 +1,10 @@
-import { MockConnectionService } from './mock';
+import { TauriConnectionService } from './tauri';
 import type { ConnectionService } from './port';
 
 /**
  * The one live engine instance. A connection service is stateful (it holds the
  * current status), so there is exactly one, shared by the connection store and the
- * health/latency pool. Swapping in a real Xray/sing-box service is a one-line
- * change here - nothing else imports the concrete class.
+ * detail sheet's ping. It drives the real xray.exe via Tauri; in a plain browser
+ * its methods degrade to a clear "desktop only" message rather than crashing.
  */
-export const service: ConnectionService = new MockConnectionService();
+export const service: ConnectionService = new TauriConnectionService();

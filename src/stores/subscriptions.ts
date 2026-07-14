@@ -1,5 +1,5 @@
 import { createStore } from 'azerothjs';
-import { createSignal } from 'azerothjs';
+import { createEffect, createSignal, onCleanup } from 'azerothjs';
 
 import {
     clearSubscriptionId,
@@ -12,8 +12,12 @@ import {
 } from '../lib/db/repo';
 import type { SubscriptionRecord } from '../lib/db/schema';
 import type { UpdateDiff } from '../lib/subs/diff';
+import { dueForUpdate } from '../lib/ui/relative-time';
 import type { UpdateRequest, WorkerResponse } from '../workers/parse-worker';
 import { useConfigs } from './configs';
+
+/** How often the scheduler wakes to check for due subscriptions. */
+const SCHEDULER_TICK_MS = 60_000;
 
 /** A stable id for a new subscription without pulling in a uuid dependency. */
 const newId = (): string => `sub_${ Date.now().toString(36) }${ Math.random().toString(36).slice(2, 8) }`;
@@ -183,7 +187,50 @@ export const useSubscriptions = createStore(() =>
         await configs.refresh();
     };
 
-    void refresh();
+    // The auto-update scheduler. Each tick refreshes every subscription whose
+    // interval has elapsed, sequentially - a subscription with 3000 entries and a
+    // network fetch should not run alongside five others and stampede the worker or
+    // the connection. A tick that is still working when the next fires is skipped.
+    let ticking = false;
+
+    const runDue = async (): Promise<void> =>
+    {
+        if (ticking)
+        {
+            return;
+        }
+
+        ticking = true;
+
+        try
+        {
+            const now = Date.now();
+
+            for (const sub of subs())
+            {
+                if (dueForUpdate(sub.lastUpdatedAt, sub.intervalMin, now) && !isUpdating(sub.id))
+                {
+                    // A failed fetch must not stop the other subscriptions.
+                    await update(sub.id).catch(() => undefined);
+                }
+            }
+        }
+        finally
+        {
+            ticking = false;
+        }
+    };
+
+    createEffect(() =>
+    {
+        const timer = window.setInterval(() => void runDue(), SCHEDULER_TICK_MS);
+
+        onCleanup(() => window.clearInterval(timer));
+    }, { name: 'subscription-scheduler' });
+
+    // Load, then immediately catch up anything that went stale while the app was
+    // closed - the moment a user reopens Guardian, overdue sources refresh.
+    void refresh().then(() => runDue());
 
     return {
         subs,
@@ -191,6 +238,7 @@ export const useSubscriptions = createStore(() =>
         lastOutcome,
         error,
         refresh,
+        runDue,
         add,
         edit,
         update,

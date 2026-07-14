@@ -208,7 +208,8 @@ export const fa: Strings =
         copied: 'کپی شد',
         addFavorite: 'افزودن به برگزیده‌ها',
         removeFavorite: 'حذف از برگزیده‌ها',
-        delete: 'حذف'
+        delete: 'حذف',
+        notSupported: 'این پروتکل توسط هسته فعلی پشتیبانی نمی‌شود.'
     },
 
     common:

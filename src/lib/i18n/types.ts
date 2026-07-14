@@ -213,6 +213,8 @@ export interface Strings
         addFavorite: string;
         removeFavorite: string;
         delete: string;
+        /** Shown when the core cannot run this protocol (hysteria2/tuic). */
+        notSupported: string;
     };
 
     common:

@@ -6,7 +6,7 @@ import type { HealthRecord } from '../lib/db/schema';
 import { fold, score } from '../lib/health/score';
 import { runPool } from '../lib/health/pool';
 import type { PingResult } from '../features/connection/engine/port';
-import { service } from '../features/connection/engine/service';
+import { tcpProbe } from '../features/connection/engine/tcp-ping';
 
 export interface TestState
 {
@@ -95,7 +95,9 @@ export const useHealth = createStore(() =>
             dirty = true;
         };
 
-        await runPool(configs, service, CONCURRENCY, {
+        // Bulk testing uses the light TCP probe - a real handshake to the server's
+        // port, without spawning an xray per probe (that is the detail sheet's job).
+        await runPool(configs, tcpProbe, CONCURRENCY, {
             onResult,
             onProgress: (done, total) => setTestState({ running: true, done, total })
         }, controller.signal);

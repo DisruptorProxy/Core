@@ -206,7 +206,8 @@ export const en: Strings =
         copied: 'Copied',
         addFavorite: 'Add to favorites',
         removeFavorite: 'Remove favorite',
-        delete: 'Delete'
+        delete: 'Delete',
+        notSupported: 'This protocol is not supported by the current core.'
     },
 
     common:

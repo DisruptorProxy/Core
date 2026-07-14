@@ -1,6 +1,7 @@
 import { Routes } from 'azerothjs';
 
 import { useLocale } from '../stores/locale';
+import { useSubscriptions } from '../stores/subscriptions';
 import { useTheme } from '../stores/theme';
 import { router } from './router';
 import SideRail from './side-rail.azeroth';
@@ -8,13 +9,16 @@ import TabBar from './tab-bar.azeroth';
 
 /**
  * App shell: a rail on wide screens, a bottom bar on phones, and the routed
- * screen in between. Both stores are instantiated here so the document's `dir`,
- * `lang` and theme class are owned from the moment the app mounts.
+ * screen in between. The theme and locale stores are instantiated here so the
+ * document's `dir`, `lang` and theme class are owned from mount; the subscriptions
+ * store is instantiated so its auto-update scheduler runs app-wide, not only while
+ * the Subscriptions screen is open.
  */
 export default component Shell()
 {
     useTheme();
     useLocale();
+    useSubscriptions();
 
     <div class="flex min-h-dvh">
         <SideRail />

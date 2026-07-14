@@ -163,6 +163,22 @@ async fn ping_xray_windows(app: tauri::AppHandle, config_path: String) -> Result
     ping_result
 }
 
+/// Light TCP-connect latency to `host:port`, in milliseconds. Used for bulk server
+/// testing - it measures reachability without spawning an xray per probe, so
+/// testing hundreds of servers stays cheap. A real through-proxy figure comes from
+/// `ping_xray_windows` for a single server.
+#[tauri::command]
+async fn tcp_ping(host: String, port: u16) -> Result<u64, String> {
+    let addr = format!("{host}:{port}");
+    let start = Instant::now();
+
+    match tokio::time::timeout(Duration::from_secs(3), tokio::net::TcpStream::connect(&addr)).await {
+        Ok(Ok(_stream)) => Ok(start.elapsed().as_millis() as u64),
+        Ok(Err(e)) => Err(format!("connection refused: {e}")),
+        Err(_) => Err("i/o timeout".to_string()),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -172,7 +188,8 @@ pub fn run() {
             create_xray_config,
             run_xray_windows,
             end_xray_windows,
-            ping_xray_windows
+            ping_xray_windows,
+            tcp_ping
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

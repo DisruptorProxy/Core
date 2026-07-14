@@ -42,3 +42,25 @@ export const isStale = (lastUpdatedAt: number | undefined, intervalMin: number, 
 
     return now - lastUpdatedAt > intervalMin * 60 * 1000 * 2;
 };
+
+/**
+ * Whether the scheduler should refresh this subscription now.
+ *
+ * `intervalMin === 0` means manual - it is never due. Otherwise it is due once a
+ * full interval has elapsed since the last successful update; a subscription that
+ * has an interval but has never updated is due immediately.
+ */
+export const dueForUpdate = (lastUpdatedAt: number | undefined, intervalMin: number, now = Date.now()): boolean =>
+{
+    if (intervalMin <= 0)
+    {
+        return false;
+    }
+
+    if (lastUpdatedAt === undefined)
+    {
+        return true;
+    }
+
+    return now - lastUpdatedAt >= intervalMin * 60 * 1000;
+};

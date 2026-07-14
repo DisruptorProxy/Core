@@ -3,6 +3,7 @@ import { createEffect, createSelector, createSignal, onCleanup } from 'azerothjs
 
 import { getConfig, getConfigsByIds } from '../lib/db/repo';
 import type { ProxyConfig } from '../lib/proxy/types';
+import { canConnect } from '../lib/xray/config';
 import { service } from '../features/connection/engine/service';
 import type { ConnectionPhase } from '../features/connection/engine/port';
 import { useHealth } from './health';
@@ -100,7 +101,14 @@ export const useConnection = createStore(() =>
             return false;
         }
 
-        const [best] = await getConfigsByIds([ranked[0].id]);
+        // Load the top candidates and pick the fastest one the core can actually
+        // run - a hy2/tuic server may score well but cannot be connected.
+        const topIds = ranked.slice(0, 20).map((entry) => entry.id);
+        const byId = new Map((await getConfigsByIds(topIds)).map((config) => [config.id, config]));
+
+        const best = ranked
+            .map((entry) => byId.get(entry.id))
+            .find((config): config is ProxyConfig => config !== undefined && canConnect(config.protocol));
 
         if (best === undefined)
         {

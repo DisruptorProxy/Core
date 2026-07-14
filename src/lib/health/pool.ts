@@ -1,5 +1,8 @@
 import type { ProxyConfig } from '../proxy/types';
-import type { ConnectionService, PingResult } from '../../features/connection/engine/port';
+import type { PingResult } from '../../features/connection/engine/port';
+
+/** Probes one server. Bulk testing passes a light TCP probe; the caller chooses. */
+export type Probe = (config: ProxyConfig, signal: AbortSignal) => Promise<PingResult>;
 
 export interface PoolCallbacks
 {
@@ -22,7 +25,7 @@ export interface PoolCallbacks
  */
 export const runPool = async (
     configs: ProxyConfig[],
-    service: ConnectionService,
+    probe: Probe,
     concurrency: number,
     callbacks: PoolCallbacks,
     signal: AbortSignal
@@ -48,7 +51,7 @@ export const runPool = async (
 
             try
             {
-                result = await service.ping(config, signal);
+                result = await probe(config, signal);
             }
             catch (error)
             {

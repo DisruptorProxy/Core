@@ -29,6 +29,11 @@ export const parseVless = (uri: string): ProxyDraft =>
         publicKey: optional(params.get('pbk')),
         shortId: optional(params.get('sid')),
         alpn: optional(params.get('alpn')),
+        // Modern vless carries real encryption (post-quantum ML-KEM), not just
+        // `none`; the xhttp transport adds `mode` and an `extra` JSON blob.
+        encryption: optional(params.get('encryption')),
+        mode: optional(params.get('mode')),
+        extra: optional(params.get('extra')),
         allowInsecure: readFlag(params.get('allowInsecure')) || readFlag(params.get('insecure')),
         rawUri: uri
     };

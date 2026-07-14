@@ -23,6 +23,12 @@ export interface ProxyDraft
     shortId?: string;
     method?: string;
     alpn?: string;
+    /** vless `encryption`: `none`, or a modern post-quantum value (mlkem768...). */
+    encryption?: string;
+    /** xhttp transport mode: `auto`, `packet-up`, `stream-up`, `stream-one`. */
+    mode?: string;
+    /** xhttp `extra`: a JSON object string of advanced transport options. */
+    extra?: string;
     allowInsecure: boolean;
     rawUri: string;
 }
