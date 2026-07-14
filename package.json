@@ -2,11 +2,16 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "azeroth-tsc && vite build",
-        "typecheck": "azeroth-tsc",
         "tauri": "tauri",
+        "typecheck": "azeroth-tsc",
+        "build": "azeroth-tsc && vite build",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
         "desktop": "npm run tauri dev",
-        "desktop-build": "npm run tauri build"
+        "desktop-build": "npm run tauri build",
+        "android": "npm run tauri android dev",
+        "android-aab": "npm run tauri android build -- --aab",
+        "android-apk": "npm run tauri android build -- --apk"
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.3.2",
