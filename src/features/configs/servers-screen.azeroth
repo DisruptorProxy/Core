@@ -1,0 +1,150 @@
+import { Show } from 'azerothjs';
+import { CircleStop, Download, Gauge, ListFilter, Server } from 'lucide';
+
+import Button from '../../lib/ui/button.azeroth';
+import EmptyState from '../../lib/ui/empty-state.azeroth';
+import { icon } from '../../lib/ui/icon';
+import ImportSheet from '../import/import-sheet.azeroth';
+import { useConfigs } from '../../stores/configs';
+import { useHealth } from '../../stores/health';
+import { useLocale } from '../../stores/locale';
+import { useServerQuery } from '../../stores/query';
+import { useSelection } from '../../stores/selection';
+import BulkBar from './bulk-bar.azeroth';
+import ConfigDetail from './config-detail.azeroth';
+import ConfigList from './config-list.azeroth';
+import FiltersBar from './filters-bar.azeroth';
+
+const ICON_BTN = 'flex size-11 items-center justify-center rounded-lg border border-border text-muted hover:bg-elevated';
+
+/**
+ * The server catalogue. Unlike the other screens it does NOT use the scrolling
+ * Screen scaffold: the list must own a bounded height and scroll internally, or
+ * virtualization has nothing to measure. So this is a full-height column - a fixed
+ * header, a filter bar, and the list filling the rest.
+ */
+export default component ServersScreen()
+{
+    const { t } = useLocale();
+    const { rows } = useConfigs();
+    const query = useServerQuery();
+    const selection = useSelection();
+    const health = useHealth();
+
+    state importOpen = false;
+
+    derived hasServers = rows().length > 0;
+
+    <div class="contents">
+    <section class="flex h-full flex-col pb-14 md:pb-0">
+        <header class="glass-bar shrink-0 border-b border-border">
+            <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-4">
+                <div class="flex min-w-0 flex-col gap-0.5">
+                    <h1 class="text-lg font-semibold tracking-tight text-text">{ t().servers.title }</h1>
+
+                    <Show when={ health.testState().running }>
+                        <p class="readout text-sm text-accent">
+                            { t().servers.testing(health.testState().done, health.testState().total) }
+                        </p>
+                    </Show>
+
+                    <Show when={ !health.testState().running }>
+                        <p class="readout text-sm text-muted">{ t().servers.countLabel(query.visibleIds().length) }</p>
+                    </Show>
+                </div>
+
+                <Show when={ !selection.active() }>
+                    <div class="flex shrink-0 items-center gap-2">
+                        <button
+                            type="button"
+                            class={ ICON_BTN }
+                            aria-label={ t().importing.openAction }
+                            onClick={ () => importOpen = true }
+                        >
+                            { icon(Download, 'size-4') }
+                        </button>
+
+                        <Show when={ hasServers && health.testState().running }>
+                            <button
+                                type="button"
+                                class="flex size-11 items-center justify-center rounded-lg border border-poor/40 text-poor hover:bg-poor/10"
+                                aria-label={ t().servers.stop }
+                                onClick={ () => health.cancel() }
+                            >
+                                { icon(CircleStop, 'size-4') }
+                            </button>
+                        </Show>
+
+                        <Show when={ hasServers && !health.testState().running }>
+                            <button
+                                type="button"
+                                class={ ICON_BTN }
+                                aria-label={ t().servers.test }
+                                onClick={ () => void health.test(query.visibleIds()) }
+                            >
+                                { icon(Gauge, 'size-4') }
+                            </button>
+                        </Show>
+
+                        <Show when={ hasServers }>
+                            <button
+                                type="button"
+                                class={ ICON_BTN }
+                                aria-label={ t().servers.select }
+                                onClick={ () => selection.enter() }
+                            >
+                                { icon(ListFilter, 'size-4') }
+                            </button>
+                        </Show>
+                    </div>
+                </Show>
+            </div>
+        </header>
+
+        <Show when={ hasServers }>
+            <div class="shrink-0 border-b border-border">
+                <div class="mx-auto w-full max-w-3xl px-5 py-3">
+                    <FiltersBar />
+                </div>
+            </div>
+
+            <div class="min-h-0 flex-1">
+                <div class="mx-auto h-full w-full max-w-3xl">
+                    <Show when={ query.visibleIds().length > 0 } fallback={ () => noMatches(t().servers.noMatches) }>
+                        <ConfigList />
+                    </Show>
+                </div>
+            </div>
+        </Show>
+
+        <Show when={ !hasServers }>
+            <div class="flex flex-1 flex-col items-center gap-6 overflow-y-auto px-5 py-10">
+                <EmptyState glyph={ Server } title={ t().servers.empty } hint={ t().servers.emptyAction } />
+
+                <div class="w-full max-w-xs">
+                    <Button label={ t().importing.openAction } leading={ Download } block={ true } onPress={ () => importOpen = true } />
+                </div>
+            </div>
+        </Show>
+    </section>
+
+    <Show when={ selection.active() }>
+        <BulkBar visibleIds={ query.visibleIds } />
+    </Show>
+
+    <ImportSheet open={ () => importOpen } onClose={ () => importOpen = false } />
+
+    <ConfigDetail />
+    </div>
+}
+
+/** A centred "no results" message, built imperatively for the Show fallback. */
+const noMatches = (message: string): HTMLElement =>
+{
+    const element = document.createElement('div');
+
+    element.className = 'flex h-full items-center justify-center px-8 text-center text-sm text-muted';
+    element.textContent = message;
+
+    return element;
+};

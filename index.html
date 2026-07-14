@@ -1,14 +1,34 @@
 <!doctype html>
-<html>
-    <head>
-        <meta charset="UTF-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+    <link rel="stylesheet" href="/src/styles.css"/>
+    <title>Guardian</title>
 
-        <link rel="stylesheet" href="/src/styles.css"/>
+    <!-- Resolve theme and direction before first paint. Applying them from the
+         bundle would flash a light, LTR screen at a dark-mode Persian user.
+         Mirrors src/stores/theme.ts and src/stores/locale.ts - keep keys in sync. -->
+    <script>
+        (() =>
+        {
+            const theme = localStorage.getItem('guardian.theme') ?? 'system';
+            const dark = theme === 'dark'
+                || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-        <script type="module" src="/src/main.ts" defer></script>
-    </head>
-    <body>
-        <div id="root"></div>
-    </body>
+            document.documentElement.classList.toggle('dark', dark);
+
+            const locale = localStorage.getItem('guardian.locale') ?? 'en';
+
+            document.documentElement.lang = locale;
+            document.documentElement.dir = locale === 'fa' ? 'rtl' : 'ltr';
+        })();
+    </script>
+
+    <script type="module" src="/src/main.azeroth" defer></script>
+</head>
+
+<body>
+<div id="root"></div>
+</body>
 </html>

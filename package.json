@@ -14,15 +14,20 @@
         "android-apk": "npm run tauri android build -- --apk"
     },
     "dependencies": {
+        "@fontsource-variable/vazirmatn": "^5.2.8",
+        "@fontsource/ibm-plex-mono": "^5.2.7",
+        "@fontsource/ibm-plex-sans": "^5.2.8",
         "@tailwindcss/vite": "^4.3.2",
         "@tauri-apps/api": "^2.11.1",
         "@tauri-apps/plugin-store": "^2.4.3",
         "azerothjs": "file:../AzerothJS/packages/azerothjs",
         "lucide": "^1.24.0",
+        "motion": "^12.42.2",
         "tailwindcss": "^4.3.2"
     },
     "devDependencies": {
         "@azerothjs/compiler": "file:../AzerothJS/packages/compiler",
+        "@azerothjs/devtools": "file:../AzerothJS/packages/devtools",
         "@azerothjs/eslint-plugin": "file:../AzerothJS/packages/eslint-plugin",
         "@azerothjs/language-server": "file:../AzerothJS/packages/language-server",
         "@azerothjs/typescript-plugin": "file:../AzerothJS/packages/typescript-plugin",
@@ -31,7 +36,7 @@
         "eslint": "^10.7.0",
         "globals": "^17.7.0",
         "jiti": "^2.7.0",
-        "typescript": "^7.0.2",
+        "typescript": "^5.6.2",
         "typescript-eslint": "^8.63.0",
         "vite": "^8.1.4"
     }

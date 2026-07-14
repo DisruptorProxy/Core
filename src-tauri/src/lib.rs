@@ -1,3 +1,4 @@
+use std::os::windows::process::CommandExt;
 use std::process::{Child, Command};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -6,7 +7,22 @@ use tauri::Manager;
 use tauri::State;
 use tauri::path::BaseDirectory;
 
+/// Runs a child without flashing a console window - xray.exe is a console app, and
+/// the UI should not blink a black window on every connect, ping, or test.
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
 struct XrayProcess(Mutex<Option<Child>>);
+
+/// Kills any xray.exe left over from a previous session that crashed before
+/// `end_xray_windows` ran. Best-effort: the app owns the only xray it should ever
+/// spawn, so a lingering one is always an orphan. Because the app runs elevated,
+/// this can also reap an elevated (TUN) instance a non-elevated tool could not.
+fn kill_stray_xray() {
+    let _ = Command::new("taskkill")
+        .args(["/F", "/IM", "xray.exe"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output();
+}
 
 fn reap_if_exited(process: &mut Option<Child>) {
     if let Some(child) = process {
@@ -56,12 +72,27 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
         .arg("-c")
         .arg(&config_path)
         .current_dir(&resource_dir)
+        .creation_flags(CREATE_NO_WINDOW)
         .spawn()
         .map_err(|e| format!("Failed to start xray.exe at {xray_path:?}: {e}"))?;
 
     let pid = child.id();
 
     *process = Some(child);
+
+    // Give xray a moment to reject a bad config or fail to open the TUN adapter, so
+    // a dead process is reported as an error instead of a false "connected".
+    std::thread::sleep(Duration::from_millis(600));
+
+    if let Some(running) = process.as_mut() {
+        if let Ok(Some(status)) = running.try_wait() {
+            *process = None;
+
+            return Err(format!(
+                "xray exited immediately ({status}). The config was rejected, or TUN needs the app to run as administrator."
+            ));
+        }
+    }
 
     Ok(format!("Started xray, PID: {pid}"))
 }
@@ -129,6 +160,7 @@ async fn ping_xray_windows(app: tauri::AppHandle, config_path: String) -> Result
         .arg("-c")
         .arg(&config_path)
         .current_dir(&resource_dir)
+        .creation_flags(CREATE_NO_WINDOW)
         .spawn()
         .map_err(|e| format!("Failed to start xray.exe at {xray_path:?}: {e}"))?;
 
@@ -163,16 +195,66 @@ async fn ping_xray_windows(app: tauri::AppHandle, config_path: String) -> Result
     ping_result
 }
 
+/// Light TCP-connect latency to `host:port`, in milliseconds. Used for bulk server
+/// testing - it measures reachability without spawning an xray per probe, so
+/// testing hundreds of servers stays cheap. A real through-proxy figure comes from
+/// `ping_xray_windows` for a single server.
+#[tauri::command]
+async fn tcp_ping(host: String, port: u16) -> Result<u64, String> {
+    let addr = format!("{host}:{port}");
+    let start = Instant::now();
+
+    match tokio::time::timeout(Duration::from_secs(3), tokio::net::TcpStream::connect(&addr)).await {
+        Ok(Ok(_stream)) => Ok(start.elapsed().as_millis() as u64),
+        Ok(Err(e)) => Err(format!("connection refused: {e}")),
+        Err(_) => Err("i/o timeout".to_string()),
+    }
+}
+
+/// Fetches a subscription body natively (reqwest), bypassing the webview's CORS.
+/// This is why a provider URL that works in v2rayN works here: the browser fetch
+/// the frontend would otherwise use cannot reach cross-origin subscription servers.
+#[tauri::command]
+async fn fetch_subscription(url: String) -> Result<String, String> {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(20))
+        .build()
+        .map_err(|e| format!("Failed to build http client: {e}"))?;
+
+    let response = client
+        .get(&url)
+        .header("User-Agent", "Guardian")
+        .send()
+        .await
+        .map_err(|_| "Could not reach the subscription URL".to_string())?;
+
+    if !response.status().is_success() {
+        return Err(format!("The server returned {}", response.status()));
+    }
+
+    response
+        .text()
+        .await
+        .map_err(|e| format!("Failed to read subscription body: {e}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
         .manage(XrayProcess(Mutex::new(None)))
+        .setup(|_app| {
+            // Reap any orphan xray from a previous crashed session before we start.
+            kill_stray_xray();
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             create_xray_config,
             run_xray_windows,
             end_xray_windows,
-            ping_xray_windows
+            ping_xray_windows,
+            tcp_ping,
+            fetch_subscription
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

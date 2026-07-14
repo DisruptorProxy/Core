@@ -1,0 +1,46 @@
+import { For, Link, createSelector, useRoute } from 'azerothjs';
+
+import { cx } from '../lib/ui/cx';
+import { icon } from '../lib/ui/icon';
+import { useLocale } from '../stores/locale';
+import { NAV_ITEMS } from './nav';
+import { router } from './router';
+
+const ITEM = 'relative flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-medium';
+
+/**
+ * Bottom navigation, mobile only. Five destinations, each a 56px-tall target in
+ * the thumb zone, sitting above the home indicator via `pb-safe`.
+ *
+ * Active state is a `createSelector`, not a comparison per row: it re-runs only
+ * the two rows whose state actually changed on navigation.
+ */
+export default component TabBar()
+{
+    const { t } = useLocale();
+
+    const location = useRoute(router);
+    const isActive = createSelector(() => location().pathname);
+
+    <nav
+        class="glass-bar pb-safe fixed inset-x-0 bottom-0 z-20 border-t border-border md:hidden"
+        aria-label={ t().app.name }
+    >
+        <ul class="flex">
+            <For each={ NAV_ITEMS } key={ (item) => item.path }>
+                { (item) =>
+                    <li class="flex-1">
+                        <Link
+                            to={ item.path }
+                            router={ router }
+                            class={ () => cx(ITEM, isActive(item.path) ? 'text-accent' : 'text-muted') }
+                        >
+                            { icon(item.glyph, 'size-5') }
+                            { item.label(t()) }
+                        </Link>
+                    </li>
+                }
+            </For>
+        </ul>
+    </nav>
+}

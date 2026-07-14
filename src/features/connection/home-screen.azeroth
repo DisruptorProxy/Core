@@ -1,0 +1,140 @@
+import { Show } from 'azerothjs';
+import { Power, Zap } from 'lucide';
+
+import { humanizeError } from '../../lib/health/humanize-error';
+import Button from '../../lib/ui/button.azeroth';
+import { cx } from '../../lib/ui/cx';
+import Screen from '../../lib/ui/screen.azeroth';
+import { useConfigs } from '../../stores/configs';
+import { useConnection } from '../../stores/connection';
+import { useLocale } from '../../stores/locale';
+import ConnectionGate from './connection-gate.azeroth';
+
+/** Seconds to m:ss / h:mm:ss - a live connection duration, tabular so it does not jitter. */
+const formatDuration = (seconds: number): string =>
+{
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    const pad = (n: number): string => n.toString().padStart(2, '0');
+
+    return h > 0 ? `${ h }:${ pad(m) }:${ pad(s) }` : `${ m }:${ pad(s) }`;
+};
+
+const PHASE_TONE: Record<string, string> =
+{
+    connected: 'text-good',
+    connecting: 'text-accent',
+    disconnecting: 'text-muted',
+    error: 'text-poor',
+    idle: 'text-muted'
+};
+
+/**
+ * The connect screen. The gate is the truth: its state is the engine's state, so
+ * "am I actually connected?" is answered by looking at it, not guessed. Below it,
+ * the active server and a live duration when connected, or a one-tap "connect
+ * fastest" when idle.
+ */
+export default component HomeScreen()
+{
+    const { t } = useLocale();
+    const connection = useConnection();
+
+    const statusText = (): string =>
+    {
+        const phase = connection.phase();
+
+        if (phase === 'connected')
+        {
+            return t().home.connected;
+        }
+
+        if (phase === 'connecting')
+        {
+            return t().home.connecting;
+        }
+
+        if (phase === 'disconnecting')
+        {
+            return t().home.disconnecting;
+        }
+
+        if (phase === 'error')
+        {
+            return t().home.failed;
+        }
+
+        return t().home.disconnected;
+    };
+
+    <Screen title={ t().home.title }>
+        <div class="flex flex-col items-center gap-8 px-5 py-10">
+            <ConnectionGate phase={ connection.phase } />
+
+            <div class="flex flex-col items-center gap-1 text-center">
+                <p class={ cx('text-xl font-semibold tracking-tight', PHASE_TONE[connection.phase()]) }>
+                    { statusText() }
+                </p>
+
+                <Show when={ connection.phase() === 'connected' && connection.activeConfig() }>
+                    <p class="text-sm font-medium text-text">{ connection.activeConfig()!.name }</p>
+                    <p class="readout text-xs text-faint" dir="ltr">
+                        { connection.activeConfig()!.host }:{ connection.activeConfig()!.port }
+                    </p>
+                    <p class="readout mt-1 text-sm text-muted">
+                        { t().home.duration(formatDuration(connection.duration())) }
+                    </p>
+                </Show>
+
+                <Show when={ connection.phase() === 'error' }>
+                    <p class="text-sm font-medium text-poor">{ humanizeError(connection.error()).title }</p>
+                    <p class="max-w-xs text-xs leading-relaxed text-muted">{ humanizeError(connection.error()).fix }</p>
+                </Show>
+            </div>
+
+            <div class="w-full max-w-xs">
+                <Show
+                    when={ connection.phase() === 'connected' || connection.phase() === 'connecting' }
+                    fallback={ () => idleActions() }
+                >
+                    <Button
+                        label={ t().home.disconnect }
+                        leading={ Power }
+                        variant="danger"
+                        block={ true }
+                        onPress={ () => void connection.disconnect() }
+                    />
+                </Show>
+            </div>
+        </div>
+    </Screen>
+}
+
+/** The idle-state primary action, built imperatively for the Show fallback. */
+const idleActions = (): HTMLElement =>
+{
+    const { t } = useLocale();
+    const { rows } = useConfigs();
+    const connection = useConnection();
+
+    const wrap = document.createElement('div');
+
+    wrap.className = 'flex flex-col items-center gap-3';
+
+    const button = Button({
+        label: t().home.connectFastest,
+        leading: Zap,
+        block: true,
+        onPress: () => void connection.connectFastest(rows().map((row) => row.id))
+    });
+
+    const hint = document.createElement('p');
+
+    hint.className = 'text-center text-xs text-faint';
+    hint.textContent = t().home.noServerSelected;
+
+    wrap.append(button, hint);
+
+    return wrap;
+};

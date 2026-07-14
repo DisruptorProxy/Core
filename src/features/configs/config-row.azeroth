@@ -1,0 +1,131 @@
+import { For, Show } from 'azerothjs';
+import { Check, Star } from 'lucide';
+
+import type { ConfigRow } from '../../lib/db/repo';
+import { bucketFor } from '../../lib/health/score';
+import { cx } from '../../lib/ui/cx';
+import { flagEmoji } from '../../lib/ui/flag';
+import { icon } from '../../lib/ui/icon';
+
+interface ConfigRowProps
+{
+    row: ConfigRow;
+    selectMode: () => boolean;
+    isSelected: () => boolean;
+    /** Reactive: the server currently carrying traffic gets a marker. */
+    isActive: () => boolean;
+    /** Reactive EWMA latency in ms, or undefined when untested. */
+    latency: () => number | undefined;
+    /** Tap: toggles selection in select mode, otherwise opens the row. */
+    onTap: () => void;
+    /** Long-press / right-click: enter select mode with this row ticked. */
+    onHold: () => void;
+}
+
+// REALITY is the only security state worth emphasising - it changes how a server
+// is reached and identified. `none` is NOT coloured as a danger: Shadowsocks and
+// VMess encrypt at the protocol layer, so "no TLS" is normal, not insecure.
+const SECURITY_BADGE: Record<string, string> =
+{
+    reality: 'border-accent/40 text-accent',
+    tls: 'border-border text-muted',
+    none: 'border-border text-muted'
+};
+
+const BADGE = 'inline-flex items-center rounded-md border px-1.5 text-[11px] font-medium leading-5';
+
+// Latency colours by bucket, never by the raw number: the same green/amber/red
+// language the whole app uses for health.
+const LATENCY_TONE: Record<string, string> =
+{
+    good: 'text-good',
+    fair: 'text-fair',
+    poor: 'text-poor',
+    unknown: 'text-faint'
+};
+
+/**
+ * One server, as a fixed-height row. Everything the user needs to judge and pick a
+ * server at a glance: a clean name, the facts that were buried in the raw name as
+ * badges, and the address as a mono readout. Latency arrives with health in P4.
+ */
+export default component ConfigRow(props: ConfigRowProps)
+{
+    const flag = flagEmoji(props.row.country);
+
+    let holdTimer = 0;
+
+    const startHold = (): void =>
+    {
+        holdTimer = window.setTimeout(() => props.onHold(), 450);
+    };
+
+    const cancelHold = (): void => window.clearTimeout(holdTimer);
+
+    <div
+        class={ () => cx(
+            'flex h-full items-center gap-3 border-b border-border px-4 transition-colors active:bg-elevated',
+            props.isActive() ? 'bg-accent-soft/60' : ''
+        ) }
+        role="button"
+        tabindex="0"
+        onClick={ () => props.onTap() }
+        onKeyDown={ (event) => { if (event.key === 'Enter') { props.onTap(); } } }
+        onPointerDown={ () => startHold() }
+        onPointerUp={ () => cancelHold() }
+        onPointerLeave={ () => cancelHold() }
+        onContextMenu={ (event) => { event.preventDefault(); props.onHold(); } }
+    >
+        <Show when={ props.isActive() }>
+            <span class="h-8 w-1 shrink-0 rounded-full bg-accent" aria-hidden="true"></span>
+        </Show>
+
+        <Show when={ props.selectMode() }>
+            <span
+                class={ cx(
+                    'flex size-5 shrink-0 items-center justify-center rounded-md border',
+                    props.isSelected() ? 'border-accent bg-accent text-accent-ink' : 'border-border-strong'
+                ) }
+                aria-hidden="true"
+            >
+                <Show when={ props.isSelected() }>
+                    { icon(Check, 'size-3.5') }
+                </Show>
+            </span>
+        </Show>
+
+        <Show when={ flag }>
+            <span class="shrink-0 text-lg leading-none">{ flag }</span>
+        </Show>
+
+        <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span class="truncate text-sm font-medium text-text">{ props.row.name }</span>
+
+            <span class="readout truncate text-xs text-faint" dir="ltr">
+                { props.row.host }:{ props.row.port }
+            </span>
+        </div>
+
+        <div class="flex shrink-0 items-center gap-1.5">
+            <Show when={ props.latency() !== undefined }>
+                <span class={ cx('readout w-12 text-end text-xs font-medium', LATENCY_TONE[bucketFor(props.latency())]) }>
+                    { props.latency() }ms
+                </span>
+            </Show>
+
+            <Show when={ props.row.favorite }>
+                { icon(Star, 'size-4 text-fair') }
+            </Show>
+
+            <For each={ props.row.tags.slice(0, 1) } key={ (tag) => tag }>
+                { (tag) =>
+                    <span class={ cx(BADGE, 'border-border text-muted') }>{ tag }</span>
+                }
+            </For>
+
+            <span class={ cx(BADGE, 'uppercase', SECURITY_BADGE[props.row.security] ?? 'border-border text-muted') }>
+                { props.row.security === 'reality' ? 'REALITY' : props.row.protocol }
+            </span>
+        </div>
+    </div>
+}

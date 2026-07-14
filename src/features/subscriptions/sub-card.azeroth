@@ -1,0 +1,103 @@
+import { Show } from 'azerothjs';
+import { Pencil, RefreshCw, Trash2 } from 'lucide';
+
+import type { SubscriptionRecord } from '../../lib/db/schema';
+import { cx } from '../../lib/ui/cx';
+import { icon } from '../../lib/ui/icon';
+import { isStale, relativeTime } from '../../lib/ui/relative-time';
+import { useLocale } from '../../stores/locale';
+import { useSubscriptions } from '../../stores/subscriptions';
+
+interface SubCardProps
+{
+    sub: SubscriptionRecord;
+    onEdit: () => void;
+    onDelete: () => void;
+}
+
+const STATUS_TONE: Record<string, string> =
+{
+    ok: 'text-good',
+    stale: 'text-fair',
+    failed: 'text-poor',
+    never: 'text-faint'
+};
+
+const ICON_BTN = 'flex size-9 items-center justify-center rounded-lg border border-border text-muted hover:bg-elevated disabled:opacity-40';
+
+/**
+ * One subscription. Its freshness is the point: a status word, a relative age, and
+ * its server count are all visible without opening anything - so a stale or failed
+ * source is obvious at a glance rather than silently rotting.
+ */
+export default component SubCard(props: SubCardProps)
+{
+    const { t } = useLocale();
+    const subscriptions = useSubscriptions();
+
+    const stale = (): boolean => isStale(props.sub.lastUpdatedAt, props.sub.intervalMin);
+
+    const statusText = (): string =>
+    {
+        if (props.sub.status === 'failed')
+        {
+            return t().subscriptions.statusFailed;
+        }
+
+        if (props.sub.status === 'never')
+        {
+            return t().subscriptions.statusNever;
+        }
+
+        return stale() ? t().subscriptions.statusStale : t().subscriptions.statusOk;
+    };
+
+    const statusTone = (): string => STATUS_TONE[props.sub.status === 'ok' && stale() ? 'stale' : props.sub.status];
+
+    <div class="glass flex flex-col gap-3 rounded-2xl p-4">
+        <div class="flex items-start justify-between gap-3">
+            <div class="flex min-w-0 flex-col gap-0.5">
+                <span class="truncate text-sm font-semibold text-text">{ props.sub.name }</span>
+                <span class="readout truncate text-xs text-faint" dir="ltr">{ props.sub.url }</span>
+            </div>
+
+            <span class="readout shrink-0 text-xs text-muted">{ t().subscriptions.countLabel(props.sub.configCount) }</span>
+        </div>
+
+        <div class="flex items-center justify-between gap-2">
+            <div class="flex min-w-0 flex-col">
+                <span class={ cx('text-xs font-medium', statusTone()) }>{ statusText() }</span>
+
+                <Show when={ props.sub.lastUpdatedAt }>
+                    <span class="text-[11px] text-faint">
+                        { t().subscriptions.updatedAgo(relativeTime(props.sub.lastUpdatedAt!, t())) }
+                    </span>
+                </Show>
+
+                <Show when={ props.sub.status === 'failed' && props.sub.lastError }>
+                    <span class="truncate text-[11px] text-poor">{ props.sub.lastError }</span>
+                </Show>
+            </div>
+
+            <div class="flex shrink-0 items-center gap-2">
+                <button
+                    type="button"
+                    class={ ICON_BTN }
+                    aria-label={ t().subscriptions.update }
+                    disabled={ subscriptions.isUpdating(props.sub.id) }
+                    onClick={ () => void subscriptions.update(props.sub.id) }
+                >
+                    { icon(RefreshCw, cx('size-4', subscriptions.isUpdating(props.sub.id) && 'animate-spin')) }
+                </button>
+
+                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.editTitle } onClick={ () => props.onEdit() }>
+                    { icon(Pencil, 'size-4') }
+                </button>
+
+                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.delete } onClick={ () => props.onDelete() }>
+                    { icon(Trash2, 'size-4') }
+                </button>
+            </div>
+        </div>
+    </div>
+}

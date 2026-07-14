@@ -1,0 +1,19 @@
+import { cx } from './cx';
+
+interface CardProps
+{
+    children: HTMLElement;
+    /** Extra classes for padding/layout; the glass surface is always applied. */
+    class?: string;
+}
+
+/**
+ * A frosted glass panel - the standard raised surface for cards, sections, and
+ * groups. One place owns the glass look, so every surface stays consistent.
+ */
+export default component Card(props: CardProps)
+{
+    <div class={ cx('glass rounded-2xl', props.class ?? '') }>
+        { props.children }
+    </div>
+}

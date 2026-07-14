@@ -1,0 +1,119 @@
+import { For, Show } from 'azerothjs';
+import { Plus, Rss } from 'lucide';
+
+import Button from '../../lib/ui/button.azeroth';
+import EmptyState from '../../lib/ui/empty-state.azeroth';
+import Screen from '../../lib/ui/screen.azeroth';
+import type { SubscriptionRecord } from '../../lib/db/schema';
+import { useLocale } from '../../stores/locale';
+import { useSubscriptions } from '../../stores/subscriptions';
+import DeleteDialog from './delete-dialog.azeroth';
+import SubCard from './sub-card.azeroth';
+import SubEditor from './sub-editor.azeroth';
+import UpdateReport from './update-report.azeroth';
+
+/**
+ * Subscriptions: the sources servers come from. Add one, and it fetches, parses,
+ * and diffs on update - the last update's diff shows inline so the user always
+ * sees what changed rather than guessing why their server count moved.
+ */
+export default component SubscriptionsScreen()
+{
+    const { t } = useLocale();
+    const subscriptions = useSubscriptions();
+
+    state editorOpen = false;
+    state editing = null as SubscriptionRecord | null;
+    state deleteTarget = null as SubscriptionRecord | null;
+
+    const openAdd = (): void =>
+    {
+        editing = null;
+        editorOpen = true;
+    };
+
+    const openEdit = (sub: SubscriptionRecord): void =>
+    {
+        editing = sub;
+        editorOpen = true;
+    };
+
+    const submit = async (url: string, name: string, intervalMin: number): Promise<void> =>
+    {
+        const current = editing;
+
+        editorOpen = false;
+
+        if (current === null)
+        {
+            const id = await subscriptions.add(url, name, intervalMin);
+
+            // A brand-new subscription updates immediately - adding a source the
+            // user cannot see the servers of would be a dead end.
+            await subscriptions.update(id);
+        }
+        else
+        {
+            await subscriptions.edit({ ...current, url, name: name.trim() === '' ? current.name : name, intervalMin });
+        }
+    };
+
+    const confirmDelete = async (keepConfigs: boolean): Promise<void> =>
+    {
+        const target = deleteTarget;
+
+        deleteTarget = null;
+
+        if (target !== null)
+        {
+            await subscriptions.remove(target.id, keepConfigs);
+        }
+    };
+
+    <div class="contents">
+    <Screen title={ t().subscriptions.title }>
+        <div class="flex flex-col gap-4 px-5 py-6">
+            <Button label={ t().subscriptions.add } leading={ Plus } block={ true } onPress={ () => openAdd() } />
+
+            <Show when={ subscriptions.error() }>
+                <p class="rounded-xl border border-poor/40 bg-poor/5 px-3 py-2 text-sm text-poor">{ subscriptions.error() }</p>
+            </Show>
+
+            <Show when={ subscriptions.lastOutcome() }>
+                <div class="glass flex flex-col gap-2 rounded-2xl p-4">
+                    <span class="text-xs font-medium text-muted">{ t().subscriptions.statusOk }</span>
+                    <UpdateReport diff={ subscriptions.lastOutcome()!.diff } />
+                </div>
+            </Show>
+
+            <Show
+                when={ subscriptions.subs().length > 0 }
+                fallback={ () => emptyState(t().subscriptions.empty, t().subscriptions.emptyAction) }
+            >
+                <div class="flex flex-col gap-3">
+                    <For each={ subscriptions.subs() } key={ (sub) => sub.id }>
+                        { (sub) =>
+                            <SubCard sub={ sub } onEdit={ () => openEdit(sub) } onDelete={ () => deleteTarget = sub } />
+                        }
+                    </For>
+                </div>
+            </Show>
+        </div>
+    </Screen>
+
+    <SubEditor
+        open={ () => editorOpen }
+        initial={ () => editing }
+        onClose={ () => editorOpen = false }
+        onSubmit={ (url, name, intervalMin) => void submit(url, name, intervalMin) }
+    />
+
+    <DeleteDialog
+        sub={ () => deleteTarget }
+        onClose={ () => deleteTarget = null }
+        onConfirm={ (keepConfigs) => void confirmDelete(keepConfigs) }
+    />
+    </div>
+}
+
+const emptyState = (title: string, hint: string): HTMLElement => EmptyState({ glyph: Rss, title, hint });

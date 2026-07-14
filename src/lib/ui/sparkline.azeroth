@@ -1,0 +1,65 @@
+interface SparklineProps
+{
+    /** Recent latency samples, oldest first. */
+    samples: number[];
+    /** Extra class for the line colour, matching the row's latency tone. */
+    tone?: string;
+}
+
+const WIDTH = 120;
+const HEIGHT = 32;
+
+/**
+ * Builds the SVG path for the samples. A plain function, called from a `derived`,
+ * so the whole thing recomputes when the samples change - and a single sample
+ * draws a flat midline rather than nothing.
+ */
+const buildPath = (samples: number[]): string =>
+{
+    if (samples.length === 0)
+    {
+        return '';
+    }
+
+    const max = Math.max(...samples, 1);
+    const min = Math.min(...samples, 0);
+    const span = Math.max(1, max - min);
+    const step = samples.length > 1 ? WIDTH / (samples.length - 1) : 0;
+
+    return samples
+        .map((value, i) =>
+        {
+            const x = step === 0 ? WIDTH / 2 : i * step;
+            const y = HEIGHT - 4 - ((value - min) / span) * (HEIGHT - 8);
+
+            return `${ i === 0 ? 'M' : 'L' }${ x.toFixed(1) },${ y.toFixed(1) }`;
+        })
+        .join(' ');
+};
+
+/**
+ * A latency history sparkline. This is what separates a flaky server from a dead
+ * one at a glance: a jagged line that keeps recovering is usable, a flatlined one
+ * is not - a shape tells that story faster than any single number.
+ */
+export default component Sparkline(props: SparklineProps)
+{
+    derived path = buildPath(props.samples);
+
+    <svg
+        class="h-8 w-full"
+        viewBox={ `0 0 ${ WIDTH } ${ HEIGHT }` }
+        preserveAspectRatio="none"
+        aria-hidden="true"
+    >
+        <path
+            d={ path }
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+            class={ props.tone ?? '' }
+        />
+    </svg>
+}
