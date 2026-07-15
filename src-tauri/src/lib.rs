@@ -9,7 +9,7 @@ use tauri::State;
 use tauri::path::BaseDirectory;
 
 use windows::Win32::Foundation::{CloseHandle, HANDLE};
-use windows::Win32::System::Threading::{GetExitCodeProcess, GetProcessId, TerminateProcess, WaitForSingleObject, INFINITE};
+use windows::Win32::System::Threading::{GetExitCodeProcess, GetProcessId, WaitForSingleObject, INFINITE};
 use windows::Win32::UI::Shell::{SEE_MASK_FLAG_NO_UI, SEE_MASK_NOCLOSEPROCESS, SEE_MASK_NO_CONSOLE, SHELLEXECUTEINFOW, ShellExecuteExW};
 use windows::Win32::UI::WindowsAndMessaging::SW_HIDE;
 use windows::core::PCWSTR;
@@ -58,10 +58,6 @@ impl ElevatedProcess {
 
         self.try_wait()
     }
-
-    fn kill(&self) -> windows::core::Result<()> {
-        unsafe { TerminateProcess(self.handle, 1) }
-    }
 }
 
 impl Drop for ElevatedProcess {
@@ -89,6 +85,11 @@ fn build_command_line(args: &[&str]) -> String {
     args.iter().map(|arg| quote_arg(arg)).collect::<Vec<_>>().join(" ")
 }
 
+/// Quotes a value as a PowerShell single-quoted string literal.
+fn ps_literal(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "''"))
+}
+
 /// Launches `exe` elevated (UAC "runas" prompt) via `ShellExecuteExW`, without
 /// spawning a visible console window.
 fn spawn_elevated(exe: &Path, args: &[&str], working_dir: &Path) -> windows::core::Result<ElevatedProcess> {
@@ -113,7 +114,74 @@ fn spawn_elevated(exe: &Path, args: &[&str], working_dir: &Path) -> windows::cor
     Ok(ElevatedProcess { handle: info.hProcess })
 }
 
-struct XrayProcess(Mutex<Option<ElevatedProcess>>);
+/// Files a single xray run uses in place of real stdio pipes and to coordinate a
+/// stop request with the elevated wrapper script - `ShellExecuteExW` gives no way
+/// to hand a `runas`-elevated child real handles for either.
+struct RunArtifacts {
+    script: PathBuf,
+    stdout_log: PathBuf,
+    stderr_log: PathBuf,
+    pid_file: PathBuf,
+    stop_file: PathBuf,
+}
+
+impl RunArtifacts {
+    fn new(run_dir: &Path) -> Self {
+        Self {
+            script: run_dir.join("xray-run.ps1"),
+            stdout_log: run_dir.join("xray-stdout.log"),
+            stderr_log: run_dir.join("xray-stderr.log"),
+            pid_file: run_dir.join("xray.pid"),
+            stop_file: run_dir.join("xray.stop"),
+        }
+    }
+
+    fn reset(&self) {
+        for path in [&self.stdout_log, &self.stderr_log, &self.pid_file, &self.stop_file] {
+            let _ = std::fs::remove_file(path);
+        }
+    }
+}
+
+/// Builds a PowerShell script that runs xray with real stdio redirected to files
+/// (`ShellExecuteExW` cannot redirect a child's handles itself) and then polls for
+/// `artifacts.stop_file` so this app can stop xray later without a second UAC
+/// prompt: the script is already elevated, so it can kill its own child directly.
+/// When xray exits on its own, the script re-exits with xray's own exit code.
+fn build_runner_script(xray_path: &Path, xray_args: &str, working_dir: &Path, artifacts: &RunArtifacts) -> String {
+    [
+        "$ErrorActionPreference = 'Stop'".to_string(),
+        format!(
+            "$proc = Start-Process -FilePath {} -ArgumentList {} -WorkingDirectory {} -RedirectStandardOutput {} -RedirectStandardError {} -WindowStyle Hidden -PassThru",
+            ps_literal(&xray_path.to_string_lossy()),
+            ps_literal(xray_args),
+            ps_literal(&working_dir.to_string_lossy()),
+            ps_literal(&artifacts.stdout_log.to_string_lossy()),
+            ps_literal(&artifacts.stderr_log.to_string_lossy()),
+        ),
+        format!(
+            "Set-Content -LiteralPath {} -Value $proc.Id -NoNewline -Encoding ascii",
+            ps_literal(&artifacts.pid_file.to_string_lossy())
+        ),
+        "while (-not $proc.HasExited) {".to_string(),
+        format!("    if (Test-Path -LiteralPath {}) {{", ps_literal(&artifacts.stop_file.to_string_lossy())),
+        "        try { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue } catch {}".to_string(),
+        format!("        Remove-Item -LiteralPath {} -ErrorAction SilentlyContinue", ps_literal(&artifacts.stop_file.to_string_lossy())),
+        "        exit 0".to_string(),
+        "    }".to_string(),
+        "    Start-Sleep -Milliseconds 150".to_string(),
+        "}".to_string(),
+        "exit $proc.ExitCode".to_string(),
+    ]
+    .join("\n")
+}
+
+struct RunningXray {
+    runner: ElevatedProcess,
+    artifacts: RunArtifacts,
+}
+
+struct XrayProcess(Mutex<Option<RunningXray>>);
 
 /// Whether an xray.exe process is currently running, checked without needing
 /// elevation - enumerating processes by name doesn't require admin rights, only
@@ -143,9 +211,9 @@ fn kill_stray_xray() {
     }
 }
 
-fn reap_if_exited(process: &mut Option<ElevatedProcess>) {
+fn reap_if_exited(process: &mut Option<RunningXray>) {
     if let Some(running) = process {
-        if running.try_wait().is_some() {
+        if running.runner.try_wait().is_some() {
             *process = None;
         }
     }
@@ -169,38 +237,6 @@ fn create_xray_config(app: tauri::AppHandle, config: serde_json::Value) -> Resul
     Ok(config_path.to_string_lossy().into_owned())
 }
 
-/// Points xray's own error log at a file in `run_dir` and writes the result to a
-/// fresh config file, returning `(config path to launch with, log file to read
-/// back)`. `ShellExecuteExW` has no way to redirect a child's stdout/stderr, so
-/// this is the only way to recover *why* xray exited (bad config, TUN adapter
-/// failure, ...) instead of just its exit code.
-fn prepare_run_config(config_path: &str, run_dir: &Path) -> Result<(PathBuf, PathBuf), String> {
-    let contents = std::fs::read_to_string(config_path).map_err(|e| format!("Failed to read config at {config_path}: {e}"))?;
-
-    let mut config: serde_json::Value =
-        serde_json::from_str(&contents).map_err(|e| format!("Failed to parse config: {e}"))?;
-
-    let log_path = run_dir.join("xray-run.log");
-    let _ = std::fs::remove_file(&log_path);
-    let log_path_str = log_path.to_string_lossy().into_owned();
-
-    match config.get_mut("log").and_then(|v| v.as_object_mut()) {
-        Some(log) => {
-            log.insert("error".to_string(), serde_json::Value::String(log_path_str));
-            log.entry("loglevel").or_insert_with(|| serde_json::Value::String("warning".to_string()));
-        }
-        None => config["log"] = serde_json::json!({ "error": log_path_str, "loglevel": "warning" }),
-    }
-
-    let run_config_path = run_dir.join("xray-run-config.json");
-
-    let run_config_contents = serde_json::to_string(&config).map_err(|e| format!("Failed to serialize run config: {e}"))?;
-
-    std::fs::write(&run_config_path, run_config_contents).map_err(|e| format!("Failed to write run config: {e}"))?;
-
-    Ok((run_config_path, log_path))
-}
-
 #[tauri::command]
 fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_path: &str) -> Result<String, String> {
     let resource_dir = app
@@ -212,6 +248,8 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
         .path()
         .app_data_dir()
         .map_err(|e| format!("Failed to resolve app data dir: {e}"))?;
+
+    std::fs::create_dir_all(&app_data_dir).map_err(|e| format!("Failed to create app data dir: {e}"))?;
 
     let xray_path = resource_dir.join("xray.exe");
 
@@ -225,29 +263,61 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
 
     println!("config_path: {}", config_path);
 
-    let (run_config_path, log_path) = prepare_run_config(config_path, &app_data_dir)?;
-    let run_config_path = run_config_path.to_string_lossy().into_owned();
+    let artifacts = RunArtifacts::new(&app_data_dir);
+    artifacts.reset();
+
+    let xray_args = build_command_line(&["run", "-c", config_path]);
+    let script = build_runner_script(&xray_path, &xray_args, &resource_dir, &artifacts);
+
+    std::fs::write(&artifacts.script, script).map_err(|e| format!("Failed to write xray runner script: {e}"))?;
+
+    let script_path = artifacts.script.to_string_lossy().into_owned();
 
     // xray needs admin rights here for the WinTUN adapter and route table, so it is
     // launched elevated on its own rather than requiring the whole app to run as
-    // administrator. This shows a UAC prompt at connect time.
-    let elevated = spawn_elevated(&xray_path, &["run", "-c", &run_config_path], &resource_dir)
-        .map_err(|e| format!("Failed to start xray.exe elevated at {xray_path:?}: {e}"))?;
+    // administrator. This shows a UAC prompt at connect time. It runs through a
+    // small elevated PowerShell wrapper rather than being launched directly:
+    // `ShellExecuteExW`'s "runas" verb has no way to redirect a child's stdio, so
+    // the wrapper captures xray's real stdout/stderr to files itself.
+    let runner = spawn_elevated(
+        Path::new("powershell.exe"),
+        &["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", &script_path],
+        &resource_dir,
+    )
+    .map_err(|e| format!("Failed to start xray elevated: {e}"))?;
 
-    let pid = elevated.id();
+    // The wrapper writes xray's real PID almost immediately after it starts; wait
+    // briefly for it purely to report an accurate PID below.
+    let mut pid = runner.id();
 
-    *process = Some(elevated);
+    for _ in 0..20 {
+        if let Some(real_pid) = std::fs::read_to_string(&artifacts.pid_file).ok().and_then(|s| s.trim().parse().ok()) {
+            pid = real_pid;
+            break;
+        }
+
+        std::thread::sleep(Duration::from_millis(50));
+    }
+
+    *process = Some(RunningXray { runner, artifacts });
 
     // Give xray a moment to reject a bad config or fail to open the TUN adapter, so
     // a dead process is reported as an error instead of a false "connected".
     std::thread::sleep(Duration::from_millis(600));
 
     if let Some(running) = process.as_ref() {
-        if let Some(exit_code) = running.try_wait() {
-            *process = None;
+        if let Some(exit_code) = running.runner.try_wait() {
+            let artifacts = process.take().unwrap().artifacts;
 
-            let output = std::fs::read_to_string(&log_path).unwrap_or_default();
-            let output = output.trim();
+            let output = [("stdout", &artifacts.stdout_log), ("stderr", &artifacts.stderr_log)]
+                .into_iter()
+                .filter_map(|(label, path)| {
+                    let text = std::fs::read_to_string(path).ok()?;
+                    let text = text.trim();
+                    (!text.is_empty()).then(|| format!("{label}:\n{text}"))
+                })
+                .collect::<Vec<_>>()
+                .join("\n\n");
 
             return Err(if output.is_empty() {
                 format!("xray exited immediately (exit code {exit_code}). The config was likely rejected.")
@@ -267,9 +337,13 @@ fn end_xray_windows(state: State<XrayProcess>) -> Result<String, String> {
     reap_if_exited(&mut process);
 
     match process.take() {
-        Some(child) => {
-            child.kill().map_err(|e| format!("Failed to kill xray process: {e}"))?;
-            child.wait();
+        Some(running) => {
+            // The runner handle is the elevated PowerShell wrapper, not xray itself
+            // (see `run_xray_windows`), so xray can't be killed directly from here
+            // without a second UAC prompt. Instead, signal the wrapper - already
+            // elevated - to stop its own child, then wait for it to do so.
+            std::fs::write(&running.artifacts.stop_file, b"stop").map_err(|e| format!("Failed to signal xray to stop: {e}"))?;
+            running.runner.wait();
             Ok("Stopped xray".to_string())
         }
         None => Err("xray is not running".to_string()),
