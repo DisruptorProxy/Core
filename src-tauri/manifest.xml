@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <!-- Guardian must run elevated: creating the WinTUN adapter and changing the
-       system route table both require administrator rights, and only an elevated
-       process can reap an elevated xray child on disconnect. -->
+  <!-- Guardian itself runs as a normal user. Creating the WinTUN adapter and
+       changing the system route table both require administrator rights, but only
+       xray.exe needs them - it is launched with its own "runas" elevation
+       (ShellExecuteExW) on demand instead of elevating the whole app. -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>
-        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
       </requestedPrivileges>
     </security>
   </trustInfo>

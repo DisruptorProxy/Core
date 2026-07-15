@@ -1211,6 +1211,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-store",
  "tokio",
+ "windows",
 ]
 
 [[package]]
