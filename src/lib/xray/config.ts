@@ -15,7 +15,7 @@ import type { Rule, RuleAction } from '../routing/types';
  */
 
 /** Local SOCKS inbound port for a live connection. */
-const CONNECT_SOCKS_PORT = 10808;
+const CONNECT_SOCKS_PORT = 1080;
 /** Distinct port for the throwaway ping xray, so it never clashes with a live one. */
 export const PING_PORT = 10809;
 
@@ -277,15 +277,15 @@ const BLOCK: XrayOutbound = { tag: 'block', protocol: 'blackhole', settings: {} 
  */
 export const buildConnectConfig = (config: ProxyConfig, rules: Rule[]): XrayConfig =>
     ({
-        log: { loglevel: 'warning' },
-        dns: { servers: ['1.1.1.1', 'https://1.1.1.1/dns-query', { address: '223.5.5.5', domains: ['geosite:ir'] }] },
+        log: { loglevel: 'debug' },
+        dns: { servers: ['1.1.1.1', 'https://1.1.1.1/dns-query'] },
         inbounds:
     [
         { tag: 'socks-in', protocol: 'socks', listen: '127.0.0.1', port: CONNECT_SOCKS_PORT, settings: { udp: true }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } },
         { tag: 'tun-in', protocol: 'tun', settings: { name: 'guardian-tun', mtu: 1500, address: ['172.19.0.1/30'] }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } }
     ],
         outbounds: [proxyOutbound(config), DIRECT, BLOCK],
-        routing: { domainStrategy: 'IPIfNonMatch', rules: routingRulesFrom(rules) }
+        routing: { domainStrategy: 'AsIs', rules: routingRulesFrom(rules) }
     });
 
 /**
