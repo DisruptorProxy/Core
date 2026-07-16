@@ -67,7 +67,7 @@ export default component HomePage()
         return t().home.disconnected;
     };
 
-    <Screen title={ t().home.title }>
+    <Screen title={ t().home.title } subtitle={ t().home.subtitle }>
         <div class="flex flex-col items-center gap-8 px-5 py-10">
             <ConnectionGate phase={ connection.phase } />
 

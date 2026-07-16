@@ -27,6 +27,7 @@ export const en: Strings =
     home:
     {
         title: 'Connect',
+        subtitle: 'One tap to the fastest healthy server.',
         disconnected: 'Not connected',
         connectAction: 'Connect',
         noServerSelected: 'Pick a server to get started.',
@@ -97,6 +98,7 @@ export const en: Strings =
     subscriptions:
     {
         title: 'Subscriptions',
+        subtitle: 'Sources that keep your server list fresh.',
         empty: 'No subscriptions yet.',
         emptyAction: 'Add a subscription link to pull servers in automatically.',
         add: 'Add subscription',
@@ -191,6 +193,7 @@ export const en: Strings =
     settings:
     {
         title: 'Settings',
+        subtitle: 'Language, theme, and app behaviour.',
         appearance: 'Appearance',
         theme: 'Theme',
         themeSystem: 'System',

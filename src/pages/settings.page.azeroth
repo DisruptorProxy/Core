@@ -37,7 +37,7 @@ export default component SettingsPage()
         { value: 'fa', label: () => t().settings.languagePersian }
     ];
 
-    <Screen title={ t().settings.title }>
+    <Screen title={ t().settings.title } subtitle={ t().settings.subtitle }>
         <div class="flex flex-col gap-8 px-5 py-6">
             <section class="flex flex-col gap-4">
                 <h2 class={ HEADING }>{ t().settings.appearance }</h2>

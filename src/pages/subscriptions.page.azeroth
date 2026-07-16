@@ -71,7 +71,7 @@ export default component SubscriptionsPage()
     };
 
     <div class="contents">
-    <Screen title={ t().subscriptions.title }>
+    <Screen title={ t().subscriptions.title } subtitle={ t().subscriptions.subtitle }>
         <div class="flex flex-col gap-4 px-5 py-6">
             <Button label={ t().subscriptions.add } leading={ Plus } block={ true } onPress={ () => openAdd() } />
 

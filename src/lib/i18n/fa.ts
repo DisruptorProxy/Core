@@ -27,6 +27,7 @@ export const fa: Strings =
     home:
     {
         title: 'اتصال',
+        subtitle: 'یک ضربه تا سریع‌ترین سرور سالم.',
         disconnected: 'متصل نیستید',
         connectAction: 'اتصال',
         noServerSelected: 'برای شروع یک سرور انتخاب کنید.',
@@ -99,6 +100,7 @@ export const fa: Strings =
     subscriptions:
     {
         title: 'اشتراک‌ها',
+        subtitle: 'منبع‌هایی که فهرست سرورهای شما را تازه نگه می‌دارند.',
         empty: 'هنوز اشتراکی ندارید.',
         emptyAction: 'یک لینک اشتراک اضافه کنید تا سرورها خودکار دریافت شوند.',
         add: 'افزودن اشتراک',
@@ -193,6 +195,7 @@ export const fa: Strings =
     settings:
     {
         title: 'تنظیمات',
+        subtitle: 'زبان، پوسته و رفتار برنامه.',
         appearance: 'ظاهر',
         theme: 'پوسته',
         themeSystem: 'سیستم',

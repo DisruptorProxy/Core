@@ -30,6 +30,7 @@ export interface Strings
     home:
     {
         title: string;
+        subtitle: string;
         disconnected: string;
         connectAction: string;
         noServerSelected: string;
@@ -100,6 +101,7 @@ export interface Strings
     subscriptions:
     {
         title: string;
+        subtitle: string;
         empty: string;
         emptyAction: string;
         add: string;
@@ -197,6 +199,7 @@ export interface Strings
     settings:
     {
         title: string;
+        subtitle: string;
         appearance: string;
         theme: string;
         themeSystem: string;
