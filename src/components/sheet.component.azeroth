@@ -1,4 +1,4 @@
-import { Show } from 'azerothjs';
+import { Transition } from 'azerothjs';
 import { X } from 'lucide';
 
 import { icon } from './icon';
@@ -18,7 +18,7 @@ interface SheetProps
  */
 export default component Sheet(props: SheetProps)
 {
-    <Show when={ props.open() }>
+    <Transition when={ props.open() } name="g-sheet" duration={ 400 }>
         <div
             class="fixed inset-0 z-40 flex items-end justify-center sm:items-center"
             role="dialog"
@@ -27,12 +27,12 @@ export default component Sheet(props: SheetProps)
         >
             <button
                 type="button"
-                class="animate-backdrop absolute inset-0 bg-black/50"
+                class="absolute inset-0 bg-black/50"
                 aria-label={ props.title }
                 onClick={ () => props.onClose() }
             ></button>
 
-            <div class="glass-strong animate-sheet relative z-10 w-full max-w-md rounded-t-3xl px-5 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:mb-4 sm:rounded-3xl sm:pb-6">
+            <div class="glass-strong relative z-10 w-full max-w-md rounded-t-3xl px-5 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:mb-4 sm:rounded-3xl sm:pb-6">
                 <div class="mb-4 flex items-center justify-between">
                     <h2 class="text-base font-semibold text-text">{ props.title }</h2>
 
@@ -49,5 +49,5 @@ export default component Sheet(props: SheetProps)
                 { props.children }
             </div>
         </div>
-    </Show>
+    </Transition>
 }
