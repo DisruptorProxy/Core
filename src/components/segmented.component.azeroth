@@ -1,0 +1,57 @@
+import { For } from 'azerothjs';
+
+
+export interface SegmentedOption
+{
+    value: string;
+    /**
+     * A getter, not a string. `<For>` reuses a row whose key has not changed, so a
+     * label baked in at row-creation time would go stale the moment the locale
+     * changes - the row's DOM survives, holding the old text. Reading through a
+     * getter makes the label its own reactive binding, which updates in place.
+     *
+     * The same rule governs every list in this app, including the 8000-row server
+     * list: a row must READ its live values, never capture a snapshot of them.
+     */
+    label: () => string;
+}
+
+interface SegmentedProps
+{
+    /** Accessible name for the group - it has no visible label of its own. */
+    label: string;
+    options: SegmentedOption[];
+    value: string;
+    onSelect: (value: string) => void;
+}
+
+const OPTION = 'min-h-9 flex-1 rounded-lg px-3 text-sm font-medium transition-colors';
+
+/**
+ * A radio group that looks like a switch. Radio semantics (not tabs) because it
+ * sets a value; screen readers then announce it as a choice, not navigation.
+ */
+export default component Segmented(props: SegmentedProps)
+{
+    <div
+        class="flex gap-1 rounded-xl border border-border bg-surface p-1"
+        role="radiogroup"
+        aria-label={ props.label }
+    >
+        <For each={ props.options } key={ (option) => option.value }>
+            { (option) =>
+                <button
+                    type="button"
+                    role="radio"
+                    aria-checked={ props.value === option.value ? 'true' : 'false' }
+                    class={ `${ OPTION } ${ props.value === option.value
+                        ? 'bg-accent text-accent-ink'
+                        : 'text-muted hover:bg-elevated hover:text-text' }` }
+                    onClick={ () => props.onSelect(option.value) }
+                >
+                    { option.label() }
+                </button>
+            }
+        </For>
+    </div>
+}

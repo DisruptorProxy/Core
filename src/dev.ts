@@ -13,7 +13,7 @@
 const enabled = import.meta.env.VITE_DEVTOOLS === 'true';
 const skipped = new URLSearchParams(window.location.search).has('no-devtools');
 
-if (import.meta.env.DEV && !enabled && !skipped)
+if (import.meta.env.DEV && enabled && !skipped)
 {
     const { installDevtools } = await import('@azerothjs/devtools');
 

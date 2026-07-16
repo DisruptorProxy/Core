@@ -1,10 +1,10 @@
 import { createRouter } from 'azerothjs';
 
-import HomeScreen from '../features/connection/home-screen.azeroth';
-import ServersScreen from '../features/configs/servers-screen.azeroth';
-import RoutingScreen from '../features/routing/routing-screen.azeroth';
-import SettingsScreen from '../features/settings/settings-screen.azeroth';
-import SubscriptionsScreen from '../features/subscriptions/subscriptions-screen.azeroth';
+import HomePage from '../pages/home.page.azeroth';
+import ServersPage from '../pages/servers.page.azeroth';
+import RoutingPage from '../pages/routing.page.azeroth';
+import SettingsPage from '../pages/settings.page.azeroth';
+import SubscriptionsPage from '../pages/subscriptions.page.azeroth';
 
 /**
  * One router instance for the app. AzerothJS routing is manual-first - `<Routes>`,
@@ -13,10 +13,10 @@ import SubscriptionsScreen from '../features/subscriptions/subscriptions-screen.
  */
 export const router = createRouter({
     routes: [
-        { path: '/', component: HomeScreen },
-        { path: '/servers', component: ServersScreen },
-        { path: '/subscriptions', component: SubscriptionsScreen },
-        { path: '/routing', component: RoutingScreen },
-        { path: '/settings', component: SettingsScreen }
+        { path: '/', component: HomePage },
+        { path: '/servers', component: ServersPage },
+        { path: '/subscriptions', component: SubscriptionsPage },
+        { path: '/routing', component: RoutingPage },
+        { path: '/settings', component: SettingsPage }
     ]
 });

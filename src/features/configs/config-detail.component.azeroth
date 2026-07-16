@@ -1,0 +1,261 @@
+import { Show } from 'azerothjs';
+import { Activity, Copy, Power, Star, Trash2 } from 'lucide';
+
+import { getConfig } from '../../lib/db/repo';
+import { humanizeError } from '../../lib/health/humanize-error';
+import { bucketFor } from '../../lib/health/score';
+import type { ProxyConfig } from '../../lib/proxy/types';
+import { canConnect } from '../../lib/xray/config';
+import { service } from '../connection/engine/service';
+import Button from '../../components/button.component.azeroth';
+import { flagEmoji } from '../../components/flag';
+import { icon } from '../../components/icon';
+import Sheet from '../../components/sheet.component.azeroth';
+import Sparkline from '../../components/sparkline.component.azeroth';
+import { useConfigs } from '../../stores/configs';
+import { useConnection } from '../../stores/connection';
+import { useDetail } from '../../stores/detail';
+import { useHealth } from '../../stores/health';
+import { useLocale } from '../../stores/locale';
+import { useSubscriptions } from '../../stores/subscriptions';
+
+const LATENCY_TONE: Record<string, string> =
+{
+    good: 'text-good',
+    fair: 'text-fair',
+    poor: 'text-poor',
+    unknown: 'text-faint'
+};
+
+const FIELD = 'flex items-center justify-between gap-3 border-b border-border py-2 last:border-0';
+const KEY = 'text-xs text-muted';
+const VAL = 'readout truncate text-sm text-text';
+
+/**
+ * Everything about one server, and everything you can do with it. Opened by tapping
+ * a row. The health section is the point of the sheet: a latency sparkline and a
+ * success rate turn "is this server any good?" from a guess into a read.
+ */
+export default component ConfigDetail()
+{
+    const { t } = useLocale();
+    const detail = useDetail();
+    const configs = useConfigs();
+    const connection = useConnection();
+    const health = useHealth();
+    const subscriptions = useSubscriptions();
+
+    state config = null as ProxyConfig | null;
+    state copied = false;
+    state pinging = false;
+
+    // Load the full record (credentials, REALITY keys) only when a sheet opens - the
+    // list only ever held the light row.
+    effect {
+        const id = detail.openId();
+
+        if (id === null)
+        {
+            config = null;
+        }
+        else
+        {
+            void getConfig(id).then((loaded) => { config = loaded ?? null; });
+        }
+    }
+
+    const open = (): boolean => detail.openId() !== null;
+
+    const record = (): ReturnType<typeof health.recordOf> => (config === null ? undefined : health.recordOf(config.id));
+    const favorite = (): boolean => (config === null ? false : (configs.rowById(config.id)?.favorite ?? false));
+
+    const sourceName = (): string =>
+    {
+        if (config?.subId === undefined)
+        {
+            return t().detail.unmanaged;
+        }
+
+        return subscriptions.subs().find((sub) => sub.id === config?.subId)?.name ?? t().detail.unmanaged;
+    };
+
+    const connect = async (): Promise<void> =>
+    {
+        if (config !== null)
+        {
+            detail.close();
+            await connection.connect(config);
+        }
+    };
+
+    // A real per-server probe (HTTP through the proxy), folded into this config's
+    // health so the latency and sparkline update in place.
+    const pingNow = async (): Promise<void> =>
+    {
+        if (config === null || pinging)
+        {
+            return;
+        }
+
+        pinging = true;
+
+        const result = await service.ping(config, new AbortController().signal);
+
+        await health.recordOne(config.id, result);
+        pinging = false;
+    };
+
+    const copyLink = async (): Promise<void> =>
+    {
+        if (config === null)
+        {
+            return;
+        }
+
+        try
+        {
+            await navigator.clipboard.writeText(config.rawUri);
+            copied = true;
+            window.setTimeout(() => copied = false, 1500);
+        }
+        catch
+        {
+            // Clipboard denied - nothing to do; the link stays in the detail view.
+        }
+    };
+
+    const remove = async (): Promise<void> =>
+    {
+        if (config !== null)
+        {
+            const id = config.id;
+
+            detail.close();
+            await configs.remove([id]);
+        }
+    };
+
+    <Sheet open={ open } onClose={ detail.close } title={ config?.name ?? '' }>
+        <Show when={ config }>
+            <div class="flex flex-col gap-4">
+                <div class="flex items-center gap-2">
+                    <Show when={ flagEmoji(config!.country) }>
+                        <span class="text-lg leading-none">{ flagEmoji(config!.country) }</span>
+                    </Show>
+                    <span class="readout truncate text-sm text-faint" dir="ltr">{ config!.host }:{ config!.port }</span>
+                </div>
+
+                <div class="glass rounded-xl px-3">
+                    <div class={ FIELD }>
+                        <span class={ KEY }>{ t().detail.protocol }</span>
+                        <span class={ `${ VAL } uppercase` }>{ config!.protocol }</span>
+                    </div>
+                    <div class={ FIELD }>
+                        <span class={ KEY }>{ t().detail.transport }</span>
+                        <span class={ VAL }>{ config!.transport }</span>
+                    </div>
+                    <div class={ FIELD }>
+                        <span class={ KEY }>{ t().detail.security }</span>
+                        <span class={ VAL }>{ config!.security }</span>
+                    </div>
+                    <div class={ FIELD }>
+                        <span class={ KEY }>{ t().detail.source }</span>
+                        <span class={ VAL }>{ sourceName() }</span>
+                    </div>
+                </div>
+
+                <div class="glass flex flex-col gap-2 rounded-xl p-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-muted">{ t().detail.health }</span>
+
+                        <button
+                            type="button"
+                            class="flex min-h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium text-muted hover:bg-elevated disabled:opacity-40"
+                            disabled={ pinging || !canConnect(config!.protocol) }
+                            onClick={ () => void pingNow() }
+                        >
+                            { icon(Activity, pinging ? 'size-3.5 animate-pulse' : 'size-3.5') }
+                            { pinging ? t().detail.pinging : t().detail.ping }
+                        </button>
+                    </div>
+
+                    <Show
+                        when={ record()?.ewmaMs !== undefined }
+                        fallback={ () => untested(t().detail.untested) }
+                    >
+                        <div class="flex items-center justify-between gap-3">
+                            <span class={ `readout text-2xl font-semibold ${ LATENCY_TONE[bucketFor(record()?.ewmaMs)] ?? '' }` }>
+                                { record()?.ewmaMs }ms
+                            </span>
+                            <span class="readout text-sm text-muted">
+                                { Math.round((record()?.successRate ?? 0) * 100) }% { t().detail.successRate }
+                            </span>
+                        </div>
+
+                        <div class={ LATENCY_TONE[bucketFor(record()?.ewmaMs)] }>
+                            <Sparkline samples={ record()?.samples ?? [] } tone="" />
+                        </div>
+                    </Show>
+
+                    <Show when={ record()?.lastError }>
+                        <p class="text-xs text-poor">{ humanizeError(record()?.lastError).title }</p>
+                    </Show>
+                </div>
+
+                <Show when={ !canConnect(config!.protocol) }>
+                    <p class="rounded-xl border border-fair/40 bg-fair/5 px-3 py-2 text-xs text-fair">
+                        { t().detail.notSupported }
+                    </p>
+                </Show>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <Button
+                        label={ t().detail.connect }
+                        leading={ Power }
+                        block={ true }
+                        disabled={ !canConnect(config!.protocol) }
+                        onPress={ () => void connect() }
+                    />
+
+                    <button
+                        type="button"
+                        class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-text hover:bg-elevated"
+                        onClick={ () => void configs.toggleFavorite(config!.id) }
+                    >
+                        { icon(Star, favorite() ? 'size-[18px] text-fair' : 'size-[18px]') }
+                        { favorite() ? t().detail.removeFavorite : t().detail.addFavorite }
+                    </button>
+
+                    <button
+                        type="button"
+                        class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-text hover:bg-elevated"
+                        onClick={ () => void copyLink() }
+                    >
+                        { icon(Copy, 'size-[18px]') }
+                        { copied ? t().detail.copied : t().detail.copyLink }
+                    </button>
+
+                    <button
+                        type="button"
+                        class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-poor/40 text-sm font-medium text-poor hover:bg-poor/10"
+                        onClick={ () => void remove() }
+                    >
+                        { icon(Trash2, 'size-[18px]') }
+                        { t().detail.delete }
+                    </button>
+                </div>
+            </div>
+        </Show>
+    </Sheet>
+}
+
+/** The untested placeholder for the health section's Show fallback. */
+const untested = (message: string): HTMLElement =>
+{
+    const element = document.createElement('p');
+
+    element.className = 'text-sm text-faint';
+    element.textContent = message;
+
+    return element;
+};

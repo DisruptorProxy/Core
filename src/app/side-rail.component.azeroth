@@ -1,0 +1,49 @@
+import { For, Link, createSelector, useRoute } from 'azerothjs';
+
+import { icon } from '../components/icon';
+import { useLocale } from '../stores/locale';
+import { NAV_ITEMS } from './nav';
+import { router } from './router';
+
+const ITEM = 'flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors';
+
+/**
+ * The same five destinations on wide screens. A rail rather than a stretched
+ * bottom bar: at desktop width the thumb zone is meaningless and the vertical
+ * list keeps the labels readable in both scripts.
+ *
+ * No physical `left` anywhere - flex direction follows `dir`, so the rail sits on
+ * the correct side in Persian without a single RTL override.
+ */
+export default component SideRail()
+{
+    const { t } = useLocale();
+
+    const location = useRoute(router);
+    const isActive = createSelector(() => location().pathname);
+
+    <nav
+        class="glass-bar hidden w-56 shrink-0 border-e border-border md:flex md:flex-col md:gap-1 md:p-3"
+        aria-label={ t().app.name }
+    >
+        <div class="px-3 py-4">
+            <p class="text-sm font-semibold tracking-tight text-text">{ t().app.name }</p>
+            <p class="text-xs text-faint">{ t().app.tagline }</p>
+        </div>
+
+        <For each={ NAV_ITEMS } key={ (item) => item.path }>
+            { (item) =>
+                <Link
+                    to={ item.path }
+                    router={ router }
+                    class={ () => `${ ITEM } ${ isActive(item.path)
+                        ? 'bg-accent-soft text-accent'
+                        : 'text-muted hover:bg-elevated hover:text-text' }` }
+                >
+                    { icon(item.glyph, 'size-[18px]') }
+                    { item.label(t()) }
+                </Link>
+            }
+        </For>
+    </nav>
+}

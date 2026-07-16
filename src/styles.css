@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Classes bound ONLY through `class:name={cond}` directives are invisible to
+   Tailwind's text scanner (it reads `class:w-full` as one unknown token), so
+   they are force-generated here. When you bind a class with `class:` and it
+   appears nowhere else as a plain string, add it to this list. */
+@source inline("w-full text-start text-fair text-good text-poor");
+
 /* Latin/UI face: IBM Plex Sans - an engineering register, matching the fact that
    this app is an instrument. Persian face: Vazirmatn, the best-shaped Persian UI
    face. Mono: IBM Plex Mono, used for every measured value (latency, ports, keys)

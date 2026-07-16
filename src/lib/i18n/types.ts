@@ -9,6 +9,13 @@ export interface Strings
     {
         name: string;
         tagline: string;
+        crashTitle: string;
+        crashHint: string;
+        crashRetry: string;
+        expandWindow: string;
+        shrinkWindow: string;
+        trayShow: string;
+        trayQuit: string;
     };
 
     nav:

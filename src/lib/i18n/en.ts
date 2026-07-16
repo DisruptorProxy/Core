@@ -5,7 +5,14 @@ export const en: Strings =
     app:
     {
         name: 'Guardian',
-        tagline: 'Your servers, measured.'
+        tagline: 'Your servers, measured.',
+        crashTitle: 'Something went wrong',
+        crashHint: 'This screen hit an unexpected error. Your servers and settings are safe.',
+        crashRetry: 'Try again',
+        expandWindow: 'Expand window',
+        shrinkWindow: 'Shrink window',
+        trayShow: 'Show Guardian',
+        trayQuit: 'Quit'
     },
 
     nav:

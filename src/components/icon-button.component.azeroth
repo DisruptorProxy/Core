@@ -1,0 +1,43 @@
+import type { IconNode } from 'lucide';
+
+import { icon } from './icon';
+
+export type IconButtonTone = 'default' | 'danger';
+
+interface IconButtonProps
+{
+    glyph: IconNode;
+    /** Accessible name - the button shows only an icon. */
+    label: string;
+    onPress: () => void;
+    tone?: IconButtonTone;
+    disabled?: boolean;
+    /** Spin the glyph, e.g. while updating. */
+    busy?: boolean;
+}
+
+// 44px target: the same touch floor as every other control.
+const BASE = 'flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:pointer-events-none disabled:opacity-40';
+
+const TONE: Record<IconButtonTone, string> =
+{
+    default: 'border-border text-muted hover:bg-elevated hover:text-text',
+    danger: 'border-poor/40 text-poor hover:bg-poor/10'
+};
+
+/**
+ * A square icon-only button - the repeated header/card action control, in one
+ * place. Always carries an accessible name; a busy state spins the glyph.
+ */
+export default component IconButton(props: IconButtonProps)
+{
+    <button
+        type="button"
+        class={ `${ BASE } ${ TONE[props.tone ?? 'default'] }` }
+        aria-label={ props.label }
+        disabled={ props.disabled === true }
+        onClick={ () => props.onPress() }
+    >
+        { icon(props.glyph, props.busy ? 'size-4 animate-spin' : 'size-4') }
+    </button>
+}

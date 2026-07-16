@@ -1,0 +1,29 @@
+import { GIRIH } from './girih-geometry';
+import type { ConnectionPhase } from './engine/port';
+
+interface GateProps
+{
+    phase: () => ConnectionPhase;
+}
+
+/**
+ * The girih gate - the app's one signature. A pierced screen that lights and opens
+ * as the connection establishes: idle is a dim closed lattice, connecting sets the
+ * interlaced stars turning, connected lights the whole rosette and opens its core.
+ * All state is CSS driven off `data-phase`, so the reduced-motion guard stops the
+ * motion without any code here.
+ */
+export default component ConnectionGate(props: GateProps)
+{
+    <svg
+        class="g-gate size-56"
+        viewBox="0 0 200 200"
+        data-phase={ props.phase() }
+        aria-hidden="true"
+    >
+        <polygon class="g-frame" points={ GIRIH.frame } />
+        <polygon class="g-rosette" points={ GIRIH.rosette } />
+        <polygon class="g-weave" points={ GIRIH.weave } />
+        <polygon class="g-core" points={ GIRIH.core } />
+    </svg>
+}

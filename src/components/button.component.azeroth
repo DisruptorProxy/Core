@@ -1,0 +1,44 @@
+import type { IconNode } from 'lucide';
+
+import { icon } from './icon';
+
+export type ButtonVariant = 'primary' | 'ghost' | 'danger';
+
+interface ButtonProps
+{
+    label: string;
+    onPress: () => void;
+    variant?: ButtonVariant;
+    leading?: IconNode;
+    disabled?: boolean;
+    /** Fills its container - used for the primary action in the thumb zone. */
+    block?: boolean;
+}
+
+// 44px minimum height: the touch-target floor, applied to every variant so a
+// ghost button is no harder to hit than a primary one.
+const BASE = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 '
+    + 'text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-45';
+
+const VARIANTS: Record<ButtonVariant, string> =
+{
+    primary: 'bg-accent text-accent-ink hover:bg-accent-hover',
+    ghost: 'border border-border text-text hover:bg-elevated',
+    danger: 'border border-poor/40 text-poor hover:bg-poor/10'
+};
+
+export default component Button(props: ButtonProps)
+{
+    const leading = props.leading ? icon(props.leading, 'size-[18px]') : null;
+
+    <button
+        type="button"
+        class={ `${ BASE } ${ VARIANTS[props.variant ?? 'primary'] }` }
+        class:w-full={ props.block === true }
+        disabled={ props.disabled === true }
+        onClick={ () => props.onPress() }
+    >
+        { leading }
+        { props.label }
+    </button>
+}

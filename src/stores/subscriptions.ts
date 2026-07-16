@@ -13,7 +13,7 @@ import {
 import type { SubscriptionRecord } from '../lib/db/schema';
 import type { UpdateDiff } from '../lib/subs/diff';
 import { fetchSubscription } from '../lib/subs/fetch';
-import { dueForUpdate } from '../lib/ui/relative-time';
+import { dueForUpdate } from '../components/relative-time';
 import type { UpdateRequest, WorkerResponse } from '../workers/parse-worker';
 import { useConfigs } from './configs';
 

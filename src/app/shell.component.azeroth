@@ -1,0 +1,53 @@
+import { ErrorBoundary, Routes } from 'azerothjs';
+
+import Button from '../components/button.component.azeroth';
+import { useLocale } from '../stores/locale';
+import { useSubscriptions } from '../stores/subscriptions';
+import { useTheme } from '../stores/theme';
+import { router } from './router';
+import { installTray } from './tray';
+import SideRail from './side-rail.component.azeroth';
+import TabBar from './tab-bar.component.azeroth';
+import Titlebar from './titlebar.component.azeroth';
+
+/**
+ * App shell: a rail on wide screens, a bottom bar on phones, and the routed
+ * screen in between. The theme and locale stores are instantiated here so the
+ * document's `dir`, `lang` and theme class are owned from mount; the subscriptions
+ * store is instantiated so its auto-update scheduler runs app-wide, not only while
+ * the Subscriptions screen is open.
+ */
+export default component Shell()
+{
+    useTheme();
+    const { t } = useLocale();
+    useSubscriptions();
+
+    installTray(() => ({ tooltip: t().app.name, show: t().app.trayShow, quit: t().app.trayQuit }));
+
+    <div class="flex h-dvh flex-col">
+        <Titlebar />
+
+        <div class="flex min-h-0 flex-1">
+            <SideRail />
+
+            <main class="min-w-0 flex-1 overflow-hidden">
+                <ErrorBoundary
+                    fallback={ (_error: unknown, reset: () => void) =>
+                        <div class="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+                            <p class="text-lg font-semibold text-text">{ t().app.crashTitle }</p>
+                            <p class="max-w-xs text-sm leading-relaxed text-muted">{ t().app.crashHint }</p>
+                            <div class="w-full max-w-40">
+                                <Button label={ t().app.crashRetry } block={ true } onPress={ reset } />
+                            </div>
+                        </div>
+                    }
+                >
+                    <Routes router={ router } />
+                </ErrorBoundary>
+            </main>
+
+            <TabBar />
+        </div>
+    </div>
+}

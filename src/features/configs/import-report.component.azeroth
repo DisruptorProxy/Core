@@ -1,0 +1,74 @@
+import { For, Show } from 'azerothjs';
+
+import { useLocale } from '../../stores/locale';
+import type { ImportReport as Report } from '../../workers/parse-worker';
+
+interface ImportReportProps
+{
+    report: Report;
+}
+
+const CELL = 'flex flex-col gap-1 rounded-xl border border-border bg-surface px-3 py-2';
+const VALUE = 'readout text-lg font-medium';
+const LABEL = 'text-xs text-muted';
+
+/**
+ * What the import actually did - the accounting no other client shows.
+ *
+ * "Duplicates" is the number that earns its place here: it is the answer to "why
+ * do I have 8000 links but 5200 servers?", and without it users assume the app
+ * lost their configs.
+ */
+export default component ImportReport(props: ImportReportProps)
+{
+    const { t } = useLocale();
+
+    derived hasErrors = props.report.errors.length > 0;
+
+    <div class="flex flex-col gap-3">
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div class={ CELL }>
+                <span class={ `${ VALUE } text-good` }>{ props.report.added }</span>
+                <span class={ LABEL }>{ t().importing.added }</span>
+            </div>
+
+            <div class={ CELL }>
+                <span class={ VALUE }>{ props.report.duplicates }</span>
+                <span class={ LABEL }>{ t().importing.duplicates }</span>
+            </div>
+
+            <div class={ CELL }>
+                <span class={ VALUE } class:text-fair={ hasErrors }>{ props.report.errors.length }</span>
+                <span class={ LABEL }>{ t().importing.invalid }</span>
+            </div>
+
+            <div class={ CELL }>
+                <span class={ VALUE }>{ props.report.elapsedMs }ms</span>
+                <span class={ LABEL }>{ t().importing.elapsed }</span>
+            </div>
+        </div>
+
+        <p class="text-xs leading-relaxed text-muted">{ t().importing.duplicatesHint }</p>
+
+        <Show when={ hasErrors }>
+            <details class="rounded-xl border border-border bg-surface">
+                <summary class="cursor-pointer px-3 py-2 text-xs font-medium text-fair">
+                    { t().importing.invalidDetail } ({ props.report.errors.length })
+                </summary>
+
+                <div class="flex max-h-48 flex-col gap-1 overflow-y-auto border-t border-border px-3 py-2">
+                    <For each={ props.report.errors.slice(0, 100) } key={ (error) => error.line }>
+                        { (error) =>
+                            <div class="flex flex-col gap-0.5 py-1">
+                                <span class="text-[11px] font-medium text-muted">
+                                    { t().importing.lineLabel(error.line) } — { error.reason }
+                                </span>
+                                <span class="readout truncate text-[11px] text-faint" dir="ltr">{ error.snippet }</span>
+                            </div>
+                        }
+                    </For>
+                </div>
+            </details>
+        </Show>
+    </div>
+}

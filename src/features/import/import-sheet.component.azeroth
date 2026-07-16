@@ -1,0 +1,204 @@
+import { Show, createRef } from 'azerothjs';
+import { Clipboard, FileUp, QrCode } from 'lucide';
+
+import { classifyImport } from '../../lib/subs/import-input';
+import { qrSupported, startQrScan } from '../../lib/qr';
+import type { QrScan } from '../../lib/qr';
+import Button from '../../components/button.component.azeroth';
+import { icon } from '../../components/icon';
+import Sheet from '../../components/sheet.component.azeroth';
+import { useConfigs } from '../../stores/configs';
+import { useLocale } from '../../stores/locale';
+import { useSubscriptions } from '../../stores/subscriptions';
+import ImportReport from '../configs/import-report.component.azeroth';
+
+interface ImportSheetProps
+{
+    open: () => boolean;
+    onClose: () => void;
+}
+
+const CHIP = 'flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border '
+    + 'text-sm font-medium text-muted hover:bg-elevated';
+
+/**
+ * One box that accepts everything: paste, clipboard, a file, or a QR scan. Whatever
+ * comes in is classified (config links, a base64 list, a subscription URL, or
+ * another client's deep link) and routed - the user never has to say which it is.
+ * The result is always the honest import report, never a silent spinner.
+ */
+export default component ImportSheet(props: ImportSheetProps)
+{
+    const { t } = useLocale();
+    const configs = useConfigs();
+    const subscriptions = useSubscriptions();
+
+    state text = '';
+    state done = false;
+    state scanning = false;
+
+    const fileRef = createRef<HTMLInputElement>();
+    const videoBox = createRef<HTMLDivElement>();
+
+    let scan: QrScan | null = null;
+
+    const stopScan = (): void =>
+    {
+        scan?.stop();
+        scan = null;
+        scanning = false;
+
+        if (videoBox.current !== null)
+        {
+            videoBox.current.replaceChildren();
+        }
+    };
+
+    // Reset the sheet each time it opens: a stale report or half-typed paste from a
+    // previous open would be confusing. Declared after stopScan so the effect, which
+    // runs immediately on setup, can call it.
+    effect {
+        if (props.open())
+        {
+            text = '';
+            done = false;
+        }
+        else
+        {
+            stopScan();
+        }
+    }
+
+    const readClipboard = async (): Promise<void> =>
+    {
+        try
+        {
+            const clip = await navigator.clipboard.readText();
+
+            text = clip.trim() === '' ? text : clip;
+        }
+        catch
+        {
+            // Denied or empty - leave the textarea as it is; the user can paste manually.
+        }
+    };
+
+    const readFile = async (event: Event): Promise<void> =>
+    {
+        const file = (event.target as HTMLInputElement).files?.[0];
+
+        if (file !== undefined)
+        {
+            text = await file.text();
+        }
+    };
+
+    const beginScan = async (): Promise<void> =>
+    {
+        scanning = true;
+
+        try
+        {
+            scan = await startQrScan();
+
+            videoBox.current?.replaceChildren(scan.video);
+            scan.video.className = 'w-full rounded-xl';
+
+            const value = await scan.result;
+
+            text = value;
+            stopScan();
+        }
+        catch
+        {
+            stopScan();
+        }
+    };
+
+    const submit = async (): Promise<void> =>
+    {
+        const input = classifyImport(text);
+
+        if (input.kind === 'empty')
+        {
+            return;
+        }
+
+        if (input.kind === 'subscription')
+        {
+            props.onClose();
+
+            const id = await subscriptions.add(input.url, '', 0);
+
+            await subscriptions.update(id);
+
+            return;
+        }
+
+        await configs.importText(input.text);
+        done = true;
+    };
+
+    <Sheet open={ props.open } onClose={ props.onClose } title={ t().importing.title }>
+        <div class="flex flex-col gap-4">
+            <Show when={ !done }>
+                <textarea
+                    class="min-h-28 w-full resize-y rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text outline-none placeholder:text-faint focus:border-accent"
+                    dir="ltr"
+                    placeholder={ t().importing.placeholder }
+                    bind:value={ text }
+                ></textarea>
+
+                <Show when={ scanning }>
+                    <div ref={ videoBox } class="overflow-hidden rounded-xl bg-black"></div>
+                    <p class="text-center text-xs text-muted">{ t().importing.qrScanning }</p>
+                </Show>
+
+                <div class="flex gap-2">
+                    <button type="button" class={ CHIP } onClick={ () => void readClipboard() }>
+                        { icon(Clipboard, 'size-4') }
+                        { t().importing.fromClipboard }
+                    </button>
+
+                    <button type="button" class={ CHIP } onClick={ () => fileRef.current?.click() }>
+                        { icon(FileUp, 'size-4') }
+                        { t().importing.fromFile }
+                    </button>
+
+                    <Show when={ qrSupported() }>
+                        <button type="button" class={ CHIP } onClick={ () => void beginScan() }>
+                            { icon(QrCode, 'size-4') }
+                            { t().importing.scanQr }
+                        </button>
+                    </Show>
+                </div>
+
+                <Show when={ configs.importState().running }>
+                    <p class="readout text-center text-sm text-muted">
+                        { t().importing.progress(configs.importState().parsed, configs.importState().total) }
+                    </p>
+                </Show>
+
+                <Button
+                    label={ t().importing.submit }
+                    block={ true }
+                    disabled={ text.trim() === '' || configs.importState().running }
+                    onPress={ () => void submit() }
+                />
+            </Show>
+
+            <Show when={ done && configs.lastReport() }>
+                <ImportReport report={ configs.lastReport()! } />
+                <Button label={ t().common.close } variant="ghost" block={ true } onPress={ props.onClose } />
+            </Show>
+
+            <input
+                ref={ fileRef }
+                type="file"
+                accept=".txt,.json,.yaml,.yml,text/plain"
+                class="hidden"
+                onChange={ (event) => void readFile(event) }
+            />
+        </div>
+    </Sheet>
+}

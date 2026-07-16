@@ -1,0 +1,127 @@
+import { Show } from 'azerothjs';
+import { Search } from 'lucide';
+
+import FilterMenu from '../../components/filter-menu.component.azeroth';
+import type { FilterOption } from '../../components/filter-menu.component.azeroth';
+import Input from '../../components/input.component.azeroth';
+import Segmented from '../../components/segmented.component.azeroth';
+import type { SegmentedOption } from '../../components/segmented.component.azeroth';
+import { useLocale } from '../../stores/locale';
+import { useServerQuery } from '../../stores/query';
+import { useSubscriptions } from '../../stores/subscriptions';
+import type { SortKey } from '../../lib/search/filter';
+
+const CHIP = 'shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors';
+
+/** Sentinel for the "All sources" row - maps to a null subscription filter. */
+const SOURCE_ALL = '';
+
+/**
+ * Search, facet pickers, and sort - the tools that make 8000 servers navigable.
+ * Search is debounced in the store; the pickers and sort apply immediately. Protocol
+ * and source are dropdowns rather than chip rails, so a hundred subscriptions stay
+ * usable instead of becoming an endless horizontal scroll.
+ */
+export default component FiltersBar()
+{
+    const { t } = useLocale();
+    const query = useServerQuery();
+    const subscriptions = useSubscriptions();
+
+    const sortOptions: SegmentedOption[] =
+    [
+        { value: 'name', label: () => t().servers.sortName },
+        { value: 'latency', label: () => t().servers.sortLatency },
+        { value: 'country', label: () => t().servers.sortCountry }
+    ];
+
+    const protocolOptions = (): FilterOption[] =>
+        query.facets().protocols.map((protocol) => ({ value: protocol, label: protocol.toUpperCase() }));
+
+    const protocolSummary = (): string =>
+    {
+        const set = query.protocols();
+
+        if (set.size === 0)
+        {
+            return t().servers.all;
+        }
+
+        if (set.size === 1)
+        {
+            return [...set][0].toUpperCase();
+        }
+
+        return String(set.size);
+    };
+
+    const sourceOptions = (): FilterOption[] =>
+    [
+        { value: SOURCE_ALL, label: t().servers.allSources },
+        ...subscriptions.subs().map((sub) => ({ value: sub.id, label: sub.name }))
+    ];
+
+    const sourceSummary = (): string =>
+    {
+        const id = query.subId();
+
+        if (id === null)
+        {
+            return t().servers.all;
+        }
+
+        return subscriptions.subs().find((sub) => sub.id === id)?.name ?? t().servers.all;
+    };
+
+    <div class="flex flex-col gap-3">
+        <Input
+            type="search"
+            leading={ Search }
+            placeholder={ t().servers.searchPlaceholder }
+            value={ query.query() }
+            onInput={ (value) => query.setQuery(value) }
+        />
+
+        <div class="flex flex-wrap gap-2">
+            <button
+                type="button"
+                class={ `${ CHIP } ${ query.favoritesOnly()
+                    ? 'border-fair/50 bg-fair/10 text-fair'
+                    : 'border-border text-muted hover:bg-elevated' }` }
+                onClick={ () => query.setFavoritesOnly(!query.favoritesOnly()) }
+            >
+                { t().servers.favoritesOnly }
+            </button>
+
+            <FilterMenu
+                label={ t().servers.protocol }
+                summary={ protocolSummary }
+                active={ () => query.protocols().size > 0 }
+                options={ protocolOptions }
+                selected={ (value) => query.protocols().has(value) }
+                onSelect={ (value) => query.toggleProtocol(value) }
+                multi={ true }
+            />
+
+            <Show when={ subscriptions.subs().length > 0 }>
+                <FilterMenu
+                    label={ t().servers.source }
+                    summary={ sourceSummary }
+                    active={ () => query.subId() !== null }
+                    options={ sourceOptions }
+                    selected={ (value) => (value === SOURCE_ALL ? query.subId() === null : query.subId() === value) }
+                    onSelect={ (value) => query.setSubId(value === SOURCE_ALL ? null : value) }
+                    searchable={ subscriptions.subs().length > 8 }
+                    searchPlaceholder={ t().servers.searchSource }
+                />
+            </Show>
+        </div>
+
+        <Segmented
+            label={ t().servers.sortName }
+            options={ sortOptions }
+            value={ query.sort() }
+            onSelect={ (value) => query.setSort(value as SortKey) }
+        />
+    </div>
+}

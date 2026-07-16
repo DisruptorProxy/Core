@@ -1,0 +1,62 @@
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { Maximize2, Minimize2, Minus, X } from 'lucide';
+
+import { icon } from '../components/icon';
+import { useLocale } from '../stores/locale';
+import { useWindowMode } from '../stores/window-mode';
+
+const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
+const CTRL = 'flex size-7 items-center justify-center rounded-lg text-muted transition-colors';
+
+/**
+ * The custom window chrome. The window is borderless (decorations off), so this is
+ * the whole titlebar: a draggable region carrying the app mark, and minimize/close
+ * controls wired to the Tauri window. In a plain browser the controls no-op, so
+ * the same layout renders in dev without throwing.
+ */
+export default component Titlebar()
+{
+    const { t } = useLocale();
+    const windowMode = useWindowMode();
+
+    const minimize = (): void =>
+    {
+        if (isTauri())
+        {
+            void getCurrentWindow().minimize();
+        }
+    };
+
+    const close = (): void =>
+    {
+        if (isTauri())
+        {
+            void getCurrentWindow().close();
+        }
+    };
+
+    <div class="glass-bar pt-safe flex h-10 shrink-0 select-none items-center border-b border-border pe-2 ps-3">
+        <div data-tauri-drag-region class="flex h-full flex-1 items-center gap-2">
+            <span class="size-2.5 rounded-full bg-accent shadow-[0_0_8px_var(--g-accent)]"></span>
+            <span class="text-xs font-semibold tracking-wide text-text">{ t().app.name }</span>
+        </div>
+
+        <div class="flex items-center gap-1">
+            <button type="button" class={ CTRL + ' hover:bg-elevated hover:text-text' } aria-label="Minimize" onClick={ () => minimize() }>
+                { icon(Minus, 'size-4') }
+            </button>
+            <button
+                type="button"
+                class={ CTRL + ' hover:bg-elevated hover:text-text' }
+                aria-label={ windowMode.mode() === 'compact' ? t().app.expandWindow : t().app.shrinkWindow }
+                onClick={ () => windowMode.toggle() }
+            >
+                { icon(windowMode.mode() === 'compact' ? Maximize2 : Minimize2, 'size-4') }
+            </button>
+            <button type="button" class={ CTRL + ' hover:bg-poor hover:text-white' } aria-label="Close" onClick={ () => close() }>
+                { icon(X, 'size-4') }
+            </button>
+        </div>
+    </div>
+}

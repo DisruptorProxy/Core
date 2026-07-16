@@ -15,10 +15,12 @@
         [
             {
                 "title": "Guardian",
-                "width": 360,
-                "height": 640,
+                "width": 400,
+                "height": 720,
+                "center": true,
                 "resizable": false,
                 "maximizable": false,
+                "fullscreen": false,
                 "decorations": false
             }
         ],
@@ -41,7 +43,23 @@
                         "core:window:allow-minimize",
                         "core:window:allow-close",
                         "core:window:allow-hide",
-                        "core:window:allow-show"
+                        "core:window:allow-show",
+
+                        "core:window:allow-set-size",
+                        "core:window:allow-set-min-size",
+                        "core:window:allow-set-max-size",
+                        "core:window:allow-set-resizable",
+                        "core:window:allow-center",
+
+                        "core:window:allow-unminimize",
+                        "core:window:allow-set-focus",
+                        "core:tray:default",
+                        "core:menu:default",
+
+                        "store:allow-load",
+                        "store:allow-save",
+                        "store:allow-get",
+                        "store:allow-set"
                     ]
                 }
             ]
@@ -51,12 +69,13 @@
     {
         "active": true,
         "targets": "all",
+        "resources":
+        [
+            "assets/*"
+        ],
         "icon":
         [
-            "icons/32x32.png",
-            "icons/128x128.png",
-            "icons/128x128@2x.png",
-            "icons/icon.icns",
+            "icons/icon.png",
             "icons/icon.ico"
         ]
     }
