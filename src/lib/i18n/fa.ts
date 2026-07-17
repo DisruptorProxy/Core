@@ -58,6 +58,7 @@ export const fa: Strings =
         select: 'انتخاب',
         selectAll: 'انتخاب همه',
         selectedLabel: (count: number) => `${ count.toLocaleString('fa-IR') } انتخاب‌شده`,
+        deletedLabel: (count: number) => `${ count.toLocaleString('fa-IR') } سرور حذف شد`,
         delete: 'حذف',
         cancel: 'انصراف',
         favoritesOnly: 'برگزیده‌ها',
@@ -233,12 +234,16 @@ export const fa: Strings =
         delete: 'حذف',
         ping: 'پینگ',
         pinging: 'در حال پینگ…',
-        notSupported: 'این پروتکل توسط هسته فعلی پشتیبانی نمی‌شود.'
+        notSupported: 'این پروتکل توسط هسته فعلی پشتیبانی نمی‌شود.',
+        emptyTitle: 'سروری انتخاب نشده',
+        emptyHint: 'برای دیدن جزئیات، سروری را از فهرست انتخاب کنید.',
+        close: 'بستن جزئیات'
     },
 
     common:
     {
         comingSoon: 'هنوز ساخته نشده.',
-        close: 'تمام'
+        close: 'تمام',
+        dismiss: 'بستن'
     }
 };

@@ -4,6 +4,7 @@ import { icon } from '../../components/icon';
 import { useConfigs } from '../../stores/configs';
 import { useLocale } from '../../stores/locale';
 import { useSelection } from '../../stores/selection';
+import { useToast } from '../../stores/toast';
 
 interface BulkBarProps
 {
@@ -24,6 +25,7 @@ export default component BulkBar(props: BulkBarProps)
     const { t } = useLocale();
     const selection = useSelection();
     const configs = useConfigs();
+    const toast = useToast();
 
     const removeSelected = async (): Promise<void> =>
     {
@@ -31,31 +33,34 @@ export default component BulkBar(props: BulkBarProps)
 
         selection.clear();
         await configs.remove(ids);
+        // The bar has already closed, so the toast is the only confirmation.
+        toast.success(t().servers.deletedLabel(ids.length));
     };
 
     <div class="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border bg-elevated/95 backdrop-blur md:bottom-0">
-        <div class="mx-auto flex max-w-3xl items-center gap-2 px-4 py-2">
-            <button type="button" class={ ACTION } onClick={ () => selection.clear() }>
+        <div class="mx-auto flex max-w-3xl items-center gap-2 px-3 py-2">
+            <button type="button" class={ ACTION + ' shrink-0 text-muted hover:bg-surface' } onClick={ () => selection.clear() }>
                 { icon(X, 'size-4') }
                 { t().servers.cancel }
             </button>
 
-            <span class="readout flex-1 text-center text-sm text-muted">
+            <span class="readout min-w-0 flex-1 truncate text-center text-sm text-muted">
                 { t().servers.selectedLabel(selection.count()) }
             </span>
 
             <button
                 type="button"
-                class={ ACTION }
+                class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface"
+                aria-label={ t().servers.selectAll }
+                data-tip={ t().servers.selectAll }
                 onClick={ () => selection.selectMany(props.visibleIds()) }
             >
-                { icon(CheckCheck, 'size-4') }
-                { t().servers.selectAll }
+                { icon(CheckCheck, 'size-5') }
             </button>
 
             <button
                 type="button"
-                class="flex min-h-11 items-center gap-1.5 rounded-lg bg-poor px-3 text-sm font-medium text-white disabled:opacity-40"
+                class="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-poor px-4 text-sm font-medium text-white disabled:opacity-40"
                 disabled={ selection.count() === 0 }
                 onClick={ () => void removeSelected() }
             >

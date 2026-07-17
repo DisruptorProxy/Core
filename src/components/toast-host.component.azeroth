@@ -1,0 +1,65 @@
+import { For } from 'azerothjs';
+import { CircleAlert, CircleCheck, Info, X } from 'lucide';
+import type { IconNode } from 'lucide';
+
+import { icon } from './icon';
+import { useLocale } from '../stores/locale';
+import { useToast } from '../stores/toast';
+import type { ToastKind } from '../stores/toast';
+
+const GLYPH: Record<ToastKind, IconNode> =
+{
+    success: CircleCheck,
+    error: CircleAlert,
+    info: Info
+};
+
+const TONE: Record<ToastKind, string> =
+{
+    success: 'text-good',
+    error: 'text-poor',
+    info: 'text-accent'
+};
+
+/**
+ * The single toast stack, mounted once in the shell. Responsive by CSS, not by JS,
+ * so a live resize reflows it:
+ *   - phones: a full-width column pinned to the BOTTOM, lifted clear of the tab bar
+ *     / bulk bar and the home-indicator safe area;
+ *   - >= sm: a narrow column in the bottom-END corner (logical inset -> flips for RTL).
+ * `aria-live` announces each toast; the region is click-through except the toasts
+ * themselves, so it never blocks the UI underneath.
+ */
+export default component ToastHost()
+{
+    const { t } = useLocale();
+    const toast = useToast();
+
+    <div
+        class="pointer-events-none fixed inset-inline-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-50 flex flex-col items-center gap-2 px-3 sm:inset-inline-auto sm:bottom-4 sm:end-4 sm:items-end"
+        role="status"
+        aria-live="polite"
+    >
+        <For each={ toast.toasts() } key={ (item) => item.id }>
+            { (item) =>
+                <div
+                    class={ 'glass-strong pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl px-3 py-2.5 '
+                        + (item.leaving ? 'animate-toast-out' : 'animate-toast-in') }
+                >
+                    { icon(GLYPH[item.kind], `size-5 shrink-0 ${ TONE[item.kind] }`) }
+
+                    <span class="min-w-0 flex-1 text-sm text-text">{ item.message }</span>
+
+                    <button
+                        type="button"
+                        class="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface"
+                        aria-label={ t().common.dismiss }
+                        onClick={ () => toast.dismiss(item.id) }
+                    >
+                        { icon(X, 'size-4') }
+                    </button>
+                </div>
+            }
+        </For>
+    </div>
+}

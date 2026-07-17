@@ -56,6 +56,7 @@ export const en: Strings =
         select: 'Select',
         selectAll: 'Select all',
         selectedLabel: (count: number) => `${ count.toLocaleString('en-US') } selected`,
+        deletedLabel: (count: number) => `${ count.toLocaleString('en-US') } server${ count === 1 ? '' : 's' } deleted`,
         delete: 'Delete',
         cancel: 'Cancel',
         favoritesOnly: 'Favorites',
@@ -231,12 +232,16 @@ export const en: Strings =
         delete: 'Delete',
         ping: 'Ping',
         pinging: 'Pinging…',
-        notSupported: 'This protocol is not supported by the current core.'
+        notSupported: 'This protocol is not supported by the current core.',
+        emptyTitle: 'No server selected',
+        emptyHint: 'Pick a server from the list to see its details.',
+        close: 'Close details'
     },
 
     common:
     {
         comingSoon: 'Not built yet.',
-        close: 'Done'
+        close: 'Done',
+        dismiss: 'Dismiss'
     }
 };

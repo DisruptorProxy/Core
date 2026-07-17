@@ -261,6 +261,71 @@
     transition: transform 180ms ease-in, opacity 180ms ease-in;
 }
 
+/* Toasts (toast-host.component). Enter slides up + fades in; leave reverses. Both
+   collapse under the reduced-motion block above, so a toast still appears and clears
+   instantly there. `forwards` holds the faded-out state during the removal delay. */
+@keyframes g-toast-in
+{
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes g-toast-out
+{
+    to { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+
+@utility animate-toast-in
+{
+    animation: g-toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@utility animate-toast-out
+{
+    animation: g-toast-out 200ms ease-in forwards;
+}
+
+/* CSS-only tooltip for icon-only controls. Gated on hover+fine-pointer so it NEVER
+   appears on touch (a phone/tablet-touch device does not match the query), which
+   means zero tap interference on mobile - the aria-label still serves assistive tech
+   there. Positioned below the control and centred; logical `inset-inline` keeps it
+   correct under RTL. Fades in after a short delay; reduced-motion collapses that. */
+@media (hover: hover) and (pointer: fine)
+{
+    [data-tip]
+    {
+        position: relative;
+    }
+
+    [data-tip]::after
+    {
+        content: attr(data-tip);
+        position: absolute;
+        inset-block-start: calc(100% + 6px);
+        inset-inline-start: 50%;
+        transform: translateX(-50%);
+        z-index: 60;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        line-height: 1;
+        color: var(--g-text);
+        background-color: var(--g-elevated);
+        border: 1px solid var(--g-border);
+        box-shadow: var(--g-shadow);
+        transition: opacity 120ms ease 350ms;
+    }
+
+    [data-tip]:hover::after,
+    [data-tip]:focus-visible::after
+    {
+        opacity: 1;
+    }
+}
+
 /* The girih connection gate. Geometry is static (see girih.ts); only transforms
    and colour animate, and the reduced-motion block above stops the spin. State is
    a data attribute so the SVG's interlaced parts can be styled together. */

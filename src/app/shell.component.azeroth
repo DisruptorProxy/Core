@@ -1,6 +1,7 @@
 import { ErrorBoundary, Routes } from 'azerothjs';
 
 import Button from '../components/button.component.azeroth';
+import ToastHost from '../components/toast-host.component.azeroth';
 import { useLocale } from '../stores/locale';
 import { useSubscriptions } from '../stores/subscriptions';
 import { useTheme } from '../stores/theme';
@@ -33,7 +34,7 @@ export default component Shell()
 
             <main class="min-w-0 flex-1 overflow-hidden">
                 <ErrorBoundary
-                    fallback={ (_error: unknown, reset: () => void) =>
+                    fallback={ (_error, reset) =>
                         <div class="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
                             <p class="text-lg font-semibold text-text">{ t().app.crashTitle }</p>
                             <p class="max-w-xs text-sm leading-relaxed text-muted">{ t().app.crashHint }</p>
@@ -49,5 +50,7 @@ export default component Shell()
 
             <TabBar />
         </div>
+
+        <ToastHost />
     </div>
 }

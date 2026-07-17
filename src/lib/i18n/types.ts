@@ -59,6 +59,7 @@ export interface Strings
         select: string;
         selectAll: string;
         selectedLabel: (count: number) => string;
+        deletedLabel: (count: number) => string;
         delete: string;
         cancel: string;
         favoritesOnly: string;
@@ -239,11 +240,16 @@ export interface Strings
         pinging: string;
         /** Shown when the core cannot run this protocol (hysteria2/tuic). */
         notSupported: string;
+        /** Wide-layout side panel with nothing selected. */
+        emptyTitle: string;
+        emptyHint: string;
+        close: string;
     };
 
     common:
     {
         comingSoon: string;
         close: string;
+        dismiss: string;
     };
 }

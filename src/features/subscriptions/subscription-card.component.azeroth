@@ -83,17 +83,18 @@ export default component SubscriptionCard(props: SubscriptionCardProps)
                     type="button"
                     class={ ICON_BTN }
                     aria-label={ t().subscriptions.update }
+                    data-tip={ t().subscriptions.update }
                     disabled={ subscriptions.isUpdating(props.sub.id) }
                     onClick={ () => void subscriptions.update(props.sub.id) }
                 >
                     { icon(RefreshCw, subscriptions.isUpdating(props.sub.id) ? 'size-4 animate-spin' : 'size-4') }
                 </button>
 
-                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.editTitle } onClick={ () => props.onEdit() }>
+                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.editTitle } data-tip={ t().subscriptions.editTitle } onClick={ () => props.onEdit() }>
                     { icon(Pencil, 'size-4') }
                 </button>
 
-                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.delete } onClick={ () => props.onDelete() }>
+                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.delete } data-tip={ t().subscriptions.delete } onClick={ () => props.onDelete() }>
                     { icon(Trash2, 'size-4') }
                 </button>
             </div>

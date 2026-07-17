@@ -52,24 +52,70 @@ export default component ConfigRow(props: ConfigRowProps)
 {
     const flag = flagEmoji(props.row.country);
 
+    // Long-press to enter select mode. The timer only fires if the finger stays
+    // put: any real scroll moves the pointer and cancels it (onPointerMove below),
+    // so dragging the list never accidentally selects. `select-none` +
+    // touch-callout-none on the row stop the browser's own text-selection / magnifier
+    // popup that a long press would otherwise raise on mobile.
     let holdTimer = 0;
+    let startX = 0;
+    let startY = 0;
+    const MOVE_CANCEL_PX = 10;
 
-    const startHold = (): void =>
+    // A short vibration confirms entry into select mode - the standard mobile cue
+    // that a long press "took". No-ops where the Vibration API is absent (desktop).
+    const fireHold = (): void =>
     {
-        holdTimer = window.setTimeout(() => props.onHold(), 450);
+        if (typeof navigator.vibrate === 'function')
+        {
+            navigator.vibrate(12);
+        }
+
+        props.onHold();
+    };
+
+    const startHold = (event: PointerEvent): void =>
+    {
+        startX = event.clientX;
+        startY = event.clientY;
+        holdTimer = window.setTimeout(fireHold, 450);
     };
 
     const cancelHold = (): void => window.clearTimeout(holdTimer);
 
+    const moveHold = (event: PointerEvent): void =>
+    {
+        if (Math.abs(event.clientX - startX) > MOVE_CANCEL_PX || Math.abs(event.clientY - startY) > MOVE_CANCEL_PX)
+        {
+            cancelHold();
+        }
+    };
+
+    // In select mode the whole row is the target and its selected state must read at
+    // a glance on a phone - so the entire row tints, not just the checkbox.
+    const rowClass = (): string =>
+    {
+        const base = 'flex h-full select-none items-center gap-3 border-b border-border px-4 transition-colors [-webkit-touch-callout:none]';
+
+        if (props.selectMode() && props.isSelected())
+        {
+            return `${ base } bg-accent-soft`;
+        }
+
+        return props.isActive() ? `${ base } bg-accent-soft/60 active:bg-elevated` : `${ base } active:bg-elevated`;
+    };
+
     <div
-        class={ () => 'flex h-full items-center gap-3 border-b border-border px-4 transition-colors active:bg-elevated'
-            + (props.isActive() ? ' bg-accent-soft/60' : '') }
+        class={ rowClass }
         role="button"
         tabindex="0"
+        aria-pressed={ () => props.selectMode() ? (props.isSelected() ? 'true' : 'false') : undefined }
         onClick={ () => props.onTap() }
-        onKeyDown={ (event) => { if (event.key === 'Enter') { props.onTap(); } } }
-        onPointerDown={ () => startHold() }
+        onKeyDown={ (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); props.onTap(); } } }
+        onPointerDown={ (event) => startHold(event) }
+        onPointerMove={ (event) => moveHold(event) }
         onPointerUp={ () => cancelHold() }
+        onPointerCancel={ () => cancelHold() }
         onPointerLeave={ () => cancelHold() }
         onContextMenu={ (event) => { event.preventDefault(); props.onHold(); } }
     >
@@ -79,12 +125,12 @@ export default component ConfigRow(props: ConfigRowProps)
 
         <Show when={ props.selectMode() }>
             <span
-                class={ 'flex size-5 shrink-0 items-center justify-center rounded-md border '
+                class={ 'flex size-6 shrink-0 items-center justify-center rounded-md border transition-colors '
                     + (props.isSelected() ? 'border-accent bg-accent text-accent-ink' : 'border-border-strong') }
                 aria-hidden="true"
             >
                 <Show when={ props.isSelected() }>
-                    { icon(Check, 'size-3.5') }
+                    { icon(Check, 'size-4') }
                 </Show>
             </span>
         </Show>

@@ -1,15 +1,18 @@
 import { Match, Show, Switch } from 'azerothjs';
-import { CircleStop, Download, Gauge, ListFilter, Server } from 'lucide';
+import { CircleStop, Download, Gauge, ListChecks, Server, X } from 'lucide';
 
 import Button from '../components/button.component.azeroth';
 import EmptyState from '../components/empty-state.component.azeroth';
 import { icon } from '../components/icon';
+import Sheet from '../components/sheet.component.azeroth';
 import ImportSheet from '../features/import/import-sheet.component.azeroth';
 import { useConfigs } from '../stores/configs';
+import { useDetail } from '../stores/detail';
 import { useHealth } from '../stores/health';
 import { useLocale } from '../stores/locale';
 import { useServerQuery } from '../stores/query';
 import { useSelection } from '../stores/selection';
+import { useViewport } from '../stores/viewport';
 import BulkBar from '../features/configs/bulk-bar.component.azeroth';
 import ConfigDetail from '../features/configs/config-detail.component.azeroth';
 import ConfigList from '../features/configs/config-list.component.azeroth';
@@ -30,13 +33,16 @@ export default component ServersPage()
     const query = useServerQuery();
     const selection = useSelection();
     const health = useHealth();
+    const detail = useDetail();
+    const viewport = useViewport();
 
     state importOpen = false;
 
     derived hasServers = rows().length > 0;
 
     <div class="contents">
-    <section class="flex h-full flex-col pb-14 md:pb-0">
+    <div class="flex h-full min-h-0">
+    <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col pb-14 md:pb-0">
         <header class="glass-bar shrink-0 border-b border-border">
             <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-4">
                 <div class="flex min-w-0 flex-col gap-0.5">
@@ -60,6 +66,7 @@ export default component ServersPage()
                             type="button"
                             class={ ICON_BTN }
                             aria-label={ t().importing.openAction }
+                            data-tip={ t().importing.openAction }
                             onClick={ () => importOpen = true }
                         >
                             { icon(Download, 'size-4') }
@@ -71,6 +78,7 @@ export default component ServersPage()
                                     type="button"
                                     class="flex size-11 items-center justify-center rounded-lg border border-poor/40 text-poor hover:bg-poor/10"
                                     aria-label={ t().servers.stop }
+                                    data-tip={ t().servers.stop }
                                     onClick={ () => health.cancel() }
                                 >
                                     { icon(CircleStop, 'size-4') }
@@ -81,6 +89,7 @@ export default component ServersPage()
                                     type="button"
                                     class={ ICON_BTN }
                                     aria-label={ t().servers.test }
+                                    data-tip={ t().servers.test }
                                     onClick={ () => void health.test(query.visibleIds()) }
                                 >
                                     { icon(Gauge, 'size-4') }
@@ -93,9 +102,10 @@ export default component ServersPage()
                                 type="button"
                                 class={ ICON_BTN }
                                 aria-label={ t().servers.select }
+                                data-tip={ t().servers.select }
                                 onClick={ () => selection.enter() }
                             >
-                                { icon(ListFilter, 'size-4') }
+                                { icon(ListChecks, 'size-4') }
                             </button>
                         </Show>
                     </div>
@@ -130,13 +140,42 @@ export default component ServersPage()
         </Show>
     </section>
 
+    <Show when={ viewport.isWide() }>
+        <aside class="flex h-full min-h-0 w-80 shrink-0 flex-col border-s border-border">
+            <Show when={ detail.openId() }>
+                <div class="glass-bar flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-4">
+                    <span class="truncate text-sm font-semibold text-text">{ detail.config()?.name ?? '' }</span>
+
+                    <button
+                        type="button"
+                        class="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface"
+                        aria-label={ t().detail.close }
+                        data-tip={ t().detail.close }
+                        onClick={ () => detail.close() }
+                    >
+                        { icon(X, 'size-4') }
+                    </button>
+                </div>
+            </Show>
+
+            <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+                <ConfigDetail />
+            </div>
+        </aside>
+    </Show>
+    </div>
+
     <Show when={ selection.active() }>
         <BulkBar visibleIds={ query.visibleIds } />
     </Show>
 
     <ImportSheet open={ () => importOpen } onClose={ () => importOpen = false } />
 
-    <ConfigDetail />
+    <Show when={ !viewport.isWide() }>
+        <Sheet open={ () => detail.openId() !== null } onClose={ () => detail.close() } title={ detail.config()?.name ?? '' }>
+            <ConfigDetail />
+        </Sheet>
+    </Show>
     </div>
 }
 
