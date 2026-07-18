@@ -13,7 +13,7 @@ interface GeoStatus
     geosite: boolean;
 }
 
-export type GeoState = 'idle' | 'updating' | 'ready' | 'error';
+type GeoState = 'idle' | 'updating' | 'ready' | 'error';
 
 /**
  * The geo databases xray uses for `geoip:`/`geosite:` routing rules.

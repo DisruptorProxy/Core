@@ -3,7 +3,7 @@ import type { IconNode } from 'lucide';
 
 import type { Strings } from '../lib/i18n/types';
 
-export interface NavItem
+interface NavItem
 {
     path: string;
     glyph: IconNode;

@@ -26,7 +26,7 @@ const SCHEDULER_TICK_MS = 60_000;
 /** A stable id for a new subscription without pulling in a uuid dependency. */
 const newId = (): string => `sub_${ Date.now().toString(36) }${ Math.random().toString(36).slice(2, 8) }`;
 
-export interface UpdateOutcome
+interface UpdateOutcome
 {
     subId: string;
     diff: UpdateDiff;

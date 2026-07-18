@@ -1,4 +1,4 @@
-export interface HumanError
+interface HumanError
 {
     /** Plain-language statement of what went wrong. */
     title: string;

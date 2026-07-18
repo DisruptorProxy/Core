@@ -4,7 +4,7 @@ import { createEffect, createSignal, createStore } from 'azerothjs';
 export type ThemePreference = 'system' | 'light' | 'dark';
 
 /** What is actually painted right now. */
-export type ResolvedTheme = 'light' | 'dark';
+type ResolvedTheme = 'light' | 'dark';
 
 const STORAGE_KEY = 'guardian.theme';
 

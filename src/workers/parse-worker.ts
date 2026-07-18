@@ -31,9 +31,9 @@ export interface UpdateRequest
     text: string;
 }
 
-export type WorkerRequest = ImportRequest | UpdateRequest;
+type WorkerRequest = ImportRequest | UpdateRequest;
 
-export interface ImportProgress
+interface ImportProgress
 {
     kind: 'progress';
     parsed: number;
@@ -51,7 +51,7 @@ export interface ImportReport
     elapsedMs: number;
 }
 
-export interface UpdateDone
+interface UpdateDone
 {
     kind: 'updated';
     diff: UpdateDiff;
@@ -59,7 +59,7 @@ export interface UpdateDone
     elapsedMs: number;
 }
 
-export interface WorkerFailed
+interface WorkerFailed
 {
     kind: 'failed';
     reason: string;

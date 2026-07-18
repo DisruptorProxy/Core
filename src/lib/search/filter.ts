@@ -2,7 +2,7 @@ import type { ConfigRow } from '../db/repo';
 
 export type SortKey = 'name' | 'latency' | 'country';
 
-export interface Filters
+interface Filters
 {
     /** Free text, matched against each row's precomputed haystack. */
     query: string;
@@ -20,7 +20,7 @@ export interface Filters
  * row. Unknown latency always sorts last - a server we have not measured is not
  * "fast".
  */
-export type LatencyLookup = (id: string) => number | undefined;
+type LatencyLookup = (id: string) => number | undefined;
 
 // One shared collator, reused across the ~100k comparisons a single sort of 8000
 // rows makes. `String.prototype.localeCompare` builds a fresh collator per call;
@@ -98,7 +98,7 @@ const comparator = (sort: SortKey, latencyOf: LatencyLookup): (a: ConfigRow, b: 
 };
 
 /** Distinct facet values present in the data, for building chips that reflect reality. */
-export interface Facets
+interface Facets
 {
     protocols: string[];
     security: string[];

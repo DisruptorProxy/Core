@@ -27,7 +27,7 @@ const isNewer = (a: string, b: string): boolean =>
     return false;
 };
 
-export type CheckState = 'idle' | 'checking' | 'current' | 'available' | 'error';
+type CheckState = 'idle' | 'checking' | 'current' | 'available' | 'error';
 
 /**
  * The app's version and update status.

@@ -7,7 +7,7 @@
  * failure that makes users think an app ate their configs, so classification is
  * explicit and the empty case is named, never silently a no-op.
  */
-export type ImportInput =
+type ImportInput =
     | { kind: 'subscription'; url: string }
     | { kind: 'configs'; text: string }
     | { kind: 'empty' };

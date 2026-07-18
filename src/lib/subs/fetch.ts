@@ -9,7 +9,7 @@ import { invoke } from '@tauri-apps/api/core';
  * function that changes - callers stay the same. Kept dependency-free and behind a
  * single seam for exactly that reason.
  */
-export class FetchFailure extends Error
+class FetchFailure extends Error
 {
     constructor(reason: string)
     {
@@ -18,7 +18,7 @@ export class FetchFailure extends Error
     }
 }
 
-export interface SubscriptionFetch
+interface SubscriptionFetch
 {
     /** The raw subscription body (base64 list or config links). */
     body: string;

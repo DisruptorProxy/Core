@@ -5,7 +5,7 @@ import { fa } from '../lib/i18n/fa';
 import type { Strings } from '../lib/i18n/types';
 
 export type Locale = 'en' | 'fa';
-export type Direction = 'ltr' | 'rtl';
+type Direction = 'ltr' | 'rtl';
 
 const STORAGE_KEY = 'guardian.locale';
 

@@ -3,7 +3,7 @@ import { createSignal, createStore } from 'azerothjs';
 /** Toast tone. `error` lingers longer than `success`/`info`. */
 export type ToastKind = 'success' | 'error' | 'info';
 
-export interface Toast
+interface Toast
 {
     id: number;
     kind: ToastKind;

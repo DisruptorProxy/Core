@@ -1,4 +1,4 @@
-export interface NormalizedName
+interface NormalizedName
 {
     /** What the row shows: the provider's name with the noise taken out. */
     name: string;

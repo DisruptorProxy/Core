@@ -3,9 +3,9 @@ import type { ProxyConfig } from '../proxy/types';
 import type { PingResult } from '../../features/connection/engine/port';
 
 /** Probes one server. Bulk testing passes a light TCP probe; the caller chooses. */
-export type Probe = (config: ProxyConfig, signal: AbortSignal) => Promise<PingResult>;
+type Probe = (config: ProxyConfig, signal: AbortSignal) => Promise<PingResult>;
 
-export interface PoolCallbacks
+interface PoolCallbacks
 {
     /** A probe finished (success or failure). Fires once per id, in completion order. */
     onResult: (id: string, result: PingResult) => void;

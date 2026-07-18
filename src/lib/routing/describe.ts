@@ -1,7 +1,7 @@
 import type { Strings } from '../i18n/types';
 import type { Rule, RuleAction } from './types';
 
-export interface RuleSentence
+interface RuleSentence
 {
     /** The plain-language subject: "Iranian sites", "Domains ending in .ir". */
     subject: string;

@@ -58,7 +58,7 @@ export const fold = (previous: HealthRecord | undefined, result: PingResult, now
     };
 };
 
-export type LatencyBucket = 'good' | 'fair' | 'poor' | 'unknown';
+type LatencyBucket = 'good' | 'fair' | 'poor' | 'unknown';
 
 /** Latency to a semantic bucket. The row colours by this, never by a raw number. */
 export const bucketFor = (ewmaMs: number | undefined): LatencyBucket =>

@@ -8,7 +8,7 @@ import { fold, score } from '../lib/health/score';
 import type { PingResult } from '../features/connection/engine/port';
 import { tcpProbe } from '../features/connection/engine/tcp-ping';
 
-export interface TestState
+interface TestState
 {
     running: boolean;
     done: number;

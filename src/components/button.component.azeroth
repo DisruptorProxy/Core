@@ -2,7 +2,7 @@ import type { IconNode } from 'lucide';
 
 import { icon } from './icon';
 
-export type ButtonVariant = 'primary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'ghost' | 'danger';
 
 interface ButtonProps
 {

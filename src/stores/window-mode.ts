@@ -8,7 +8,7 @@ import { LogicalSize, getCurrentWindow } from '@tauri-apps/api/window';
  * height 560 - past the md breakpoint the shell swaps the tab bar for the rail
  * by CSS, so the layout follows the REAL width, not this flag.
  */
-export type WindowMode = 'compact' | 'expanded';
+type WindowMode = 'compact' | 'expanded';
 
 const STORAGE_KEY = 'guardian.window-mode';
 

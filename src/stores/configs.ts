@@ -5,7 +5,7 @@ import type { ConfigRow } from '../lib/db/repo';
 
 import type { ImportReport, ImportRequest, WorkerResponse } from '../workers/parse-worker';
 
-export interface ImportState
+interface ImportState
 {
     running: boolean;
     parsed: number;

@@ -1,8 +1,8 @@
 import { decodeBase64, looksLikeBase64 } from '../proxy/uri';
 
-export type SubscriptionFormat = 'uri-list' | 'base64' | 'singbox' | 'clash' | 'unknown';
+type SubscriptionFormat = 'uri-list' | 'base64' | 'singbox' | 'clash' | 'unknown';
 
-export interface DecodedSubscription
+interface DecodedSubscription
 {
     format: SubscriptionFormat;
     /** A newline-separated list of config URIs, whatever the source format was. */

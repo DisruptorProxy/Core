@@ -1,5 +1,5 @@
-export const DB_NAME = 'guardian';
-export const DB_VERSION = 1;
+const DB_NAME = 'guardian';
+const DB_VERSION = 1;
 
 export const STORE_CONFIGS = 'configs';
 export const STORE_HEALTH = 'health';
@@ -29,7 +29,7 @@ export interface HealthRecord
     samples: number[];
 }
 
-export type SubscriptionStatus = 'ok' | 'stale' | 'failed' | 'never';
+type SubscriptionStatus = 'ok' | 'stale' | 'failed' | 'never';
 
 /**
  * Quota + expiry a provider reports in the `Subscription-Userinfo` response header.

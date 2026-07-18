@@ -6,7 +6,7 @@ import { TrayIcon } from '@tauri-apps/api/tray';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 /** The tray's localized strings, read reactively so a locale switch re-labels the menu. */
-export interface TrayLabels
+interface TrayLabels
 {
     tooltip: string;
     show: string;

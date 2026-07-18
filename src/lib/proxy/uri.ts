@@ -187,7 +187,7 @@ export const optional = (value: string | undefined | null): string | undefined =
  * unescaped `@`, missing brackets on IPv6, empty userinfo - and losing a server to
  * a spec-correct parser helps nobody.
  */
-export interface UriParts
+interface UriParts
 {
     userinfo: string;
     host: string;

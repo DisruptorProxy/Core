@@ -24,13 +24,13 @@ import type { Rule, RuleAction } from '../routing/types';
  */
 const CONNECT_SOCKS_PORT = 1080;
 /** Distinct port for the throwaway ping xray, so it never clashes with a live one. */
-export const PING_PORT = 1081;
+const PING_PORT = 1081;
 /**
  * Loopback gRPC port Xray's StatsService listens on during a live connection, so the
  * app can poll cumulative uplink/downlink counters. Must match the port the Rust
  * `xray_traffic` command queries.
  */
-export const API_PORT = 10085;
+const API_PORT = 10085;
 
 /** Protocols the config builder can produce an outbound for today. */
 const SUPPORTED_PROTOCOLS: ReadonlySet<Protocol> = new Set<Protocol>(['vmess', 'vless', 'trojan', 'shadowsocks']);
@@ -85,7 +85,7 @@ interface XrayRoutingRule
     inboundTag?: string[];
 }
 
-export interface XrayConfig
+interface XrayConfig
 {
     log: Record<string, unknown>;
     dns?: Record<string, unknown>;
@@ -276,7 +276,7 @@ const isUnresolvableGeoRule = (rule: Rule, geo: GeoAssets): boolean =>
  * are skipped when their database is missing, so a config never references a
  * `.dat` the core cannot load.
  */
-export const routingRulesFrom = (rules: Rule[], geo: GeoAssets = GEO_PRESENT): XrayRoutingRule[] =>
+const routingRulesFrom = (rules: Rule[], geo: GeoAssets = GEO_PRESENT): XrayRoutingRule[] =>
     rules.filter((rule) => !isUnresolvableGeoRule(rule, geo)).map((rule): XrayRoutingRule =>
     {
         const outboundTag = RULE_TAG[rule.action];

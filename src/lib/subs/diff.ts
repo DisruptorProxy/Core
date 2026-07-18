@@ -20,7 +20,7 @@ export interface UpdateDiff
     invalid: number;
 }
 
-export interface UpdatePlan
+interface UpdatePlan
 {
     diff: UpdateDiff;
     /** New and unchanged configs to write (put overwrites unchanged in place). */
