@@ -1,8 +1,10 @@
 import { For, Show } from 'azerothjs';
+
 import { Check, Star } from 'lucide';
 
 import type { ConfigRow } from '../../lib/db/repo';
 import { bucketFor } from '../../lib/health/score';
+
 import { flagEmoji } from '../../components/flag';
 import { icon } from '../../components/icon';
 

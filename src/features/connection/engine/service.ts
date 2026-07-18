@@ -1,5 +1,5 @@
-import { TauriConnectionService } from './tauri';
 import type { ConnectionService } from './port';
+import { TauriConnectionService } from './tauri';
 
 /**
  * The one live engine instance. A connection service is stateful (it holds the

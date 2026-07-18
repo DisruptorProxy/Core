@@ -1,6 +1,5 @@
 import { For } from 'azerothjs';
 
-
 export interface SegmentedOption
 {
     value: string;

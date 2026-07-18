@@ -1,5 +1,4 @@
-import { createStore } from 'azerothjs';
-import { createEffect, createSignal } from 'azerothjs';
+import { createEffect, createSignal, createStore } from 'azerothjs';
 
 import { en } from '../lib/i18n/en';
 import { fa } from '../lib/i18n/fa';

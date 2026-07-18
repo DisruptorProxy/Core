@@ -1,10 +1,10 @@
-import { createStore } from 'azerothjs';
-import { createSignal } from 'azerothjs';
+import { createSignal, createStore } from 'azerothjs';
 
 import { getConfigsByIds, loadHealth, putHealth } from '../lib/db/repo';
 import type { HealthRecord } from '../lib/db/schema';
-import { fold, score } from '../lib/health/score';
 import { runPool } from '../lib/health/pool';
+import { fold, score } from '../lib/health/score';
+
 import type { PingResult } from '../features/connection/engine/port';
 import { tcpProbe } from '../features/connection/engine/tcp-ping';
 

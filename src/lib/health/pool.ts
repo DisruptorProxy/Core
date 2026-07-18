@@ -1,4 +1,5 @@
 import type { ProxyConfig } from '../proxy/types';
+
 import type { PingResult } from '../../features/connection/engine/port';
 
 /** Probes one server. Bulk testing passes a light TCP probe; the caller chooses. */

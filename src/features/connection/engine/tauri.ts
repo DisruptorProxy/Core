@@ -1,11 +1,14 @@
 import { createSignal } from 'azerothjs';
 import type { Getter } from 'azerothjs';
+
 import { invoke } from '@tauri-apps/api/core';
 
+import type { ProxyConfig } from '../../../lib/proxy/types';
 import { buildConnectConfig, buildPingConfig, canConnect } from '../../../lib/xray/config';
 import type { GeoAssets } from '../../../lib/xray/config';
-import type { ProxyConfig } from '../../../lib/proxy/types';
+
 import { useRouting } from '../../../stores/routing';
+
 import type { ConnectionService, ConnectionStatus, PingResult, TrafficSample } from './port';
 
 /** True inside the Tauri desktop webview; false in a plain browser. */

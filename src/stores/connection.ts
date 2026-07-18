@@ -1,12 +1,13 @@
-import { createStore } from 'azerothjs';
-import { createEffect, createSelector, createSignal, onCleanup } from 'azerothjs';
+import { createEffect, createSelector, createSignal, createStore, onCleanup } from 'azerothjs';
 
 import { getConfig, getConfigsByIds } from '../lib/db/repo';
 import type { ProxyConfig } from '../lib/proxy/types';
 import { canConnect } from '../lib/xray/config';
-import { service } from '../features/connection/engine/service';
-import type { ConnectionPhase, TrafficSample } from '../features/connection/engine/port';
+
 import { useHealth } from './health';
+
+import type { ConnectionPhase, TrafficSample } from '../features/connection/engine/port';
+import { service } from '../features/connection/engine/service';
 
 /** How often the live traffic counters are polled from the core while connected. */
 const TRAFFIC_POLL_MS = 2000;

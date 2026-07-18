@@ -1,5 +1,4 @@
-import { createStore } from 'azerothjs';
-import { createSignal } from 'azerothjs';
+import { createSignal, createStore } from 'azerothjs';
 
 import { getSetting, putSetting } from '../lib/db/repo';
 import { PRESET_RULES } from '../lib/routing/presets';

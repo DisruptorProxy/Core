@@ -1,15 +1,17 @@
 import { ErrorBoundary, Routes } from 'azerothjs';
 
-import Button from '../components/button.component.azeroth';
-import ToastHost from '../components/toast-host.component.azeroth';
 import { useLocale } from '../stores/locale';
 import { useSubscriptions } from '../stores/subscriptions';
 import { useTheme } from '../stores/theme';
+
+import Button from '../components/button.component.azeroth';
+import ToastHost from '../components/toast-host.component.azeroth';
+
 import { router } from './router';
-import { installTray } from './tray';
 import SideRail from './side-rail.component.azeroth';
 import TabBar from './tab-bar.component.azeroth';
 import Titlebar from './titlebar.component.azeroth';
+import { installTray } from './tray';
 
 /**
  * App shell: a rail on wide screens, a bottom bar on phones, and the routed

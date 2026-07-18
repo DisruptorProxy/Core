@@ -1,5 +1,5 @@
-import { GIRIH } from './girih-geometry';
 import type { ConnectionPhase } from './engine/port';
+import { GIRIH } from './girih-geometry';
 
 interface GateProps
 {

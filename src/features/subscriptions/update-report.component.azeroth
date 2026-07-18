@@ -1,7 +1,8 @@
 import { Show } from 'azerothjs';
 
-import { useLocale } from '../../stores/locale';
 import type { UpdateDiff } from '../../lib/subs/diff';
+
+import { useLocale } from '../../stores/locale';
 
 interface UpdateReportProps
 {

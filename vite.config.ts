@@ -1,6 +1,7 @@
-import { defineConfig } from 'vite';
 import { azeroth } from '@azerothjs/compiler';
+
 import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'vite';
 
 const host = process.env.TAURI_DEV_HOST;
 

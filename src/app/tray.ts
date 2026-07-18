@@ -1,4 +1,5 @@
 import { createEffect } from 'azerothjs';
+
 import { defaultWindowIcon } from '@tauri-apps/api/app';
 import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { TrayIcon } from '@tauri-apps/api/tray';

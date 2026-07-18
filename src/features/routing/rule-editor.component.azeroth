@@ -1,11 +1,13 @@
 import { For } from 'azerothjs';
 
+import type { MatchType, Rule, RuleAction } from '../../lib/routing/types';
+
+import { useLocale } from '../../stores/locale';
+
 import Button from '../../components/button.component.azeroth';
 import Segmented from '../../components/segmented.component.azeroth';
 import type { SegmentedOption } from '../../components/segmented.component.azeroth';
 import Sheet from '../../components/sheet.component.azeroth';
-import type { MatchType, Rule, RuleAction } from '../../lib/routing/types';
-import { useLocale } from '../../stores/locale';
 
 interface RuleEditorProps
 {

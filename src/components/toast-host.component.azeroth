@@ -1,11 +1,13 @@
 import { For } from 'azerothjs';
+
 import { CircleAlert, CircleCheck, Info, X } from 'lucide';
 import type { IconNode } from 'lucide';
 
-import { icon } from './icon';
 import { useLocale } from '../stores/locale';
 import { useToast } from '../stores/toast';
 import type { ToastKind } from '../stores/toast';
+
+import { icon } from './icon';
 
 const GLYPH: Record<ToastKind, IconNode> =
 {

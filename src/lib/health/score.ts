@@ -1,4 +1,5 @@
 import type { HealthRecord } from '../db/schema';
+
 import type { PingResult } from '../../features/connection/engine/port';
 
 /** How much of the EWMA the newest sample takes. Higher = reacts faster, noisier. */

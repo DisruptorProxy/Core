@@ -1,8 +1,8 @@
-import { createStore } from 'azerothjs';
-import { createDeferred, createMemo, createSignal } from 'azerothjs';
+import { createDeferred, createMemo, createSignal, createStore } from 'azerothjs';
 
 import { applyFilters, collectFacets } from '../lib/search/filter';
 import type { SortKey } from '../lib/search/filter';
+
 import { useConfigs } from './configs';
 import { useHealth } from './health';
 

@@ -1,14 +1,18 @@
 import { For, Show } from 'azerothjs';
+
 import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide';
 
+import type { Strings } from '../lib/i18n/types';
 import { describeRule } from '../lib/routing/describe';
 import { PRESET_IDS } from '../lib/routing/presets';
 import type { ProfileId, Rule, RuleAction } from '../lib/routing/types';
-import { icon } from '../components/icon';
-import Screen from '../components/screen.component.azeroth';
-import type { Strings } from '../lib/i18n/types';
+
 import { useLocale } from '../stores/locale';
 import { useRouting } from '../stores/routing';
+
+import { icon } from '../components/icon';
+import Screen from '../components/screen.component.azeroth';
+
 import RuleEditor from '../features/routing/rule-editor.component.azeroth';
 
 const ACTION_TONE: Record<RuleAction, string> =

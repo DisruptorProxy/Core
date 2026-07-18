@@ -1,8 +1,8 @@
 import { createRouter } from 'azerothjs';
 
 import HomePage from '../pages/home.page.azeroth';
-import ServersPage from '../pages/servers.page.azeroth';
 import RoutingPage from '../pages/routing.page.azeroth';
+import ServersPage from '../pages/servers.page.azeroth';
 import SettingsPage from '../pages/settings.page.azeroth';
 import SubscriptionsPage from '../pages/subscriptions.page.azeroth';
 

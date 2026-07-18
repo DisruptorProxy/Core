@@ -1,4 +1,5 @@
 import { Show } from 'azerothjs';
+
 import type { IconNode } from 'lucide';
 
 import { icon } from './icon';

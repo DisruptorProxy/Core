@@ -1,10 +1,11 @@
 import { CheckCheck, Trash2, X } from 'lucide';
 
-import { icon } from '../../components/icon';
 import { useConfigs } from '../../stores/configs';
 import { useLocale } from '../../stores/locale';
 import { useSelection } from '../../stores/selection';
 import { useToast } from '../../stores/toast';
+
+import { icon } from '../../components/icon';
 
 interface BulkBarProps
 {

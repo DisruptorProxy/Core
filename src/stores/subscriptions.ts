@@ -1,5 +1,4 @@
-import { createStore } from 'azerothjs';
-import { createEffect, createSignal, onCleanup } from 'azerothjs';
+import { createEffect, createSignal, createStore, onCleanup } from 'azerothjs';
 
 import {
     clearSubscriptionId,
@@ -14,9 +13,12 @@ import type { SubscriptionRecord, SubscriptionUserinfo } from '../lib/db/schema'
 import type { UpdateDiff } from '../lib/subs/diff';
 import { fetchSubscription } from '../lib/subs/fetch';
 import { parseSubscriptionUserinfo } from '../lib/subs/userinfo';
-import { dueForUpdate } from '../components/relative-time';
+
 import type { UpdateRequest, WorkerResponse } from '../workers/parse-worker';
+
 import { useConfigs } from './configs';
+
+import { dueForUpdate } from '../components/relative-time';
 
 /** How often the scheduler wakes to check for due subscriptions. */
 const SCHEDULER_TICK_MS = 60_000;

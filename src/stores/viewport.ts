@@ -1,5 +1,4 @@
-import { createStore } from 'azerothjs';
-import { createSignal } from 'azerothjs';
+import { createSignal, createStore } from 'azerothjs';
 
 /**
  * Is the window wide enough for a two-column master-detail layout? The threshold

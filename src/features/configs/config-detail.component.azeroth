@@ -1,15 +1,18 @@
 import { Show } from 'azerothjs';
+
 import { Activity, Copy, Power, Server, Star, Trash2 } from 'lucide';
 
 import { humanizeError } from '../../lib/health/humanize-error';
 import { bucketFor } from '../../lib/health/score';
 import { canConnect } from '../../lib/xray/config';
+
+import { useDetail } from '../../stores/detail';
+import { useLocale } from '../../stores/locale';
+
 import Button from '../../components/button.component.azeroth';
 import { flagEmoji } from '../../components/flag';
 import { icon } from '../../components/icon';
 import Sparkline from '../../components/sparkline.component.azeroth';
-import { useDetail } from '../../stores/detail';
-import { useLocale } from '../../stores/locale';
 
 const LATENCY_TONE: Record<string, string> =
 {

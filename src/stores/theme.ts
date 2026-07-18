@@ -1,5 +1,4 @@
-import { createStore } from 'azerothjs';
-import { createEffect, createSignal } from 'azerothjs';
+import { createEffect, createSignal, createStore } from 'azerothjs';
 
 /** What the user chose. `system` follows the OS and keeps following it live. */
 export type ThemePreference = 'system' | 'light' | 'dark';

@@ -1,13 +1,17 @@
 import { Match, Show, Switch } from 'azerothjs';
+
 import { Power, Zap } from 'lucide';
 
 import { formatBytes } from '../lib/format/bytes';
 import { humanizeError } from '../lib/health/humanize-error';
-import Button from '../components/button.component.azeroth';
-import Screen from '../components/screen.component.azeroth';
+
 import { useConfigs } from '../stores/configs';
 import { useConnection } from '../stores/connection';
 import { useLocale } from '../stores/locale';
+
+import Button from '../components/button.component.azeroth';
+import Screen from '../components/screen.component.azeroth';
+
 import ConnectionGate from '../features/connection/connection-gate.component.azeroth';
 
 /** Seconds to m:ss / h:mm:ss - a live connection duration, tabular so it does not jitter. */

@@ -1,5 +1,4 @@
-import { createStore } from 'azerothjs';
-import { createSignal } from 'azerothjs';
+import { createSignal, createStore } from 'azerothjs';
 
 /** Toast tone. `error` lingers longer than `success`/`info`. */
 export type ToastKind = 'success' | 'error' | 'info';

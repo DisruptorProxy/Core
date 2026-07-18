@@ -1,10 +1,12 @@
-import VirtualList from '../../components/virtual-list.component.azeroth';
 import { useConfigs } from '../../stores/configs';
 import { useConnection } from '../../stores/connection';
 import { useDetail } from '../../stores/detail';
 import { useHealth } from '../../stores/health';
 import { useServerQuery } from '../../stores/query';
 import { useSelection } from '../../stores/selection';
+
+import VirtualList from '../../components/virtual-list.component.azeroth';
+
 import ConfigRow from './config-row.component.azeroth';
 
 /** Fixed row height - the whole virtual list depends on every row being this tall. */

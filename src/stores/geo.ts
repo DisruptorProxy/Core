@@ -1,5 +1,5 @@
-import { createStore } from 'azerothjs';
-import { createSignal } from 'azerothjs';
+import { createSignal, createStore } from 'azerothjs';
+
 import { invoke } from '@tauri-apps/api/core';
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;

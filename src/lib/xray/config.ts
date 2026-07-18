@@ -1,4 +1,4 @@
-import type { ProxyConfig, Protocol, Transport } from '../proxy/types';
+import type { Protocol, ProxyConfig, Transport } from '../proxy/types';
 import type { Rule, RuleAction } from '../routing/types';
 
 /**

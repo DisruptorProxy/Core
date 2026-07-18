@@ -1,5 +1,5 @@
-import { createStore } from 'azerothjs';
-import { createSignal } from 'azerothjs';
+import { createSignal, createStore } from 'azerothjs';
+
 import { LogicalSize, getCurrentWindow } from '@tauri-apps/api/window';
 
 /**

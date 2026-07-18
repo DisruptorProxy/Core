@@ -1,7 +1,7 @@
 import { clearSubscriptionId, configsForSubscription, deleteConfigs, putConfigs } from '../lib/db/repo';
 import { parseUri } from '../lib/proxy/parse';
-import { ParseFailure } from '../lib/proxy/uri';
 import type { ParseError, ProxyConfig } from '../lib/proxy/types';
+import { ParseFailure } from '../lib/proxy/uri';
 import { decodeSubscription } from '../lib/subs/decode';
 import { planUpdate } from '../lib/subs/diff';
 import type { UpdateDiff } from '../lib/subs/diff';

@@ -1,9 +1,10 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Maximize2, Minimize2, Minus, X } from 'lucide';
 
-import { icon } from '../components/icon';
 import { useLocale } from '../stores/locale';
 import { useWindowMode } from '../stores/window-mode';
+
+import { icon } from '../components/icon';
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 

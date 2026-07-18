@@ -1,5 +1,4 @@
-import { createStore } from 'azerothjs';
-import { createSignal } from 'azerothjs';
+import { createSignal, createStore } from 'azerothjs';
 
 /** Fallback shown in browser dev; the desktop app reads the real version from Tauri. */
 const FALLBACK_VERSION = '1.0.0';
