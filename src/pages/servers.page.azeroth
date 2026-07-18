@@ -1,4 +1,4 @@
-import { Match, Show, Switch } from 'azerothjs';
+import { Match, Show, Switch, Transition } from 'azerothjs';
 
 import { CircleStop, Download, Gauge, ListChecks, Server, X } from 'lucide';
 
@@ -44,7 +44,7 @@ export default component ServersPage()
     derived hasServers = rows().length > 0;
 
     <div class="contents">
-    <div class="flex h-full min-h-0">
+    <div class="animate-page-in flex h-full min-h-0">
     <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col pb-14 md:pb-0">
         <header class="glass-bar shrink-0 border-b border-border">
             <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-4">
@@ -168,9 +168,9 @@ export default component ServersPage()
     </Show>
     </div>
 
-    <Show when={ selection.active() }>
+    <Transition when={ selection.active() } name="g-bulkbar" duration={ 320 }>
         <BulkBar visibleIds={ query.visibleIds } />
-    </Show>
+    </Transition>
 
     <ImportSheet open={ () => importOpen } onClose={ () => importOpen = false } />
 

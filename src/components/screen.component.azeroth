@@ -16,7 +16,7 @@ interface ScreenProps
  */
 export default component Screen(props: ScreenProps)
 {
-    <section class="flex h-full flex-col">
+    <section class="animate-page-in flex h-full flex-col">
         <header class="glass-bar shrink-0 border-b border-border">
             <div class="mx-auto flex w-full max-w-3xl flex-col gap-0.5 px-5 py-4">
                 <h1 class="text-lg font-semibold tracking-tight text-text">{ props.title }</h1>

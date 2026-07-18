@@ -285,6 +285,41 @@
     animation: g-toast-out 200ms ease-in forwards;
 }
 
+/* Route entrance. <Routes> builds each page fresh when the match changes, so a
+   mount animation plays exactly once per navigation - a quiet fade with a small
+   upward settle. Vertical + opacity only, so it reads the same in LTR and RTL,
+   and the reduced-motion block above collapses it to an instant swap. */
+@keyframes g-page-in
+{
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@utility animate-page-in
+{
+    animation: g-page-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* The bulk-selection bar (bulk-bar.component), driven by <Transition name="g-bulkbar">.
+   It docks at the bottom edge, so it slides up from under itself on enter and back
+   down on leave. Transform + opacity only; reduced-motion collapses both. */
+.g-bulkbar-enter-from,
+.g-bulkbar-leave-to
+{
+    transform: translateY(100%);
+    opacity: 0;
+}
+
+.g-bulkbar-enter-active
+{
+    transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease-out;
+}
+
+.g-bulkbar-leave-active
+{
+    transition: transform 220ms ease-in, opacity 200ms ease-in;
+}
+
 /* CSS-only tooltip for icon-only controls. Gated on hover+fine-pointer so it NEVER
    appears on touch (a phone/tablet-touch device does not match the query), which
    means zero tap interference on mobile - the aria-label still serves assistive tech
@@ -356,6 +391,17 @@
 {
     animation-direction: reverse;
     animation-duration: 12s;
+}
+
+/* Disconnecting: the interlaced parts keep turning but recolour to muted and
+   slow down - the gate winding down and letting go - while the core retracts on
+   its own (the connected scale rule no longer applies). Reads as release, not an
+   abrupt snap back to the idle lattice. */
+.g-gate[data-phase="disconnecting"] .g-rosette,
+.g-gate[data-phase="disconnecting"] .g-weave
+{
+    stroke: var(--g-muted);
+    animation: g-gate-spin 6s linear infinite;
 }
 
 .g-gate[data-phase="connected"] polygon
