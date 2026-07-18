@@ -22,6 +22,11 @@ export interface Filters
  */
 export type LatencyLookup = (id: string) => number | undefined;
 
+// One shared collator, reused across the ~100k comparisons a single sort of 8000
+// rows makes. `String.prototype.localeCompare` builds a fresh collator per call;
+// hoisting one here is several times faster on every keystroke, chip, and sort.
+const collator = new Intl.Collator();
+
 /**
  * The one function the list depends on. Every keystroke, chip, and sort change
  * re-runs this over the full 8000-row array and returns the ids to display.
@@ -80,16 +85,16 @@ const comparator = (sort: SortKey, latencyOf: LatencyLookup): (a: ConfigRow, b: 
             const left = latencyOf(a.id) ?? Number.POSITIVE_INFINITY;
             const right = latencyOf(b.id) ?? Number.POSITIVE_INFINITY;
 
-            return left - right || a.name.localeCompare(b.name);
+            return left - right || collator.compare(a.name, b.name);
         };
     }
 
     if (sort === 'country')
     {
-        return (a, b) => (a.country ?? 'zz').localeCompare(b.country ?? 'zz') || a.name.localeCompare(b.name);
+        return (a, b) => collator.compare(a.country ?? 'zz', b.country ?? 'zz') || collator.compare(a.name, b.name);
     }
 
-    return (a, b) => a.name.localeCompare(b.name);
+    return (a, b) => collator.compare(a.name, b.name);
 };
 
 /** Distinct facet values present in the data, for building chips that reflect reality. */

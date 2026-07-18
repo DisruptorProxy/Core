@@ -1,3 +1,5 @@
+import { invoke } from '@tauri-apps/api/core';
+
 /**
  * Fetches a subscription body.
  *
@@ -36,8 +38,6 @@ export const fetchSubscription = async (url: string, signal?: AbortSignal): Prom
     {
         try
         {
-            const { invoke } = await import('@tauri-apps/api/core');
-
             return await invoke<SubscriptionFetch>('fetch_subscription', { url });
         }
         catch (error)

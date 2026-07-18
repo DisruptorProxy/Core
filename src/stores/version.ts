@@ -1,5 +1,7 @@
 import { createSignal, createStore } from 'azerothjs';
 
+import { getVersion } from '@tauri-apps/api/app';
+
 /** Fallback shown in browser dev; the desktop app reads the real version from Tauri. */
 const FALLBACK_VERSION = '1.0.0';
 
@@ -52,8 +54,6 @@ export const useVersion = createStore(() =>
 
         try
         {
-            const { getVersion } = await import('@tauri-apps/api/app');
-
             setCurrent(await getVersion());
         }
         catch
