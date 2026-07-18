@@ -18,7 +18,7 @@ interface ButtonProps
 // 44px minimum height: the touch-target floor, applied to every variant so a
 // ghost button is no harder to hit than a primary one.
 const BASE = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 '
-    + 'text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-45';
+    + 'text-sm font-medium press disabled:pointer-events-none disabled:opacity-45';
 
 const VARIANTS: Record<ButtonVariant, string> =
 {

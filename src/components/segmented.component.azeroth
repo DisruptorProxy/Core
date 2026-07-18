@@ -24,7 +24,7 @@ interface SegmentedProps
     onSelect: (value: string) => void;
 }
 
-const OPTION = 'relative z-10 min-h-9 flex-1 rounded-lg px-3 text-sm font-medium transition-colors';
+const OPTION = 'relative z-10 min-h-9 flex-1 rounded-lg px-3 text-sm font-medium press';
 
 /**
  * A radio group that looks like a switch. Radio semantics (not tabs) because it

@@ -70,7 +70,7 @@ export default component FilterMenu(props: FilterMenuProps)
     <div class="contents">
         <button
             type="button"
-            class={ 'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors '
+            class={ 'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium press '
                 + (props.active()
                     ? 'border-accent bg-accent-soft text-accent'
                     : 'border-border text-muted hover:bg-elevated') }

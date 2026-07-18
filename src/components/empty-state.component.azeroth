@@ -15,7 +15,7 @@ export default component EmptyState(props: EmptyStateProps)
 {
     const glyph = icon(props.glyph, 'size-6 text-faint');
 
-    <div class="flex flex-col items-center justify-center gap-3 px-8 py-16 text-center">
+    <div class="g-stagger flex flex-col items-center justify-center gap-3 px-8 py-16 text-center">
         <div class="flex size-12 items-center justify-center rounded-2xl border border-border bg-surface">
             { glyph }
         </div>

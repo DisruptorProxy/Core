@@ -8,7 +8,7 @@ import { icon } from '../components/icon';
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-const CTRL = 'flex size-7 items-center justify-center rounded-lg text-muted transition-colors';
+const CTRL = 'flex size-7 items-center justify-center rounded-lg text-muted press';
 
 /**
  * The custom window chrome. The window is borderless (decorations off), so this is

@@ -21,7 +21,7 @@ import ConfigList from '../features/configs/config-list.component.azeroth';
 import FiltersBar from '../features/configs/filters-bar.component.azeroth';
 import ImportSheet from '../features/import/import-sheet.component.azeroth';
 
-const ICON_BTN = 'flex size-11 items-center justify-center rounded-lg border border-border text-muted hover:bg-elevated';
+const ICON_BTN = 'flex size-11 items-center justify-center rounded-lg border border-border text-muted hover:bg-elevated press';
 
 /**
  * The server catalogue. Unlike the other screens it does NOT use the scrolling
@@ -79,7 +79,7 @@ export default component ServersPage()
                             <Match when={ hasServers && health.testState().running }>
                                 <button
                                     type="button"
-                                    class="flex size-11 items-center justify-center rounded-lg border border-poor/40 text-poor hover:bg-poor/10"
+                                    class="flex size-11 items-center justify-center rounded-lg border border-poor/40 text-poor hover:bg-poor/10 press"
                                     aria-label={ t().servers.stop }
                                     data-tip={ t().servers.stop }
                                     onClick={ () => health.cancel() }

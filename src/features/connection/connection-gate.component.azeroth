@@ -1,3 +1,7 @@
+import { createEffect } from 'azerothjs';
+
+import { GATE_SPRING, motion } from '../../lib/motion/presets';
+
 import type { ConnectionPhase } from './engine/port';
 import { GIRIH } from './girih-geometry';
 
@@ -15,6 +19,24 @@ interface GateProps
  */
 export default component ConnectionGate(props: GateProps)
 {
+    // The core's scale is a spring, not a CSS transition, so a fast connect ->
+    // disconnect reverses it in-flight instead of snapping. Everything else on the
+    // gate stays CSS-driven off data-phase. motion() carries the reduced-motion
+    // contract, so the core still lands on the right size instantly there.
+    let core: Element | null = null;
+
+    const bindCore = (element: Element): void => { core = element; };
+
+    createEffect(() =>
+    {
+        const open = props.phase() === 'connected';
+
+        if (core !== null)
+        {
+            motion(core, { scale: open ? 1.7 : 1 }, GATE_SPRING);
+        }
+    });
+
     <svg
         class="g-gate size-56"
         viewBox="0 0 200 200"
@@ -24,6 +46,6 @@ export default component ConnectionGate(props: GateProps)
         <polygon class="g-frame" points={ GIRIH.frame } />
         <polygon class="g-rosette" points={ GIRIH.rosette } />
         <polygon class="g-weave" points={ GIRIH.weave } />
-        <polygon class="g-core" points={ GIRIH.core } />
+        <polygon ref={ bindCore } class="g-core" points={ GIRIH.core } />
     </svg>
 }

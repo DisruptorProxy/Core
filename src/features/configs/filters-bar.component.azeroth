@@ -14,7 +14,7 @@ import Input from '../../components/input.component.azeroth';
 import Segmented from '../../components/segmented.component.azeroth';
 import type { SegmentedOption } from '../../components/segmented.component.azeroth';
 
-const CHIP = 'shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors';
+const CHIP = 'shrink-0 rounded-full border px-3 py-1 text-xs font-medium press';
 
 /** Sentinel for the "All sources" row - maps to a null subscription filter. */
 const SOURCE_ALL = '';

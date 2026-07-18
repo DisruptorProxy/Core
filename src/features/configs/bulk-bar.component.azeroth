@@ -13,7 +13,7 @@ interface BulkBarProps
     visibleIds: () => string[];
 }
 
-const ACTION = 'flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-medium';
+const ACTION = 'flex min-h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-medium press';
 
 /**
  * The action bar that makes "delete 3000 dead configs" a real operation. It docks
@@ -51,7 +51,7 @@ export default component BulkBar(props: BulkBarProps)
 
             <button
                 type="button"
-                class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface"
+                class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface press"
                 aria-label={ t().servers.selectAll }
                 data-tip={ t().servers.selectAll }
                 onClick={ () => selection.selectMany(props.visibleIds()) }
@@ -61,7 +61,7 @@ export default component BulkBar(props: BulkBarProps)
 
             <button
                 type="button"
-                class="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-poor px-4 text-sm font-medium text-white disabled:opacity-40"
+                class="flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-poor px-4 text-sm font-medium text-white press disabled:opacity-40"
                 disabled={ selection.count() === 0 }
                 onClick={ () => void removeSelected() }
             >

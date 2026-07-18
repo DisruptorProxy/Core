@@ -7,7 +7,7 @@ import { icon } from '../components/icon';
 import { NAV_ITEMS } from './nav';
 import { router } from './router';
 
-const ITEM = 'flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors';
+const ITEM = 'flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium press';
 
 /**
  * The same five destinations on wide screens. A rail rather than a stretched

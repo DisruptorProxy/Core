@@ -7,7 +7,7 @@ import { icon } from '../components/icon';
 import { NAV_ITEMS } from './nav';
 import { router } from './router';
 
-const ITEM = 'relative flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-medium';
+const ITEM = 'relative flex min-h-14 flex-col items-center justify-center gap-1 text-xs font-medium press';
 
 /**
  * Bottom navigation, mobile only. Five destinations, each a 56px-tall target in

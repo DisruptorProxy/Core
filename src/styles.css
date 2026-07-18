@@ -62,6 +62,29 @@
 
     --g-font-sans: 'IBM Plex Sans', 'Vazirmatn Variable', system-ui, sans-serif;
     --g-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+    /* -----------------------------------------------------------------------
+       Motion. One vocabulary for the whole app, so timing reads as a system and
+       not a pile of per-component guesses. Durations climb by role - a press is
+       fast, a panel is slow. Easings split by intent: `out` for entrances that
+       arrive and settle, `in` for exits that leave quickly, `standard` for small
+       state moves (colour, press). The two spring curves are built with linear()
+       so a panel or a thumb overshoots a hair and settles like a physical object -
+       an arc a cubic-bezier cannot express. Everything that consumes these tokens
+       is collapsed to an instant state change by the reduced-motion block below. */
+    --g-dur-fast: 120ms;
+    --g-dur-quick: 180ms;
+    --g-dur-base: 240ms;
+    --g-dur-slow: 320ms;
+    --g-dur-slower: 420ms;
+
+    --g-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --g-ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --g-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    /* Gentle spring (~1.5% overshoot): panels, the segmented thumb, the bulk bar. */
+    --g-ease-spring: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849, 0.937 34.9%, 0.968, 0.991 43.5%, 1.006, 1.014 53%, 1.015 55.8%, 1.009 63.5%, 1.002 78.4%, 0.999, 1);
+    /* Livelier pop (~6% overshoot): toasts and the titlebar icon swap. */
+    --g-ease-pop: linear(0, 0.008, 0.031 2.7%, 0.129 6.1%, 0.257, 0.534 15.9%, 0.638, 0.731, 0.81, 0.876, 0.928 30.8%, 0.983, 1.02, 1.046 41.6%, 1.058, 1.061, 1.057 50.9%, 1.048, 1.021 62.6%, 1.008 69.7%, 0.998, 0.995 82.4%, 1);
 }
 
 /* Dark glass: deep ink canvas with turquoise/pomegranate ambient glows, dark
@@ -221,13 +244,31 @@
     }
 }
 
+/* Tactile press: any control carrying this dips a hair toward the surface while
+   held and springs back on release. It owns the colour/border transitions too (a
+   superset of `transition-colors`), so a control uses `press` OR `transition-colors`,
+   never both. Transform-only on the active state, so it composites; the global
+   reduced-motion block zeroes the timing, leaving an imperceptible instant scale. */
+@utility press
+{
+    transition-property: color, background-color, border-color, box-shadow, transform;
+    transition-duration: var(--g-dur-fast);
+    transition-timing-function: var(--g-ease-standard);
+
+    &:active
+    {
+        transform: scale(0.96);
+    }
+}
+
 /* Sheet + backdrop entrance. The reduced-motion block above zeroes these, so no
    per-component guard is needed. */
 
 /* The <Transition name="g-sheet"> family (sheet.component). The transition root
    carries the phase classes; the backdrop (direct-child button) and the panel
-   (direct-child div) are styled through them, so enter AND exit animate. The
-   reduced-motion contract above collapses these like everything else. */
+   (direct-child div) are styled through them, so enter AND exit animate. The panel
+   rises, scales up from 0.97, and settles on the spring; the backdrop just fades.
+   The reduced-motion contract above collapses these like everything else. */
 .g-sheet-enter-from > button,
 .g-sheet-leave-to > button
 {
@@ -236,29 +277,29 @@
 
 .g-sheet-enter-active > button
 {
-    transition: opacity 160ms ease-out;
+    transition: opacity var(--g-dur-quick) var(--g-ease-out);
 }
 
 .g-sheet-leave-active > button
 {
-    transition: opacity 180ms ease-in;
+    transition: opacity var(--g-dur-quick) var(--g-ease-in);
 }
 
 .g-sheet-enter-from > div,
 .g-sheet-leave-to > div
 {
-    transform: translateY(8%);
+    transform: translateY(12px) scale(0.97);
     opacity: 0;
 }
 
 .g-sheet-enter-active > div
 {
-    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--g-dur-slow) var(--g-ease-spring), opacity var(--g-dur-slow) var(--g-ease-out);
 }
 
 .g-sheet-leave-active > div
 {
-    transition: transform 180ms ease-in, opacity 180ms ease-in;
+    transition: transform var(--g-dur-quick) var(--g-ease-in), opacity var(--g-dur-quick) var(--g-ease-in);
 }
 
 /* Toasts (toast-host.component). Enter slides up + fades in; leave reverses. Both
@@ -266,23 +307,23 @@
    instantly there. `forwards` holds the faded-out state during the removal delay. */
 @keyframes g-toast-in
 {
-    from { opacity: 0; transform: translateY(12px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translateY(16px) scale(0.95); }
+    to { opacity: 1; transform: none; }
 }
 
 @keyframes g-toast-out
 {
-    to { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 0; transform: translateY(8px) scale(0.97); }
 }
 
 @utility animate-toast-in
 {
-    animation: g-toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: g-toast-in var(--g-dur-slow) var(--g-ease-pop);
 }
 
 @utility animate-toast-out
 {
-    animation: g-toast-out 200ms ease-in forwards;
+    animation: g-toast-out var(--g-dur-quick) var(--g-ease-in) forwards;
 }
 
 /* Route entrance. <Routes> builds each page fresh when the match changes, so a
@@ -291,13 +332,13 @@
    and the reduced-motion block above collapses it to an instant swap. */
 @keyframes g-page-in
 {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(8px) scale(0.995); }
+    to { opacity: 1; transform: none; }
 }
 
 @utility animate-page-in
 {
-    animation: g-page-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: g-page-in var(--g-dur-slow) var(--g-ease-out);
 }
 
 /* Icon swap (titlebar window-mode toggle). The reactive icon binding mounts a
@@ -305,13 +346,13 @@
    Scale + opacity only; reduced-motion collapses it. */
 @keyframes g-icon-swap
 {
-    from { opacity: 0; transform: scale(0.6); }
-    to { opacity: 1; transform: scale(1); }
+    from { opacity: 0; transform: scale(0.5) rotate(-12deg); }
+    to { opacity: 1; transform: none; }
 }
 
 @utility animate-icon-swap
 {
-    animation: g-icon-swap 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: g-icon-swap var(--g-dur-base) var(--g-ease-pop);
 }
 
 /* The bulk-selection bar (bulk-bar.component), driven by <Transition name="g-bulkbar">.
@@ -326,12 +367,31 @@
 
 .g-bulkbar-enter-active
 {
-    transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease-out;
+    transition: transform var(--g-dur-slow) var(--g-ease-spring), opacity var(--g-dur-quick) var(--g-ease-out);
 }
 
 .g-bulkbar-leave-active
 {
-    transition: transform 220ms ease-in, opacity 200ms ease-in;
+    transition: transform var(--g-dur-quick) var(--g-ease-in), opacity var(--g-dur-quick) var(--g-ease-in);
+}
+
+/* Grouped entrance: a container marked with this rises its direct children in a
+   quick cascade on mount - for small, fixed groups (an empty state's icon, title
+   and hint), never lists. The global reduced-motion block flattens the animation
+   to instant, so the delays then only stagger instantaneous appearances. */
+.g-stagger > *
+{
+    animation: g-rise var(--g-dur-slow) var(--g-ease-out) both;
+}
+
+.g-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.g-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.g-stagger > *:nth-child(4) { animation-delay: 180ms; }
+
+@keyframes g-rise
+{
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
 }
 
 /* Segmented control sliding thumb (segmented.component). One absolutely-positioned
@@ -347,8 +407,9 @@
     width: calc((100% - 0.5rem) / var(--seg-count, 1));
     border-radius: 0.5rem;
     background-color: var(--g-accent);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 0.14);
     transform: translateX(calc(var(--seg-index, 0) * 100%));
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform var(--g-dur-base) var(--g-ease-spring);
 }
 
 [dir="rtl"] .g-seg-thumb
@@ -374,7 +435,7 @@
         position: absolute;
         inset-block-start: calc(100% + 6px);
         inset-inline-start: 50%;
-        transform: translateX(-50%);
+        transform: translateX(-50%) translateY(-3px);
         z-index: 60;
         white-space: nowrap;
         pointer-events: none;
@@ -387,13 +448,14 @@
         background-color: var(--g-elevated);
         border: 1px solid var(--g-border);
         box-shadow: var(--g-shadow);
-        transition: opacity 120ms ease 350ms;
+        transition: opacity var(--g-dur-fast) ease 350ms, transform var(--g-dur-base) var(--g-ease-out) 350ms;
     }
 
     [data-tip]:hover::after,
     [data-tip]:focus-visible::after
     {
         opacity: 1;
+        transform: translateX(-50%) translateY(0);
     }
 }
 
@@ -405,7 +467,7 @@
     fill: none;
     stroke: var(--g-border-strong);
     stroke-width: 1.5;
-    transition: stroke 400ms ease, opacity 400ms ease;
+    transition: stroke var(--g-dur-slower) ease, opacity var(--g-dur-slower) ease;
     transform-box: fill-box;
     transform-origin: center;
 }
@@ -413,7 +475,10 @@
 .g-gate .g-core
 {
     fill: var(--g-surface);
-    transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1), stroke 400ms ease;
+    /* The core's scale is driven imperatively with the motion() spring (see
+       connection-gate.component) so it can reverse mid-flight on a fast
+       connect -> disconnect; CSS owns only its colour. */
+    transition: stroke var(--g-dur-slower) ease;
 }
 
 .g-gate[data-phase="connecting"] .g-rosette,
@@ -445,14 +510,17 @@
     stroke: var(--g-accent);
 }
 
+/* Connected: the lit gate breathes - the glow swells and eases back, so a live
+   connection reads as alive at a glance rather than a static frame. The core's
+   scale is held open by the motion() spring, not this rule. Reduced-motion pins
+   the animation to its first frame (the resting 8px glow). */
 .g-gate[data-phase="connected"]
 {
-    filter: drop-shadow(0 0 10px var(--g-accent));
+    animation: g-gate-glow 3s ease-in-out infinite;
 }
 
 .g-gate[data-phase="connected"] .g-core
 {
-    transform: scale(1.7);
     stroke: var(--g-accent);
 }
 
@@ -464,6 +532,12 @@
 @keyframes g-gate-spin
 {
     to { transform: rotate(360deg); }
+}
+
+@keyframes g-gate-glow
+{
+    0%, 100% { filter: drop-shadow(0 0 8px var(--g-accent)); }
+    50% { filter: drop-shadow(0 0 18px var(--g-accent)); }
 }
 
 /* Frosted glass. `glass` is the standard panel (cards, bars); `glass-strong` is

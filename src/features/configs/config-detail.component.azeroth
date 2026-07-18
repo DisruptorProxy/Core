@@ -126,7 +126,7 @@ export default component ConfigDetail()
 
                 <button
                     type="button"
-                    class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-text hover:bg-elevated"
+                    class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-text hover:bg-elevated press"
                     onClick={ () => detail.toggleFavorite() }
                 >
                     { icon(Star, detail.favorite() ? 'size-[18px] text-fair' : 'size-[18px]') }
@@ -135,7 +135,7 @@ export default component ConfigDetail()
 
                 <button
                     type="button"
-                    class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-text hover:bg-elevated"
+                    class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-text hover:bg-elevated press"
                     onClick={ () => void detail.copyLink() }
                 >
                     { icon(Copy, 'size-[18px]') }
@@ -144,7 +144,7 @@ export default component ConfigDetail()
 
                 <button
                     type="button"
-                    class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-poor/40 text-sm font-medium text-poor hover:bg-poor/10"
+                    class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-poor/40 text-sm font-medium text-poor hover:bg-poor/10 press"
                     onClick={ () => void detail.remove() }
                 >
                     { icon(Trash2, 'size-[18px]') }
