@@ -300,6 +300,20 @@
     animation: g-page-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Icon swap (titlebar window-mode toggle). The reactive icon binding mounts a
+   fresh glyph on each toggle, so a short pop marks the compact/expanded change.
+   Scale + opacity only; reduced-motion collapses it. */
+@keyframes g-icon-swap
+{
+    from { opacity: 0; transform: scale(0.6); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@utility animate-icon-swap
+{
+    animation: g-icon-swap 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* The bulk-selection bar (bulk-bar.component), driven by <Transition name="g-bulkbar">.
    It docks at the bottom edge, so it slides up from under itself on enter and back
    down on leave. Transform + opacity only; reduced-motion collapses both. */
@@ -318,6 +332,28 @@
 .g-bulkbar-leave-active
 {
     transition: transform 220ms ease-in, opacity 200ms ease-in;
+}
+
+/* Segmented control sliding thumb (segmented.component). One absolutely-positioned
+   pill slides to the active option; --seg-count and --seg-index are set inline on
+   the container and inherited here. Transform-only so it composites; inset-inline-start
+   flips the anchor for RTL and the [dir="rtl"] rule negates the slide direction, so
+   the thumb tracks the active option on both sides. Reduced-motion zeroes the slide. */
+.g-seg-thumb
+{
+    position: absolute;
+    inset-block: 0.25rem;
+    inset-inline-start: 0.25rem;
+    width: calc((100% - 0.5rem) / var(--seg-count, 1));
+    border-radius: 0.5rem;
+    background-color: var(--g-accent);
+    transform: translateX(calc(var(--seg-index, 0) * 100%));
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[dir="rtl"] .g-seg-thumb
+{
+    transform: translateX(calc(var(--seg-index, 0) * -100%));
 }
 
 /* CSS-only tooltip for icon-only controls. Gated on hover+fine-pointer so it NEVER

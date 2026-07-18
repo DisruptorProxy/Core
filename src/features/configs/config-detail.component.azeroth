@@ -44,7 +44,7 @@ export default component ConfigDetail()
         when={ config() }
         fallback={ () => detail.openId() === null ? emptyState(t().detail.emptyTitle, t().detail.emptyHint) : null }
     >
-        <div class="flex flex-col gap-4">
+        <div class="animate-page-in flex flex-col gap-4">
             <div class="flex items-center gap-2">
                 <Show when={ flagEmoji(config()!.country) }>
                     <span class="text-lg leading-none">{ flagEmoji(config()!.country) }</span>

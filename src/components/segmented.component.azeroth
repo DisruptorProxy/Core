@@ -1,4 +1,4 @@
-import { For } from 'azerothjs';
+import { For, styleMap } from 'azerothjs';
 
 export interface SegmentedOption
 {
@@ -24,19 +24,30 @@ interface SegmentedProps
     onSelect: (value: string) => void;
 }
 
-const OPTION = 'min-h-9 flex-1 rounded-lg px-3 text-sm font-medium transition-colors';
+const OPTION = 'relative z-10 min-h-9 flex-1 rounded-lg px-3 text-sm font-medium transition-colors';
 
 /**
  * A radio group that looks like a switch. Radio semantics (not tabs) because it
  * sets a value; screen readers then announce it as a choice, not navigation.
+ *
+ * A single pill (`.g-seg-thumb`) slides to the selected option instead of each
+ * button toggling its own background: `--seg-count`/`--seg-index` are set inline
+ * here and the thumb's CSS reads them, so the slide is one composited transform
+ * and stays correct under RTL.
  */
 export default component Segmented(props: SegmentedProps)
 {
     <div
-        class="flex gap-1 rounded-xl border border-border bg-surface p-1"
+        class="relative flex rounded-xl border border-border bg-surface p-1"
         role="radiogroup"
         aria-label={ props.label }
+        style={ styleMap({
+            '--seg-count': () => props.options.length,
+            '--seg-index': () => props.options.findIndex((option) => option.value === props.value)
+        }) }
     >
+        <div class="g-seg-thumb" aria-hidden="true"></div>
+
         <For each={ props.options } key={ (option) => option.value }>
             { (option) =>
                 <button
@@ -44,8 +55,8 @@ export default component Segmented(props: SegmentedProps)
                     role="radio"
                     aria-checked={ props.value === option.value ? 'true' : 'false' }
                     class={ `${ OPTION } ${ props.value === option.value
-                        ? 'bg-accent text-accent-ink'
-                        : 'text-muted hover:bg-elevated hover:text-text' }` }
+                        ? 'text-accent-ink'
+                        : 'text-muted hover:text-text' }` }
                     onClick={ () => props.onSelect(option.value) }
                 >
                     { option.label() }

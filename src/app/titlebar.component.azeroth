@@ -54,7 +54,7 @@ export default component Titlebar()
                 data-tip={ windowMode.mode() === 'compact' ? t().app.expandWindow : t().app.shrinkWindow }
                 onClick={ () => windowMode.toggle() }
             >
-                { icon(windowMode.mode() === 'compact' ? Maximize2 : Minimize2, 'size-4') }
+                { icon(windowMode.mode() === 'compact' ? Maximize2 : Minimize2, 'size-4 animate-icon-swap') }
             </button>
             <button type="button" class={ CTRL + ' hover:bg-poor hover:text-white' } aria-label="Close" data-tip="Close" onClick={ () => close() }>
                 { icon(X, 'size-4') }
