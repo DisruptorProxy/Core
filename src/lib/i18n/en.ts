@@ -38,6 +38,7 @@ export const en: Strings =
         disconnect: 'Disconnect',
         connectFastest: 'Connect fastest',
         duration: (text: string) => `Connected for ${ text }`,
+        transferred: 'Transferred',
         protocolLabel: 'Protocol',
         noneTested: 'Test your servers to find the fastest.'
     },
@@ -135,7 +136,10 @@ export const en: Strings =
         added: 'Added',
         removed: 'Removed',
         unchanged: 'Unchanged',
-        keptFavorites: 'Kept favorites'
+        keptFavorites: 'Kept favorites',
+        remaining: 'Remaining',
+        daysLeft: (n: number) => `${ n } days left`,
+        expired: 'Expired'
     },
 
     routing:
@@ -209,7 +213,14 @@ export const en: Strings =
         checking: 'Checking…',
         upToDate: 'You’re on the latest version.',
         updateAvailable: (version: string) => `Version ${ version } is available.`,
-        download: 'Download'
+        download: 'Download',
+        geoFiles: 'Geo files',
+        geoFilesDesc: 'Databases for country and site-category routing rules. Update them to keep bypass and blocking rules accurate.',
+        geoInstalled: 'Installed',
+        geoMissing: 'Not installed',
+        updateGeoFiles: 'Update geo files',
+        updatingGeoFiles: 'Downloading…',
+        geoFilesUpdated: 'Geo files are up to date.'
     },
 
     detail:

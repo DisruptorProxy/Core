@@ -41,6 +41,8 @@ export interface Strings
         disconnect: string;
         connectFastest: string;
         duration: (text: string) => string;
+        /** Label before the total bytes moved this session, e.g. "Transferred 12.4 MB". */
+        transferred: string;
         protocolLabel: string;
         noneTested: string;
     };
@@ -139,6 +141,10 @@ export interface Strings
         removed: string;
         unchanged: string;
         keptFavorites: string;
+        // Quota + expiry from the provider's `Subscription-Userinfo` header.
+        remaining: string;
+        daysLeft: (n: number) => string;
+        expired: string;
     };
 
     routing:
@@ -216,6 +222,14 @@ export interface Strings
         upToDate: string;
         updateAvailable: (version: string) => string;
         download: string;
+        // Geo databases (geoip.dat / geosite.dat) used by country/site routing rules.
+        geoFiles: string;
+        geoFilesDesc: string;
+        geoInstalled: string;
+        geoMissing: string;
+        updateGeoFiles: string;
+        updatingGeoFiles: string;
+        geoFilesUpdated: string;
     };
 
     detail:

@@ -2,7 +2,7 @@ fn main() {
     let mut attributes = tauri_build::Attributes::new();
 
     // manifest.xml requests `asInvoker` (no forced elevation), so it's safe to embed
-    // in dev builds too - only xray.exe self-elevates, via ShellExecuteExW at connect
+    // in dev builds too - only app-xray.exe self-elevates, via ShellExecuteExW at connect
     // time, not the app.
     #[cfg(windows)]
     {

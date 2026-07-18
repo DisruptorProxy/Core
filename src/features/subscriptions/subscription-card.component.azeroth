@@ -1,7 +1,8 @@
 import { Show } from 'azerothjs';
 import { Pencil, RefreshCw, Trash2 } from 'lucide';
 
-import type { SubscriptionRecord } from '../../lib/db/schema';
+import type { SubscriptionRecord, SubscriptionUserinfo } from '../../lib/db/schema';
+import { formatBytes } from '../../lib/format/bytes';
 import { icon } from '../../components/icon';
 import { isStale, relativeTime } from '../../components/relative-time';
 import { useLocale } from '../../stores/locale';
@@ -53,6 +54,40 @@ export default component SubscriptionCard(props: SubscriptionCardProps)
 
     const statusTone = (): string => STATUS_TONE[props.sub.status === 'ok' && stale() ? 'stale' : props.sub.status];
 
+    const info = (): SubscriptionUserinfo | undefined => props.sub.userinfo;
+
+    const totalBytes = (): number => info()?.total ?? 0;
+
+    const remainingBytes = (): number =>
+    {
+        const usage = info();
+
+        return usage ? Math.max(usage.total - usage.upload - usage.download, 0) : 0;
+    };
+
+    /** Whole days until expiry; <= 0 once past, null when the provider sent no expiry. */
+    const daysLeft = (): number | null =>
+    {
+        const expire = info()?.expire ?? 0;
+
+        return expire > 0 ? Math.ceil((expire * 1000 - Date.now()) / 86_400_000) : null;
+    };
+
+    const expiryText = (): string =>
+    {
+        const days = daysLeft();
+
+        if (days === null)
+        {
+            return '';
+        }
+
+        return days <= 0 ? t().subscriptions.expired : t().subscriptions.daysLeft(days);
+    };
+
+    // Only worth a row when the provider actually reported a quota or an expiry.
+    const hasUsage = (): boolean => info() !== undefined && (totalBytes() > 0 || daysLeft() !== null);
+
     <div class="glass flex flex-col gap-3 rounded-2xl p-4">
         <div class="flex items-start justify-between gap-3">
             <div class="flex min-w-0 flex-col gap-0.5">
@@ -99,5 +134,23 @@ export default component SubscriptionCard(props: SubscriptionCardProps)
                 </button>
             </div>
         </div>
+
+        <Show when={ hasUsage() }>
+            <div class="flex items-center justify-between gap-2 border-t border-border/60 pt-2 text-[11px]">
+                <Show when={ totalBytes() > 0 } fallback={ () => document.createElement('span') }>
+                    <span class="text-muted">
+                        { t().subscriptions.remaining }
+                        <span class="readout text-text" dir="ltr"> { formatBytes(remainingBytes()) } </span>
+                        <span class="text-faint">/ { formatBytes(totalBytes()) }</span>
+                    </span>
+                </Show>
+
+                <Show when={ daysLeft() !== null }>
+                    <span class={ `readout font-medium ${ (daysLeft() ?? 0) <= 3 ? 'text-poor' : 'text-muted' }` }>
+                        { expiryText() }
+                    </span>
+                </Show>
+            </div>
+        </Show>
     </div>
 }

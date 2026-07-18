@@ -5,8 +5,13 @@ import { getConfig, getConfigsByIds } from '../lib/db/repo';
 import type { ProxyConfig } from '../lib/proxy/types';
 import { canConnect } from '../lib/xray/config';
 import { service } from '../features/connection/engine/service';
-import type { ConnectionPhase } from '../features/connection/engine/port';
+import type { ConnectionPhase, TrafficSample } from '../features/connection/engine/port';
 import { useHealth } from './health';
+
+/** How often the live traffic counters are polled from the core while connected. */
+const TRAFFIC_POLL_MS = 2000;
+
+const NO_TRAFFIC: TrafficSample = { uplink: 0, downlink: 0 };
 
 /**
  * The connection state machine and the active-server truth.
@@ -40,6 +45,29 @@ export const useConnection = createStore(() =>
 
         onCleanup(() => window.clearInterval(timer));
     }, { name: 'connection-clock' });
+
+    // Live traffic counters, polled from the core's stats API while connected. Reset
+    // to zero the moment the connection ends, so a stale figure never lingers, and
+    // seeded with an immediate read so the readout is not blank for the first tick.
+    const [traffic, setTraffic] = createSignal<TrafficSample>(NO_TRAFFIC);
+
+    createEffect(() =>
+    {
+        if (status().phase !== 'connected')
+        {
+            setTraffic(NO_TRAFFIC);
+
+            return;
+        }
+
+        const poll = (): void => void service.traffic().then(setTraffic);
+
+        poll();
+
+        const timer = window.setInterval(poll, TRAFFIC_POLL_MS);
+
+        onCleanup(() => window.clearInterval(timer));
+    }, { name: 'connection-traffic' });
 
     const phase = (): ConnectionPhase => status().phase;
     const activeConfig = (): ProxyConfig | null => status().config;
@@ -138,6 +166,7 @@ export const useConnection = createStore(() =>
         error,
         isActive,
         duration,
+        traffic,
         connect,
         connectById,
         disconnect,

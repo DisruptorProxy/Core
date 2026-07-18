@@ -3,9 +3,10 @@ import type { Getter } from 'azerothjs';
 import { invoke } from '@tauri-apps/api/core';
 
 import { buildConnectConfig, buildPingConfig, canConnect } from '../../../lib/xray/config';
+import type { GeoAssets } from '../../../lib/xray/config';
 import type { ProxyConfig } from '../../../lib/proxy/types';
 import { useRouting } from '../../../stores/routing';
-import type { ConnectionService, ConnectionStatus, PingResult } from './port';
+import type { ConnectionService, ConnectionStatus, PingResult, TrafficSample } from './port';
 
 /** True inside the Tauri desktop webview; false in a plain browser. */
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -14,7 +15,7 @@ const NOT_DESKTOP = 'Connecting is only available in the Guardian desktop app.';
 
 /**
  * The real engine. Generates an Xray config from the server + active routing
- * profile, then drives the bundled xray.exe through the Rust commands
+ * profile, then drives the bundled app-xray.exe through the Rust commands
  * (create_xray_config / run_xray_windows / end_xray_windows / ping_xray_windows).
  *
  * The status is a local signal this service owns - Rust pushes nothing, so connect
@@ -60,7 +61,8 @@ export class TauriConnectionService implements ConnectionService
 
         try
         {
-            const xrayConfig = buildConnectConfig(config, useRouting().rules());
+            const geo = await readGeoStatus();
+            const xrayConfig = buildConnectConfig(config, useRouting().rules(), geo);
             const configPath = await invoke<string>('create_xray_config', { config: xrayConfig });
 
             await invoke<string>('run_xray_windows', { configPath });
@@ -116,7 +118,43 @@ export class TauriConnectionService implements ConnectionService
             return { ok: false, error: messageOf(error) };
         }
     }
+
+    public async traffic(): Promise<TrafficSample>
+    {
+        if (!isTauri())
+        {
+            return { uplink: 0, downlink: 0 };
+        }
+
+        try
+        {
+            return await invoke<TrafficSample>('xray_traffic');
+        }
+        catch
+        {
+            // xray not running or the stats API is unreachable - nothing has moved.
+            return { uplink: 0, downlink: 0 };
+        }
+    }
 }
+
+/**
+ * Which geo databases xray can actually load right now. A `geosite:`/`geoip:` rule
+ * pointing at a missing `.dat` makes the core reject the whole config, so the
+ * builder drops those rules. If the probe itself fails, assume neither is present -
+ * skipping a geo rule only loses that rule, whereas keeping it kills the connection.
+ */
+const readGeoStatus = async (): Promise<GeoAssets> =>
+{
+    try
+    {
+        return await invoke<GeoAssets>('geo_files_status');
+    }
+    catch
+    {
+        return { geoip: false, geosite: false };
+    }
+};
 
 /** Tauri rejects invoke with a string or an Error; normalise to a string for the humanizer. */
 const messageOf = (error: unknown): string =>

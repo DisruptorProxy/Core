@@ -1,6 +1,7 @@
 import { Match, Show, Switch } from 'azerothjs';
 import { Power, Zap } from 'lucide';
 
+import { formatBytes } from '../lib/format/bytes';
 import { humanizeError } from '../lib/health/humanize-error';
 import Button from '../components/button.component.azeroth';
 import Screen from '../components/screen.component.azeroth';
@@ -84,6 +85,12 @@ export default component HomePage()
                         </p>
                         <p class="readout mt-1 text-sm text-muted">
                             { t().home.duration(formatDuration(connection.duration())) }
+                        </p>
+                        <p class="readout text-sm font-medium text-text" dir="ltr">
+                            ↑ { formatBytes(connection.traffic().uplink) }   ↓ { formatBytes(connection.traffic().downlink) }
+                        </p>
+                        <p class="readout text-xs text-faint">
+                            { t().home.transferred } <span dir="ltr">{ formatBytes(connection.traffic().uplink + connection.traffic().downlink) }</span>
                         </p>
                     </Match>
                     <Match when={ connection.phase() === 'error' }>

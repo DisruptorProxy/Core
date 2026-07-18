@@ -2,7 +2,7 @@
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
   <!-- Guardian itself runs as a normal user. Creating the WinTUN adapter and
        changing the system route table both require administrator rights, but only
-       xray.exe needs them - it is launched with its own "runas" elevation
+       app-xray.exe needs them - it is launched with its own "runas" elevation
        (ShellExecuteExW) on demand instead of elevating the whole app. -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>

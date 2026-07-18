@@ -16,20 +16,29 @@ export class FetchFailure extends Error
     }
 }
 
+export interface SubscriptionFetch
+{
+    /** The raw subscription body (base64 list or config links). */
+    body: string;
+    /** The `Subscription-Userinfo` header verbatim, or null when the provider omits it. */
+    userinfo: string | null;
+}
+
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-export const fetchSubscription = async (url: string, signal?: AbortSignal): Promise<string> =>
+export const fetchSubscription = async (url: string, signal?: AbortSignal): Promise<SubscriptionFetch> =>
 {
     // In the desktop app, fetch through Rust (reqwest): it is not bound by the
-    // webview's CORS, so real provider URLs that work in v2rayN work here too. The
-    // browser fetch below only reaches same-origin URLs and is the dev fallback.
+    // webview's CORS, so real provider URLs that work in v2rayN work here too. It
+    // also returns the `Subscription-Userinfo` header, which a CORS'd browser fetch
+    // cannot read. The browser path below is the same-origin dev fallback.
     if (isTauri())
     {
         try
         {
             const { invoke } = await import('@tauri-apps/api/core');
 
-            return await invoke<string>('fetch_subscription', { url });
+            return await invoke<SubscriptionFetch>('fetch_subscription', { url });
         }
         catch (error)
         {
@@ -55,5 +64,5 @@ export const fetchSubscription = async (url: string, signal?: AbortSignal): Prom
         throw new FetchFailure(`The server returned ${ response.status } ${ response.statusText }`.trim());
     }
 
-    return response.text();
+    return { body: await response.text(), userinfo: response.headers.get('subscription-userinfo') };
 };

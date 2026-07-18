@@ -38,6 +38,7 @@ export const fa: Strings =
         disconnect: 'قطع اتصال',
         connectFastest: 'اتصال به سریع‌ترین',
         duration: (text: string) => `متصل به مدت ${ text }`,
+        transferred: 'داده منتقل‌شده',
         protocolLabel: 'پروتکل',
         noneTested: 'سرورها را تست کنید تا سریع‌ترین پیدا شود.'
     },
@@ -137,7 +138,10 @@ export const fa: Strings =
         added: 'افزوده',
         removed: 'حذف‌شده',
         unchanged: 'بدون‌تغییر',
-        keptFavorites: 'برگزیده‌های نگه‌داشته'
+        keptFavorites: 'برگزیده‌های نگه‌داشته',
+        remaining: 'باقی‌مانده',
+        daysLeft: (n: number) => `${ n.toLocaleString('fa-IR') } روز مانده`,
+        expired: 'منقضی‌شده'
     },
 
     routing:
@@ -211,7 +215,14 @@ export const fa: Strings =
         checking: 'در حال بررسی…',
         upToDate: 'شما آخرین نسخه را دارید.',
         updateAvailable: (version: string) => `نسخه ${ version } در دسترس است.`,
-        download: 'دریافت'
+        download: 'دریافت',
+        geoFiles: 'فایل‌های جغرافیایی',
+        geoFilesDesc: 'پایگاه‌داده‌های قوانین مسیریابی بر پایه کشور و دسته سایت. برای دقیق‌ماندن قوانین دور زدن و مسدودسازی، آن‌ها را به‌روز کنید.',
+        geoInstalled: 'نصب‌شده',
+        geoMissing: 'نصب‌نشده',
+        updateGeoFiles: 'به‌روزرسانی فایل‌های جغرافیایی',
+        updatingGeoFiles: 'در حال دریافت…',
+        geoFilesUpdated: 'فایل‌های جغرافیایی به‌روز هستند.'
     },
 
     detail:

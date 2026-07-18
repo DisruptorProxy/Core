@@ -6,18 +6,31 @@ import type { Rule, RuleAction } from '../routing/types';
  *
  * This is the bridge between Guardian's model and the actual proxy core: every
  * field the parsers recovered (REALITY keys, vless flow, ws path, ss cipher) has
- * to land in the exact place xray.exe expects, or the connection silently fails.
+ * to land in the exact place app-xray.exe expects, or the connection silently fails.
  * The functions here are pure and JSON-only, so they can be unit-tested against
  * known-good output with no network and no Tauri.
  *
- * The bundled xray.exe is a TUN-capable fork; it supports vmess/vless/trojan/
+ * The bundled app-xray.exe is a TUN-capable fork; it supports vmess/vless/trojan/
  * shadowsocks outbounds (and hysteria/wireguard, not wired here). tuic is absent.
  */
 
-/** Local SOCKS inbound port for a live connection. */
+/**
+ * Local SOCKS inbound port for a live connection. Deliberately NOT 1080: that port
+ * is the near-universal default for other proxy clients (v2rayN, Clash, a user's
+ * own xray), and if one already holds it the core cannot bind and the connection
+ * dies at startup with "Only one usage of each socket address". This uncommon port
+ * keeps Guardian out of their way. Guardian routes the whole device via TUN anyway;
+ * this inbound is only for apps that opt into the SOCKS proxy directly.
+ */
 const CONNECT_SOCKS_PORT = 1080;
 /** Distinct port for the throwaway ping xray, so it never clashes with a live one. */
-export const PING_PORT = 10809;
+export const PING_PORT = 1081;
+/**
+ * Loopback gRPC port Xray's StatsService listens on during a live connection, so the
+ * app can poll cumulative uplink/downlink counters. Must match the port the Rust
+ * `xray_traffic` command queries.
+ */
+export const API_PORT = 10085;
 
 /** Protocols the config builder can produce an outbound for today. */
 const SUPPORTED_PROTOCOLS: ReadonlySet<Protocol> = new Set<Protocol>(['vmess', 'vless', 'trojan', 'shadowsocks']);
@@ -66,12 +79,20 @@ interface XrayRoutingRule
     domain?: string[];
     ip?: string[];
     network?: string;
+    /** Destination port(s): a number, or an Xray range string like `"1000-2000"`. */
+    port?: number | string;
+    /** Match by originating inbound tag - used to route the API inbound to the `api` handler. */
+    inboundTag?: string[];
 }
 
 export interface XrayConfig
 {
     log: Record<string, unknown>;
     dns?: Record<string, unknown>;
+    /** Enables the internal traffic counters; `api`/`policy` expose and populate them. */
+    stats?: Record<string, unknown>;
+    api?: Record<string, unknown>;
+    policy?: Record<string, unknown>;
     inbounds: XrayInbound[];
     outbounds: XrayOutbound[];
     routing: { domainStrategy: string; rules: XrayRoutingRule[] };
@@ -231,12 +252,32 @@ const RULE_TAG: Record<RuleAction, string> =
 };
 
 /**
+ * Which geo databases are present next to xray.exe. A `geosite:`/`geoip:` rule
+ * whose `.dat` is missing makes the core reject the entire config on startup, so
+ * such rules are dropped rather than emitted. Defaults to present so the pure
+ * builder and its tests stay geo-agnostic; the connect path passes real status.
+ */
+export interface GeoAssets
+{
+    geoip: boolean;
+    geosite: boolean;
+}
+
+const GEO_PRESENT: GeoAssets = { geoip: true, geosite: true };
+
+/** A geo rule whose backing `.dat` is absent - dropping it keeps the config loadable. */
+const isUnresolvableGeoRule = (rule: Rule, geo: GeoAssets): boolean =>
+    (rule.type === 'geosite' && !geo.geosite) || (rule.type === 'geoip' && !geo.geoip);
+
+/**
  * Translates Guardian's plain-language routing rules into Xray routing rules,
  * preserving order (first match wins in both models). The `final` rule becomes a
- * catch-all that matches all TCP+UDP, so nothing is ever left unrouted.
+ * catch-all that matches all TCP+UDP, so nothing is ever left unrouted. Geo rules
+ * are skipped when their database is missing, so a config never references a
+ * `.dat` the core cannot load.
  */
-export const routingRulesFrom = (rules: Rule[]): XrayRoutingRule[] =>
-    rules.map((rule): XrayRoutingRule =>
+export const routingRulesFrom = (rules: Rule[], geo: GeoAssets = GEO_PRESENT): XrayRoutingRule[] =>
+    rules.filter((rule) => !isUnresolvableGeoRule(rule, geo)).map((rule): XrayRoutingRule =>
     {
         const outboundTag = RULE_TAG[rule.action];
 
@@ -268,24 +309,96 @@ const normalizeSuffix = (value: string): string => `domain:${ value.replace(/^\.
 
 const DIRECT: XrayOutbound = { tag: 'direct', protocol: 'freedom', settings: {} };
 const BLOCK: XrayOutbound = { tag: 'block', protocol: 'blackhole', settings: {} };
+/**
+ * Answers hijacked DNS in-core. Per Xray's `dns` outbound schema
+ * (xtls.github.io/config/outbounds/dns.html), `rewriteAddress`/`rewritePort`/
+ * `rewriteNetwork` force every captured query - even ones the OS aimed at the LAN
+ * router - onto a real resolver over UDP; the rewritten query still travels the
+ * tunnel (routing dispatches it to `proxy`), so it is never exposed on the physical
+ * NIC.
+ */
+const DNS_OUT: XrayOutbound =
+{
+    tag: 'dns-out',
+    protocol: 'dns',
+    settings: { rewriteNetwork: 'udp', rewriteAddress: '1.1.1.1', rewritePort: 53 }
+};
+
+/**
+ * Hijacks every DNS query - including ones the OS aims at the LAN router - into the
+ * `dns-out` outbound, so no lookup escapes the tunnel in plaintext. It must sit
+ * first in the routing table, ahead of the `direct` rules that would otherwise send
+ * a query to a private resolver straight out the physical NIC.
+ */
+const DNS_RULE: XrayRoutingRule = { type: 'field', outboundTag: 'dns-out', port: 53 };
+
+/**
+ * Live-traffic telemetry. `STATS` plus the `system` policy counters make Xray tally
+ * per-outbound uplink/downlink; `API` + `API_INBOUND` + `API_RULE` expose those
+ * counters over a loopback gRPC port the app polls with `xray api statsquery`. The
+ * app reads `outbound>>>proxy>>>traffic>>>{uplink,downlink}`.
+ */
+const STATS: Record<string, unknown> = {};
+const API: Record<string, unknown> = { tag: 'api', services: ['StatsService'] };
+const POLICY: Record<string, unknown> =
+{
+    system:
+    {
+        statsInboundUplink: true,
+        statsInboundDownlink: true,
+        statsOutboundUplink: true,
+        statsOutboundDownlink: true
+    }
+};
+const API_INBOUND: XrayInbound =
+    { tag: 'api-in', protocol: 'dokodemo-door', listen: '127.0.0.1', port: API_PORT, settings: { address: '127.0.0.1' } };
+const API_RULE: XrayRoutingRule = { type: 'field', inboundTag: ['api-in'], outboundTag: 'api' };
 
 /**
  * The full connect config: a SOCKS inbound (for apps that honour it) plus the TUN
- * inbound that routes the whole device, the proxy/direct/block outbounds, and the
- * routing table. The TUN inbound schema matches the fork's `proxy/tun` config
- * (`name`/`mtu`/`address`); confirm against a known-good config from the fork.
+ * inbound that routes the whole device, the proxy/direct/block/dns outbounds, and
+ * the routing table.
+ *
+ * The TUN inbound follows Xray's native `tun` schema (xtls.github.io/config/
+ * inbounds/tun.html): `gateway` is the interface's own address, `dns` is what the
+ * adapter advertises to the OS. `autoSystemRoutingTable: ['0.0.0.0/0']` writes a
+ * default route into the Windows routing table so every IPv4 packet is pulled into
+ * the tunnel (the tunnel is IPv4-only, so IPv6 is intentionally left unrouted), and
+ * `autoOutboundsInterface: 'auto'` binds Xray's own outbounds to the physical NIC so
+ * the proxy connection to the server is not caught by that route and looped back.
+ *
+ * DNS is forced through Xray to stop leaks: `DNS_RULE` hijacks all port-53 traffic
+ * into `DNS_OUT`, which resolves via the `dns` servers (DoH first, IPv4-only), and
+ * `domainStrategy: 'IPIfNonMatch'` resolves in-core rather than via the OS resolver.
  */
-export const buildConnectConfig = (config: ProxyConfig, rules: Rule[]): XrayConfig =>
+export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], geo: GeoAssets = GEO_PRESENT): XrayConfig =>
     ({
         log: { loglevel: 'debug' },
-        dns: { servers: ['1.1.1.1', 'https://1.1.1.1/dns-query'] },
+        dns: { servers: ['1.1.1.1', '8.8.8.8'], queryStrategy: 'UseIPv4' },
+        stats: STATS,
+        api: API,
+        policy: POLICY,
         inbounds:
     [
         { tag: 'socks-in', protocol: 'socks', listen: '127.0.0.1', port: CONNECT_SOCKS_PORT, settings: { udp: true }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } },
-        { tag: 'tun-in', protocol: 'tun', settings: { name: 'guardian-tun', mtu: 1500, address: ['172.19.0.1/30'] }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } }
+        {
+            tag: 'tun-in',
+            protocol: 'tun',
+            settings:
+            {
+                name: 'guardian-tun',
+                mtu: 1500,
+                gateway: ['172.19.19.1/30'],
+                dns: ['1.1.1.1'],
+                autoSystemRoutingTable: ['0.0.0.0/0'],
+                autoOutboundsInterface: 'auto'
+            },
+            sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] }
+        },
+        API_INBOUND
     ],
-        outbounds: [proxyOutbound(config), DIRECT, BLOCK],
-        routing: { domainStrategy: 'AsIs', rules: routingRulesFrom(rules) }
+        outbounds: [proxyOutbound(config), DIRECT, BLOCK, DNS_OUT],
+        routing: { domainStrategy: 'IPIfNonMatch', rules: [API_RULE, DNS_RULE, ...routingRulesFrom(rules, geo)] }
     });
 
 /**

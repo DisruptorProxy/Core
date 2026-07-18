@@ -31,6 +31,19 @@ export interface HealthRecord
 
 export type SubscriptionStatus = 'ok' | 'stale' | 'failed' | 'never';
 
+/**
+ * Quota + expiry a provider reports in the `Subscription-Userinfo` response header.
+ * `upload`/`download`/`total` are bytes; `expire` is a unix timestamp in seconds
+ * (0 when the provider omits it). The de-facto standard every proxy client reads.
+ */
+export interface SubscriptionUserinfo
+{
+    upload: number;
+    download: number;
+    total: number;
+    expire: number;
+}
+
 export interface SubscriptionRecord
 {
     id: string;
@@ -42,6 +55,8 @@ export interface SubscriptionRecord
     intervalMin: number;
     configCount: number;
     lastError?: string;
+    /** Quota + expiry from the last fetch's `Subscription-Userinfo` header, if any. */
+    userinfo?: SubscriptionUserinfo;
 }
 
 /**

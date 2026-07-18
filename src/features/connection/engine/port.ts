@@ -25,6 +25,14 @@ export interface PingResult
     error?: string;
 }
 
+export interface TrafficSample
+{
+    /** Cumulative bytes sent through the proxy since the connection started. */
+    uplink: number;
+    /** Cumulative bytes received through the proxy since the connection started. */
+    downlink: number;
+}
+
 /**
  * The one seam between the UI and a real proxy core.
  *
@@ -41,4 +49,6 @@ export interface ConnectionService
     status(): Getter<ConnectionStatus>;
     /** Probes one server. `signal` aborts an in-flight probe when a test is cancelled. */
     ping(config: ProxyConfig, signal: AbortSignal): Promise<PingResult>;
+    /** Live cumulative traffic of the active connection; zeros when nothing is running. */
+    traffic(): Promise<TrafficSample>;
 }

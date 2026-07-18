@@ -33,7 +33,7 @@ export const PRESET_RULES: Record<Exclude<ProfileId, 'custom'>, Rule[]> =
     [
         rule('r-ads', 'geosite', 'category-ads-all', 'block'),
         ...privateDirect(),
-        rule('r-geosite-ir', 'geosite', 'ir', 'direct'),
+        rule('r-geosite-ir', 'geosite', 'category-ir', 'direct'),
         rule('r-geoip-ir', 'geoip', 'ir', 'direct'),
         rule('r-suffix-ir', 'domain-suffix', '.ir', 'direct'),
         rule('r-final', 'final', '', 'proxy')
@@ -43,7 +43,7 @@ export const PRESET_RULES: Record<Exclude<ProfileId, 'custom'>, Rule[]> =
     // setup - do not tunnel domestic traffic that already works.
     'bypass-iran':
     [
-        rule('bi-geosite-ir', 'geosite', 'ir', 'direct'),
+        rule('bi-geosite-ir', 'geosite', 'category-ir', 'direct'),
         rule('bi-geoip-ir', 'geoip', 'ir', 'direct'),
         rule('bi-suffix-ir', 'domain-suffix', '.ir', 'direct'),
         rule('bi-final', 'final', '', 'proxy')

@@ -5,6 +5,7 @@ import Card from '../components/card.component.azeroth';
 import Screen from '../components/screen.component.azeroth';
 import Segmented from '../components/segmented.component.azeroth';
 import type { SegmentedOption } from '../components/segmented.component.azeroth';
+import { useGeo } from '../stores/geo';
 import { useLocale } from '../stores/locale';
 import type { Locale } from '../stores/locale';
 import { useTheme } from '../stores/theme';
@@ -23,6 +24,11 @@ export default component SettingsPage()
     const { t, locale, setLocale } = useLocale();
     const { preference, setPreference } = useTheme();
     const version = useVersion();
+    const geo = useGeo();
+
+    const geoStatusLabel = (present: boolean): string => (present ? t().settings.geoInstalled : t().settings.geoMissing);
+    const geoStatusClass = (present: boolean): string =>
+        `readout text-sm font-medium ${ present ? 'text-good' : 'text-faint' }`;
 
     const themeOptions: SegmentedOption[] =
     [
@@ -61,6 +67,40 @@ export default component SettingsPage()
                         onSelect={ (value) => setLocale(value as Locale) }
                     />
                 </div>
+            </section>
+
+            <section class="flex flex-col gap-4">
+                <h2 class={ HEADING }>{ t().settings.geoFiles }</h2>
+
+                <Card class="flex flex-col gap-3 p-4">
+                    <p class="text-sm text-muted">{ t().settings.geoFilesDesc }</p>
+
+                    <div class="flex items-center justify-between">
+                        <span class="readout text-sm text-muted">geoip.dat</span>
+                        <span class={ geoStatusClass(geo.geoip()) }>{ geoStatusLabel(geo.geoip()) }</span>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="readout text-sm text-muted">geosite.dat</span>
+                        <span class={ geoStatusClass(geo.geosite()) }>{ geoStatusLabel(geo.geosite()) }</span>
+                    </div>
+
+                    <Show when={ geo.state() === 'ready' }>
+                        <p class="text-xs text-good">{ t().settings.geoFilesUpdated }</p>
+                    </Show>
+
+                    <Show when={ geo.state() === 'error' }>
+                        <p class="text-xs text-poor">{ geo.error() }</p>
+                    </Show>
+
+                    <Button
+                        label={ geo.state() === 'updating' ? t().settings.updatingGeoFiles : t().settings.updateGeoFiles }
+                        variant="ghost"
+                        block={ true }
+                        disabled={ geo.state() === 'updating' }
+                        onPress={ () => void geo.update() }
+                    />
+                </Card>
             </section>
 
             <section class="flex flex-col gap-4">

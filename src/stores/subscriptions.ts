@@ -10,9 +10,10 @@ import {
     loadSubscriptions,
     putSubscription
 } from '../lib/db/repo';
-import type { SubscriptionRecord } from '../lib/db/schema';
+import type { SubscriptionRecord, SubscriptionUserinfo } from '../lib/db/schema';
 import type { UpdateDiff } from '../lib/subs/diff';
 import { fetchSubscription } from '../lib/subs/fetch';
+import { parseSubscriptionUserinfo } from '../lib/subs/userinfo';
 import { dueForUpdate } from '../components/relative-time';
 import type { UpdateRequest, WorkerResponse } from '../workers/parse-worker';
 import { useConfigs } from './configs';
@@ -105,7 +106,7 @@ export const useSubscriptions = createStore(() =>
             setError(null);
             markUpdating(id, true);
 
-            const runWorker = (text: string): void =>
+            const runWorker = (text: string, userinfo?: SubscriptionUserinfo): void =>
             {
                 const worker = new Worker(new URL('../workers/parse-worker.ts', import.meta.url), { type: 'module' });
 
@@ -138,7 +139,10 @@ export const useSubscriptions = createStore(() =>
                         status: 'ok',
                         lastUpdatedAt: Date.now(),
                         configCount: count,
-                        lastError: undefined
+                        lastError: undefined,
+                        // Keep the previous usage when this fetch carried no header,
+                        // so a provider that reports it only sometimes never blanks out.
+                        userinfo: userinfo ?? record.userinfo
                     });
 
                     await refresh();
@@ -166,7 +170,7 @@ export const useSubscriptions = createStore(() =>
             // Fetch on the main thread - native and CORS-free in the desktop app; a
             // worker cannot reach Tauri's invoke, so it only parses what it is handed.
             void fetchSubscription(record.url)
-                .then((text) => runWorker(text))
+                .then((result) => runWorker(result.body, parseSubscriptionUserinfo(result.userinfo)))
                 .catch(async (fetchError: unknown) =>
                 {
                     const reason = fetchError instanceof Error ? fetchError.message : 'Could not reach the subscription URL';

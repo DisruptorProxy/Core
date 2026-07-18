@@ -14,9 +14,15 @@ use windows::Win32::UI::Shell::{SEE_MASK_FLAG_NO_UI, SEE_MASK_NOCLOSEPROCESS, SE
 use windows::Win32::UI::WindowsAndMessaging::SW_HIDE;
 use windows::core::PCWSTR;
 
-/// Runs a child without flashing a console window - xray.exe is a console app, and
+/// Runs a child without flashing a console window - app-xray.exe is a console app, and
 /// the UI should not blink a black window on every connect, ping, or test.
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+/// Geo database sources. Xray resolves `geoip:`/`geosite:` routing rules against
+/// these `.dat` files; they ship out-of-band (too large and too fast-moving to
+/// bundle) and are downloaded next to app-xray.exe on demand.
+const GEOIP_URL: &str = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat";
+const GEOSITE_URL: &str = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat";
 
 /// GetExitCodeProcess's value for "this process has not exited yet".
 const STILL_ACTIVE: u32 = 259;
@@ -183,19 +189,19 @@ struct RunningXray {
 
 struct XrayProcess(Mutex<Option<RunningXray>>);
 
-/// Whether an xray.exe process is currently running, checked without needing
+/// Whether an app-xray.exe process is currently running, checked without needing
 /// elevation - enumerating processes by name doesn't require admin rights, only
 /// touching one that belongs to another user/elevation level does.
 fn is_xray_running() -> bool {
     Command::new("tasklist")
-        .args(["/FI", "IMAGENAME eq xray.exe", "/NH"])
+        .args(["/FI", "IMAGENAME eq app-xray.exe", "/NH"])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map(|out| String::from_utf8_lossy(&out.stdout).to_lowercase().contains("xray.exe"))
+        .map(|out| String::from_utf8_lossy(&out.stdout).to_lowercase().contains("app-xray.exe"))
         .unwrap_or(false)
 }
 
-/// Kills any xray.exe left over from a previous session that crashed before
+/// Kills any app-xray.exe left over from a previous session that crashed before
 /// `end_xray_windows` ran. Best-effort: the app owns the only xray it should ever
 /// spawn, so a lingering one is always an orphan. The app itself no longer runs
 /// elevated, so a stray elevated (TUN) instance needs its own "runas" elevation to
@@ -205,7 +211,7 @@ fn kill_stray_xray() {
         return;
     }
 
-    if let Ok(taskkill) = spawn_elevated(Path::new("taskkill.exe"), &["/F", "/IM", "xray.exe"], Path::new("."))
+    if let Ok(taskkill) = spawn_elevated(Path::new("taskkill.exe"), &["/F", "/IM", "app-xray.exe"], Path::new("."))
     {
         taskkill.wait();
     }
@@ -216,6 +222,24 @@ fn reap_if_exited(process: &mut Option<RunningXray>) {
         if running.runner.try_wait().is_some() {
             *process = None;
         }
+    }
+}
+
+/// Stops the running xray without a fresh UAC prompt by signalling its already
+/// elevated wrapper to kill its child (the same stop-file path `end_xray_windows`
+/// uses), then waiting for the wrapper to exit. Best-effort and a no-op when
+/// nothing is running - called on app shutdown so app-xray.exe never outlives
+/// Guardian and leaves the TUN adapter and system routes in place.
+fn stop_xray(state: &XrayProcess) {
+    let Ok(mut process) = state.0.lock() else {
+        return;
+    };
+
+    reap_if_exited(&mut process);
+
+    if let Some(running) = process.take() {
+        let _ = std::fs::write(&running.artifacts.stop_file, b"stop");
+        running.runner.wait();
     }
 }
 
@@ -251,7 +275,7 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
 
     std::fs::create_dir_all(&app_data_dir).map_err(|e| format!("Failed to create app data dir: {e}"))?;
 
-    let xray_path = resource_dir.join("xray.exe");
+    let xray_path = resource_dir.join("app-xray.exe");
 
     let mut process = state.0.lock().map_err(|e| format!("Failed to lock xray process state: {e}"))?;
 
@@ -373,7 +397,7 @@ async fn ping_xray_windows(app: tauri::AppHandle, config_path: String) -> Result
         .resolve("assets", BaseDirectory::Resource)
         .map_err(|e| format!("Failed to resolve resource dir: {e}"))?;
 
-    let xray_path = resource_dir.join("xray.exe");
+    let xray_path = resource_dir.join("app-xray.exe");
 
     let config_contents =
         std::fs::read_to_string(&config_path).map_err(|e| format!("Failed to read config at {config_path}: {e}"))?;
@@ -401,7 +425,7 @@ async fn ping_xray_windows(app: tauri::AppHandle, config_path: String) -> Result
         .current_dir(&resource_dir)
         .creation_flags(CREATE_NO_WINDOW)
         .spawn()
-        .map_err(|e| format!("Failed to start xray.exe at {xray_path:?}: {e}"))?;
+        .map_err(|e| format!("Failed to start app-xray.exe at {xray_path:?}: {e}"))?;
 
     let addr = format!("127.0.0.1:{port}");
 
@@ -450,11 +474,20 @@ async fn tcp_ping(host: String, port: u16) -> Result<u64, String> {
     }
 }
 
-/// Fetches a subscription body natively (reqwest), bypassing the webview's CORS.
-/// This is why a provider URL that works in v2rayN works here: the browser fetch
-/// the frontend would otherwise use cannot reach cross-origin subscription servers.
+/// A subscription fetch: the body plus the provider's `Subscription-Userinfo`
+/// header (upload/download/total/expire), when present. The header rides on the same
+/// response, so it is captured here rather than costing a second request.
+#[derive(serde::Serialize)]
+struct SubscriptionResponse {
+    body: String,
+    userinfo: Option<String>,
+}
+
+/// Fetches a subscription natively (reqwest), bypassing the webview's CORS. This is
+/// why a provider URL that works in v2rayN works here: the browser fetch the
+/// frontend would otherwise use cannot reach cross-origin subscription servers.
 #[tauri::command]
-async fn fetch_subscription(url: String) -> Result<String, String> {
+async fn fetch_subscription(url: String) -> Result<SubscriptionResponse, String> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(20))
         .build()
@@ -471,10 +504,154 @@ async fn fetch_subscription(url: String) -> Result<String, String> {
         return Err(format!("The server returned {}", response.status()));
     }
 
-    response
+    // Read the usage header before consuming the body: providers report quota and
+    // expiry in `Subscription-Userinfo`, the de-facto standard every client honours.
+    let userinfo = response
+        .headers()
+        .get("subscription-userinfo")
+        .and_then(|value| value.to_str().ok())
+        .map(|value| value.to_string());
+
+    let body = response
         .text()
         .await
-        .map_err(|e| format!("Failed to read subscription body: {e}"))
+        .map_err(|e| format!("Failed to read subscription body: {e}"))?;
+
+    Ok(SubscriptionResponse { body, userinfo })
+}
+
+/// Bytes sent (uplink) and received (downlink) through the proxy since connect.
+#[derive(serde::Serialize)]
+struct Traffic {
+    uplink: u64,
+    downlink: u64,
+}
+
+/// Cumulative bytes the live connection has moved through the `proxy` outbound, read
+/// from Xray's StatsService over its loopback gRPC API. The counters start at zero
+/// each time xray launches, so this reads as "since connect". Fails when xray is not
+/// running (the API port is closed) - the caller treats that as "no connection".
+#[tauri::command]
+async fn xray_traffic(app: tauri::AppHandle) -> Result<Traffic, String> {
+    let xray_path = resource_assets_dir(&app)?.join("app-xray.exe");
+
+    let output = tokio::process::Command::new(&xray_path)
+        .args([
+            "api",
+            "statsquery",
+            "-s",
+            "127.0.0.1:10085",
+            "-t",
+            "2",
+            "-pattern",
+            "outbound>>>proxy>>>traffic",
+        ])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+        .await
+        .map_err(|e| format!("Failed to query xray stats: {e}"))?;
+
+    if !output.status.success() {
+        return Err("xray stats API is not reachable".to_string());
+    }
+
+    let parsed: serde_json::Value =
+        serde_json::from_slice(&output.stdout).map_err(|e| format!("Failed to parse stats: {e}"))?;
+
+    let mut traffic = Traffic { uplink: 0, downlink: 0 };
+
+    if let Some(stats) = parsed["stat"].as_array() {
+        for entry in stats {
+            // `value` is a JSON number, but older cores emit it as a string; accept both.
+            let value = entry["value"]
+                .as_u64()
+                .or_else(|| entry["value"].as_str().and_then(|s| s.parse().ok()))
+                .unwrap_or(0);
+
+            match entry["name"].as_str().unwrap_or("") {
+                name if name.ends_with("uplink") => traffic.uplink = value,
+                name if name.ends_with("downlink") => traffic.downlink = value,
+                _ => {}
+            }
+        }
+    }
+
+    Ok(traffic)
+}
+
+/// Presence of the geo databases xray needs for `geoip:`/`geosite:` routing rules.
+/// Serialized to the frontend so the config builder can skip rules whose `.dat` is
+/// missing (an unresolved geo rule makes xray reject the whole config on startup).
+#[derive(serde::Serialize)]
+struct GeoStatus {
+    geoip: bool,
+    geosite: bool,
+}
+
+/// The bundled-assets directory that sits next to app-xray.exe. The core's working
+/// directory is set here when it runs, so a `.dat` written here is exactly where
+/// xray looks for `geoip.dat`/`geosite.dat`.
+fn resource_assets_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .resolve("assets", BaseDirectory::Resource)
+        .map_err(|e| format!("Failed to resolve resource dir: {e}"))
+}
+
+fn geo_status_of(dir: &Path) -> GeoStatus {
+    GeoStatus {
+        geoip: dir.join("geoip.dat").is_file(),
+        geosite: dir.join("geosite.dat").is_file(),
+    }
+}
+
+/// Whether geoip.dat / geosite.dat are present next to app-xray.exe. Read at
+/// connect time so the config builder can drop geo rules the core could not resolve.
+#[tauri::command]
+fn geo_files_status(app: tauri::AppHandle) -> Result<GeoStatus, String> {
+    Ok(geo_status_of(&resource_assets_dir(&app)?))
+}
+
+/// Downloads a single file fully into memory, then writes it in one call. The geo
+/// `.dat` files are a couple of MB, so buffering is cheap and the on-disk file is
+/// only ever replaced by a complete download (a truncated write would make xray
+/// reject every geo rule).
+async fn download_file(client: &reqwest::Client, url: &str, dest: &Path) -> Result<(), String> {
+    let response = client
+        .get(url)
+        .header("User-Agent", "Guardian")
+        .send()
+        .await
+        .map_err(|_| format!("Could not reach {url}"))?;
+
+    if !response.status().is_success() {
+        return Err(format!("Download failed: the server returned {}", response.status()));
+    }
+
+    let bytes = response.bytes().await.map_err(|e| format!("Failed to read the download: {e}"))?;
+
+    std::fs::write(dest, &bytes).map_err(|e| format!("Failed to write {}: {e}", dest.display()))?;
+
+    Ok(())
+}
+
+/// Downloads the latest geoip.dat and geosite.dat and drops them next to
+/// app-xray.exe, so `geoip:`/`geosite:` routing rules resolve on the next connect.
+/// Returns the resulting presence of both files.
+#[tauri::command]
+async fn update_geo_files(app: tauri::AppHandle) -> Result<GeoStatus, String> {
+    let dir = resource_assets_dir(&app)?;
+
+    std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create assets dir: {e}"))?;
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(60))
+        .build()
+        .map_err(|e| format!("Failed to build http client: {e}"))?;
+
+    download_file(&client, GEOIP_URL, &dir.join("geoip.dat")).await?;
+    download_file(&client, GEOSITE_URL, &dir.join("geosite.dat")).await?;
+
+    Ok(geo_status_of(&dir))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -493,8 +670,20 @@ pub fn run() {
             end_xray_windows,
             ping_xray_windows,
             tcp_ping,
-            fetch_subscription
+            fetch_subscription,
+            xray_traffic,
+            geo_files_status,
+            update_geo_files
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app_handle, event| {
+            // When Guardian exits - the titlebar/tray both close the only window,
+            // which ends the app - tear down xray with it. Nothing else stops the
+            // elevated child on close, so without this a session left connected
+            // would leak an orphan app-xray.exe holding the TUN adapter and routes.
+            if let tauri::RunEvent::Exit = event {
+                stop_xray(&app_handle.state::<XrayProcess>());
+            }
+        });
 }

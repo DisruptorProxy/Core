@@ -18,6 +18,9 @@ const GEOSITE_NAMES: Record<string, (s: Strings) => string> =
 {
     'category-ads-all': (s) => s.routing.descAdsTrackers,
     'category-ads': (s) => s.routing.descAdsTrackers,
+    // `category-ir` is the Iran domain list in Loyalsoldier's geosite.dat; `ir` is
+    // kept for other data sources and older stored custom rules.
+    'category-ir': (s) => s.routing.descIranianSites,
     ir: (s) => s.routing.descIranianSites,
     cn: (s) => s.routing.descChineseSites
 };
