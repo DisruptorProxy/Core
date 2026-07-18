@@ -14,16 +14,6 @@ export interface Filters
     sort: SortKey;
 }
 
-export const EMPTY_FILTERS: Filters =
-{
-    query: '',
-    protocols: new Set(),
-    security: new Set(),
-    subId: null,
-    favoritesOnly: false,
-    sort: 'name'
-};
-
 /**
  * Latency lives in a separate store keyed by config id (a probe must not rewrite
  * a config row), so sorting by latency needs it passed in rather than read off the

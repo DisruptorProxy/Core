@@ -285,8 +285,6 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
         return Err("xray is already running".to_string());
     }
 
-    println!("config_path: {}", config_path);
-
     let artifacts = RunArtifacts::new(&app_data_dir);
     artifacts.reset();
 
@@ -657,7 +655,6 @@ async fn update_geo_files(app: tauri::AppHandle) -> Result<GeoStatus, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_store::Builder::new().build())
         .manage(XrayProcess(Mutex::new(None)))
         .setup(|_app| {
             // Reap any orphan xray from a previous crashed session before we start.

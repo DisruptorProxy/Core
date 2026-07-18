@@ -32,7 +32,6 @@ export interface Strings
         title: string;
         subtitle: string;
         disconnected: string;
-        connectAction: string;
         noServerSelected: string;
         connecting: string;
         connected: string;
@@ -43,8 +42,6 @@ export interface Strings
         duration: (text: string) => string;
         /** Label before the total bytes moved this session, e.g. "Transferred 12.4 MB". */
         transferred: string;
-        protocolLabel: string;
-        noneTested: string;
     };
 
     servers:
@@ -92,13 +89,10 @@ export interface Strings
         fromClipboard: string;
         fromFile: string;
         scanQr: string;
-        qrUnsupported: string;
         qrScanning: string;
         submit: string;
         invalidDetail: string;
         lineLabel: (line: number) => string;
-        clipboardEmpty: string;
-        clipboardDenied: string;
     };
 
     subscriptions:
@@ -262,7 +256,6 @@ export interface Strings
 
     common:
     {
-        comingSoon: string;
         close: string;
         dismiss: string;
     };

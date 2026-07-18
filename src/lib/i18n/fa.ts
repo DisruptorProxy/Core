@@ -29,7 +29,6 @@ export const fa: Strings =
         title: 'اتصال',
         subtitle: 'یک ضربه تا سریع‌ترین سرور سالم.',
         disconnected: 'متصل نیستید',
-        connectAction: 'اتصال',
         noServerSelected: 'برای شروع یک سرور انتخاب کنید.',
         connecting: 'در حال اتصال…',
         connected: 'متصل',
@@ -38,9 +37,7 @@ export const fa: Strings =
         disconnect: 'قطع اتصال',
         connectFastest: 'اتصال به سریع‌ترین',
         duration: (text: string) => `متصل به مدت ${ text }`,
-        transferred: 'داده منتقل‌شده',
-        protocolLabel: 'پروتکل',
-        noneTested: 'سرورها را تست کنید تا سریع‌ترین پیدا شود.'
+        transferred: 'داده منتقل‌شده'
     },
 
     servers:
@@ -90,13 +87,10 @@ export const fa: Strings =
         fromClipboard: 'از کلیپ‌بورد',
         fromFile: 'از فایل',
         scanQr: 'اسکن QR',
-        qrUnsupported: 'اسکن QR روی این دستگاه در دسترس نیست.',
         qrScanning: 'دوربین را روی کد QR بگیرید…',
         submit: 'دریافت',
         invalidDetail: 'خط‌های ناخوانا',
-        lineLabel: (line: number) => `خط ${ line.toLocaleString('fa-IR') }`,
-        clipboardEmpty: 'کلیپ‌بورد خالی است.',
-        clipboardDenied: 'دسترسی به کلیپ‌بورد رد شد.'
+        lineLabel: (line: number) => `خط ${ line.toLocaleString('fa-IR') }`
     },
 
     subscriptions:
@@ -253,7 +247,6 @@ export const fa: Strings =
 
     common:
     {
-        comingSoon: 'هنوز ساخته نشده.',
         close: 'تمام',
         dismiss: 'بستن'
     }

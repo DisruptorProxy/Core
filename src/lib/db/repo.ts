@@ -171,17 +171,6 @@ export const getConfigsByIds = async (ids: string[]): Promise<ProxyConfig[]> =>
     return configs.filter((config): config is ProxyConfig => config !== undefined);
 };
 
-export const countConfigs = async (): Promise<number> =>
-{
-    const db = await openDatabase();
-    const tx = db.transaction(STORE_CONFIGS, 'readonly');
-    const count = await done(tx.objectStore(STORE_CONFIGS).count());
-
-    db.close();
-
-    return count;
-};
-
 export const deleteConfigs = async (ids: string[]): Promise<void> =>
 {
     if (ids.length === 0)

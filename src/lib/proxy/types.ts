@@ -89,11 +89,3 @@ export interface ParseError
     /** A short, safe excerpt - never the whole URI, which carries credentials. */
     snippet: string;
 }
-
-export interface ParseOutcome
-{
-    configs: ProxyConfig[];
-    errors: ParseError[];
-    /** Configs dropped because an identical server was already present. */
-    duplicates: number;
-}

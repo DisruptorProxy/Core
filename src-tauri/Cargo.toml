@@ -13,8 +13,6 @@ tauri-build = { version = "2", features = [ ] }
 [dependencies]
 tauri = { version = "2", features = [ "tray-icon" ] }
 
-tauri-plugin-store = "2"
-
 serde_json = "1"
 serde = { version = "1", features = [ "derive" ] }
 
@@ -24,7 +22,6 @@ reqwest = { version = "0.12", default-features = false, features = [ "socks", "r
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.61", features = [
     "Win32_Foundation",
-    "Win32_System_Registry",
     "Win32_System_Threading",
     "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",

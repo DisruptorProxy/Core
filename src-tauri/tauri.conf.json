@@ -54,12 +54,7 @@
                         "core:window:allow-unminimize",
                         "core:window:allow-set-focus",
                         "core:tray:default",
-                        "core:menu:default",
-
-                        "store:allow-load",
-                        "store:allow-save",
-                        "store:allow-get",
-                        "store:allow-set"
+                        "core:menu:default"
                     ]
                 }
             ]

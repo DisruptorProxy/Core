@@ -29,7 +29,6 @@ export const en: Strings =
         title: 'Connect',
         subtitle: 'One tap to the fastest healthy server.',
         disconnected: 'Not connected',
-        connectAction: 'Connect',
         noServerSelected: 'Pick a server to get started.',
         connecting: 'Connecting…',
         connected: 'Connected',
@@ -38,9 +37,7 @@ export const en: Strings =
         disconnect: 'Disconnect',
         connectFastest: 'Connect fastest',
         duration: (text: string) => `Connected for ${ text }`,
-        transferred: 'Transferred',
-        protocolLabel: 'Protocol',
-        noneTested: 'Test your servers to find the fastest.'
+        transferred: 'Transferred'
     },
 
     servers:
@@ -88,13 +85,10 @@ export const en: Strings =
         fromClipboard: 'From clipboard',
         fromFile: 'From file',
         scanQr: 'Scan QR',
-        qrUnsupported: 'QR scanning is not available on this device.',
         qrScanning: 'Point the camera at a QR code…',
         submit: 'Import',
         invalidDetail: 'Unreadable lines',
-        lineLabel: (line: number) => `Line ${ line }`,
-        clipboardEmpty: 'The clipboard is empty.',
-        clipboardDenied: 'Clipboard access was denied.'
+        lineLabel: (line: number) => `Line ${ line }`
     },
 
     subscriptions:
@@ -251,7 +245,6 @@ export const en: Strings =
 
     common:
     {
-        comingSoon: 'Not built yet.',
         close: 'Done',
         dismiss: 'Dismiss'
     }
