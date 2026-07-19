@@ -1,6 +1,6 @@
 import { fingerprint } from './fingerprint';
 import { parseHysteria2 } from './hysteria';
-import { normalizeName } from './normalize-name';
+import { countryFromFlag, extractTagsFromName } from './normalize-name';
 import { parseShadowsocks } from './shadowsocks';
 import { parseTrojan } from './trojan';
 import { parseTuic } from './tuic';
@@ -41,14 +41,18 @@ export const parseUri = (uri: string, subId?: string): ProxyConfig | ParseFailur
     try
     {
         const draft = entry[1](line);
-        const { name, country, tags } = normalizeName(draft.rawName, `${ draft.host }:${ draft.port }`);
 
         return {
             ...draft,
             id: fingerprint(draft),
-            name,
-            country,
-            tags,
+            // Keep the original name exactly as provided — no emoji stripping,
+            // no keyword filtering, no tag removal. The raw provider label is
+            // the user's name for this server.
+            name: draft.rawName,
+            // Detect country from the first flag emoji in the original name.
+            country: countryFromFlag(draft.rawName),
+            // Tags (2.5x, IPv6, VIP, …) are still extracted for badge display.
+            tags: extractTagsFromName(draft.rawName),
             subId,
             favorite: false,
             addedAt: Date.now()

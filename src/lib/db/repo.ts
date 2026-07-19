@@ -26,9 +26,16 @@ export interface ConfigRow
 }
 
 const toRow = (config: ProxyConfig): ConfigRow =>
-    ({
+{
+    // Always prefer the raw original name: the parser preserves it exactly as
+    // the provider wrote it, including emoji. This also repairs existing configs
+    // that were parsed with the old normalizeName() which stripped emoji from
+    // `name` but kept the original in `rawName`.
+    const displayName = config.rawName || config.name;
+
+    return {
         id: config.id,
-        name: config.name,
+        name: displayName,
         protocol: config.protocol,
         host: config.host,
         port: config.port,
@@ -38,8 +45,9 @@ const toRow = (config: ProxyConfig): ConfigRow =>
         tags: config.tags,
         subId: config.subId,
         favorite: config.favorite,
-        haystack: `${ config.name } ${ config.host } ${ config.protocol } ${ config.security } ${ config.country ?? '' } ${ config.tags.join(' ') }`.toLowerCase()
-    });
+        haystack: `${ displayName } ${ config.host } ${ config.protocol } ${ config.security } ${ config.country ?? '' } ${ config.tags.join(' ') }`.toLowerCase()
+    };
+};
 
 const done = <T>(request: IDBRequest<T>): Promise<T> =>
     new Promise((resolve, reject) =>

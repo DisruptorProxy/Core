@@ -66,8 +66,8 @@
     --g-blur: 20px;
     --g-shadow: 0 1px 1px oklch(0.24 0.02 258 / 0.04), 0 12px 32px oklch(0.24 0.02 258 / 0.10);
 
-    --g-font-sans: 'IBM Plex Sans', 'Vazirmatn Variable', system-ui, sans-serif;
-    --g-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --g-font-sans: 'IBM Plex Sans', 'Vazirmatn Variable', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', system-ui, sans-serif;
+    --g-font-mono: 'IBM Plex Mono', ui-monospace, 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', monospace;
 
     /* -----------------------------------------------------------------------
        Motion. One vocabulary for the whole app, so timing reads as a system and
@@ -128,7 +128,7 @@
    one voice instead of switching mid-sentence. */
 [dir="rtl"]
 {
-    --g-font-sans: 'Vazirmatn Variable', 'IBM Plex Sans', system-ui, sans-serif;
+    --g-font-sans: 'Vazirmatn Variable', 'IBM Plex Sans', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', system-ui, sans-serif;
 }
 
 /* `inline` so utilities compile to var() references and a theme swap is a single
