@@ -248,6 +248,7 @@ export const fa: Strings =
     common:
     {
         close: 'تمام',
-        dismiss: 'بستن'
+        dismiss: 'بستن',
+        serverNotFound: 'سرور پیدا نشد. احتمالاً حذف شده.'
     }
 };

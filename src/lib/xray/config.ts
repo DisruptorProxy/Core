@@ -350,8 +350,7 @@ const POLICY: Record<string, unknown> =
         statsOutboundDownlink: true
     }
 };
-const API_INBOUND: XrayInbound =
-    { tag: 'api-in', protocol: 'dokodemo-door', listen: '127.0.0.1', port: API_PORT, settings: { address: '127.0.0.1' } };
+const API_INBOUND: XrayInbound = { tag: 'api-in', protocol: 'dokodemo-door', listen: '127.0.0.1', port: API_PORT, settings: { address: '127.0.0.1' } };
 const API_RULE: XrayRoutingRule = { type: 'field', inboundTag: ['api-in'], outboundTag: 'api' };
 
 /**
@@ -386,7 +385,7 @@ export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], geo: GeoA
             protocol: 'tun',
             settings:
             {
-                name: 'guardian-tun',
+                name: 'app-tun',
                 mtu: 1500,
                 gateway: ['172.19.19.1/30'],
                 dns: ['1.1.1.1'],

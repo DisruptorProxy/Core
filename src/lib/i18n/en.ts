@@ -246,6 +246,7 @@ export const en: Strings =
     common:
     {
         close: 'Done',
-        dismiss: 'Dismiss'
+        dismiss: 'Dismiss',
+        serverNotFound: 'Server not found. It may have been deleted.'
     }
 };

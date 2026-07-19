@@ -5,6 +5,8 @@ import type { ProxyConfig } from '../lib/proxy/types';
 import { canConnect } from '../lib/xray/config';
 
 import { useHealth } from './health';
+import { useLocale } from './locale';
+import { useToast } from './toast';
 
 import type { ConnectionPhase, TrafficSample } from '../features/connection/engine/port';
 import { service } from '../features/connection/engine/service';
@@ -100,14 +102,21 @@ export const useConnection = createStore(() =>
         }
     };
 
-    const connectById = async (id: string): Promise<void> =>
+    const connectToId = async (id: string): Promise<void> =>
     {
         const config = await getConfig(id);
 
         if (config !== undefined)
         {
             await connect(config);
+
+            return;
         }
+
+        const { t } = useLocale();
+        const toast = useToast();
+
+        toast.error(t().common.serverNotFound);
     };
 
     const disconnect = (): Promise<void> => service.disconnect();
@@ -169,7 +178,7 @@ export const useConnection = createStore(() =>
         duration,
         traffic,
         connect,
-        connectById,
+        connectToId,
         disconnect,
         connectFastest
     };

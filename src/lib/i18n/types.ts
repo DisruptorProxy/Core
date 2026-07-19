@@ -258,5 +258,7 @@ export interface Strings
     {
         close: string;
         dismiss: string;
+        /** Shown when a connect-by-id call finds no server in the database. */
+        serverNotFound: string;
     };
 }
