@@ -6,6 +6,7 @@ import { humanizeError } from '../../lib/health/humanize-error';
 import { bucketFor } from '../../lib/health/score';
 import { canConnect } from '../../lib/xray/config';
 
+import { useConnection } from '../../stores/connection';
 import { useDetail } from '../../stores/detail';
 import { useLocale } from '../../stores/locale';
 
@@ -37,8 +38,17 @@ export default component ConfigDetail()
 {
     const { t } = useLocale();
     const detail = useDetail();
+    const connection = useConnection();
 
     const config = (): ReturnType<typeof detail.config> => detail.config();
+    const isActive = (): boolean =>
+    {
+        const id = config()?.id;
+
+        return id !== undefined && connection.activeId() === id
+            && (connection.phase() === 'connected' || connection.phase() === 'connecting');
+    };
+    const isSwitching = (): boolean => connection.switching();
 
     <Show
         when={ config() }
@@ -116,13 +126,35 @@ export default component ConfigDetail()
             </Show>
 
             <div class="grid grid-cols-2 gap-2">
-                <Button
-                    label={ t().detail.connect }
-                    leading={ Power }
-                    block={ true }
-                    disabled={ !canConnect(config()!.protocol) }
-                    onPress={ () => void detail.connect() }
-                />
+                <Show when={ isSwitching() }>
+                    <Button
+                        label={ t().home.switching }
+                        leading={ Power }
+                        block={ true }
+                        disabled={ true }
+                        onPress={ () => {} }
+                    />
+                </Show>
+                <Show when={ !isSwitching() }>
+                    <Show when={ isActive() }>
+                        <Button
+                            label={ t().detail.disconnect }
+                            leading={ Power }
+                            variant="danger"
+                            block={ true }
+                            onPress={ () => void connection.disconnect() }
+                        />
+                    </Show>
+                    <Show when={ !isActive() }>
+                        <Button
+                            label={ t().detail.connect }
+                            leading={ Power }
+                            block={ true }
+                            disabled={ !canConnect(config()!.protocol) }
+                            onPress={ () => void detail.connect() }
+                        />
+                    </Show>
+                </Show>
 
                 <button
                     type="button"

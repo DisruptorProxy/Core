@@ -77,6 +77,13 @@ export const useConnection = createStore(() =>
     const activeId = (): string | null => status().config?.id ?? null;
     const error = (): string | undefined => status().error;
 
+    /**
+     * True during a server-swap: the engine is disconnecting from the old server
+     * and about to connect to a new one. The UI shows a brief "Switching…" state
+     * so the user sees the transition rather than a flash of idle.
+     */
+    const [switching, setSwitching] = createSignal(false);
+
     /** O(1) per-row: only the previously- and newly-active rows re-run on a change. */
     const isActive = createSelector<string | null>(activeId);
 
@@ -90,6 +97,27 @@ export const useConnection = createStore(() =>
 
     const connect = async (config: ProxyConfig): Promise<void> =>
     {
+        // Always kill any lingering app-xray.exe before connecting, even when the
+        // engine reports 'idle' — a crashed session can leave an orphaned process
+        // that would block the new tunnel's port. The disconnect call is idempotent:
+        // if nothing is running the Rust side silently succeeds.
+        const currentPhase = status().phase;
+
+        if (currentPhase !== 'idle' && currentPhase !== 'error')
+        {
+            setSwitching(true);
+        }
+
+        try
+        {
+            await service.disconnect();
+        }
+        catch
+        {
+            // Swallow - the disconnect is best-effort. The connect below moves
+            // the engine to the new target regardless.
+        }
+
         try
         {
             await service.connect(config);
@@ -99,6 +127,10 @@ export const useConnection = createStore(() =>
             // The engine has already moved the status signal to `error`; the UI
             // reads that. Swallowing keeps a failed connect from surfacing as an
             // unhandled rejection.
+        }
+        finally
+        {
+            setSwitching(false);
         }
     };
 
@@ -170,6 +202,7 @@ export const useConnection = createStore(() =>
     };
 
     return {
+        switching,
         phase,
         activeConfig,
         activeId,

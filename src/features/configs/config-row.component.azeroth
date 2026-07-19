@@ -104,7 +104,7 @@ export default component ConfigRow(props: ConfigRowProps)
             return `${ base } bg-accent-soft`;
         }
 
-        return props.isActive() ? `${ base } bg-accent-soft/60 active:bg-elevated` : `${ base } active:bg-elevated`;
+        return props.isActive() ? `${ base } bg-accent-soft active:bg-accent-soft/80` : `${ base } active:bg-elevated`;
     };
 
     <div
@@ -122,7 +122,7 @@ export default component ConfigRow(props: ConfigRowProps)
         onContextMenu={ (event) => { event.preventDefault(); props.onHold(); } }
     >
         <Show when={ props.isActive() }>
-            <span class="h-8 w-1 shrink-0 rounded-full bg-accent" aria-hidden="true"></span>
+            <span class="h-10 w-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_10px_rgba(0,191,122,0.40)]" aria-hidden="true"></span>
         </Show>
 
         <Show when={ props.selectMode() }>

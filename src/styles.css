@@ -540,6 +540,39 @@
     50% { filter: drop-shadow(0 0 18px var(--g-accent)); }
 }
 
+/* Switching: the gate is mid-swap between two servers. The rosette and weave
+   pulse between accent and muted, signalling a transition. The connected glow
+   is suspended so the swap reads as a single transitional gesture rather than
+   connected -> off -> on. This CSS uses the same data-phase attribute the gate
+   already drives, so no new prop or attribute is needed. */
+.g-gate[data-phase="switching"]
+{
+    animation: none;
+}
+
+.g-gate[data-phase="switching"] .g-rosette,
+.g-gate[data-phase="switching"] .g-weave
+{
+    animation: g-gate-switch-pulse 1.2s ease-in-out infinite;
+}
+
+.g-gate[data-phase="switching"] .g-rosette
+{
+    stroke: var(--g-accent);
+}
+
+.g-gate[data-phase="switching"] .g-weave
+{
+    stroke: var(--g-muted);
+    animation-delay: 0.3s;
+}
+
+@keyframes g-gate-switch-pulse
+{
+    0%, 100% { opacity: 0.5; transform: rotate(0deg); }
+    50% { opacity: 1; transform: rotate(6deg); }
+}
+
 /* Frosted glass. `glass` is the standard panel (cards, bars); `glass-strong` is
    for modals that need more opacity to sit above the app. The inset top highlight
    is what makes a translucent pane read as a lit sheet of glass rather than a

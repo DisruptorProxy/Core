@@ -12,6 +12,7 @@ import { useLocale } from '../stores/locale';
 import Button from '../components/button.component.azeroth';
 import Screen from '../components/screen.component.azeroth';
 
+import type { ConnectionPhase } from '../features/connection/engine/port';
 import ConnectionGate from '../features/connection/connection-gate.component.azeroth';
 
 /** Seconds to m:ss / h:mm:ss - a live connection duration, tabular so it does not jitter. */
@@ -30,6 +31,7 @@ const PHASE_TONE: Record<string, string> =
     connected: 'text-good',
     connecting: 'text-accent',
     disconnecting: 'text-muted',
+    switching: 'text-accent',
     error: 'text-poor',
     idle: 'text-muted'
 };
@@ -45,9 +47,19 @@ export default component HomePage()
     const { t } = useLocale();
     const connection = useConnection();
 
+    // During a server-swap we override the phase so the gate, the status text, and
+    // the button all show the transitional state together.
+    const gatePhase = (): ConnectionPhase =>
+        connection.switching() ? 'switching' : connection.phase();
+
     const statusText = (): string =>
     {
-        const phase = connection.phase();
+        const phase = gatePhase();
+
+        if (phase === 'switching')
+        {
+            return t().home.switching;
+        }
 
         if (phase === 'connected')
         {
@@ -74,10 +86,10 @@ export default component HomePage()
 
     <Screen title={ t().home.title } subtitle={ t().home.subtitle }>
         <div class="flex flex-col items-center gap-8 px-5 py-10">
-            <ConnectionGate phase={ connection.phase } />
+            <ConnectionGate phase={ gatePhase } />
 
             <div class="flex flex-col items-center gap-1 text-center">
-                <p class={ `text-xl font-semibold tracking-tight ${ PHASE_TONE[connection.phase()] ?? '' }` }>
+                <p class={ `text-xl font-semibold tracking-tight ${ PHASE_TONE[gatePhase()] ?? '' }${ gatePhase() === 'switching' ? ' animate-pulse' : '' }` }>
                     { statusText() }
                 </p>
 
@@ -106,15 +118,30 @@ export default component HomePage()
 
             <div class="w-full max-w-xs">
                 <Show
-                    when={ connection.phase() === 'connected' || connection.phase() === 'connecting' }
-                    fallback={ () => idleActions() }
+                    when={ gatePhase() === 'switching' }
+                    fallback={
+                        () =>
+                            <Show
+                                when={ gatePhase() === 'connected' || gatePhase() === 'connecting' }
+                                fallback={ () => idleActions() }
+                            >
+                                <Button
+                                    label={ t().home.disconnect }
+                                    leading={ Power }
+                                    variant="danger"
+                                    block={ true }
+                                    onPress={ () => void connection.disconnect() }
+                                />
+                            </Show>
+                    }
                 >
                     <Button
-                        label={ t().home.disconnect }
+                        label={ t().home.switching }
                         leading={ Power }
-                        variant="danger"
+                        variant="primary"
                         block={ true }
-                        onPress={ () => void connection.disconnect() }
+                        disabled={ true }
+                        onPress={ () => {} }
                     />
                 </Show>
             </div>

@@ -33,6 +33,7 @@ export interface Strings
         subtitle: string;
         disconnected: string;
         noServerSelected: string;
+        switching: string;
         connecting: string;
         connected: string;
         disconnecting: string;
@@ -239,6 +240,7 @@ export interface Strings
         untested: string;
         lastError: string;
         connect: string;
+        disconnect: string;
         copyLink: string;
         copied: string;
         addFavorite: string;

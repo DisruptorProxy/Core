@@ -2,7 +2,7 @@ import type { Getter } from 'azerothjs';
 
 import type { ProxyConfig } from '../../../lib/proxy/types';
 
-export type ConnectionPhase = 'idle' | 'connecting' | 'connected' | 'disconnecting' | 'error';
+export type ConnectionPhase = 'idle' | 'connecting' | 'connected' | 'disconnecting' | 'switching' | 'error';
 
 export interface ConnectionStatus
 {
