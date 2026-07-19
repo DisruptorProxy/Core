@@ -11,7 +11,7 @@ import { useDetail } from '../../stores/detail';
 import { useLocale } from '../../stores/locale';
 
 import Button from '../../components/button.component.azeroth';
-import { flagEmoji } from '../../components/flag';
+import { flagIcon } from '../../components/flag';
 import { icon } from '../../components/icon';
 import Sparkline from '../../components/sparkline.component.azeroth';
 
@@ -56,8 +56,8 @@ export default component ConfigDetail()
     >
         <div class="animate-page-in flex flex-col gap-4">
             <div class="flex items-center gap-2">
-                <Show when={ flagEmoji(config()!.country) }>
-                    <span class="text-lg leading-none">{ flagEmoji(config()!.country) }</span>
+                <Show when={ flagIcon(config()!.country) }>
+                    <span class={ `${ flagIcon(config()!.country) } flag-detail` }></span>
                 </Show>
                 <span class="readout truncate text-sm text-faint" dir="ltr">{ config()!.host }:{ config()!.port }</span>
             </div>

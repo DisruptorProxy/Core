@@ -17,6 +17,12 @@
 @import "@fontsource/ibm-plex-mono/500.css";
 @import "@fontsource-variable/vazirmatn/index.css";
 
+/* Country flags via CSS sprites — lightweight SVG flags that render reliably on
+   every platform, unlike emoji regional-indicator pairs which Windows often
+   displays as two separate letters. Imported before the theme so the icon sizing
+   rules below can override defaults if needed. */
+@import "flag-icons/css/flag-icons.min.css";
+
 /* The theme is a class on <html>, not a media query: the user picks
    system/light/dark and we resolve it. See src/stores/theme.ts. */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -601,6 +607,24 @@
     background-color: var(--g-surface);
     -webkit-backdrop-filter: blur(var(--g-blur)) saturate(1.5);
     backdrop-filter: blur(var(--g-blur)) saturate(1.5);
+}
+
+/* flag-icons: inline flag in server rows and detail. The `.fi` base renders
+   the flag at 1em × 0.75em; these utilities size it to match the old emoji
+   (text-lg = 1.125rem) and add a vertical nudge so it sits on the text baseline
+   instead of riding high. border-radius gives a subtle squircle like macOS. */
+.flag-row
+{
+    font-size: 1.125rem;
+    line-height: 1;
+    border-radius: 2px;
+}
+
+.flag-detail
+{
+    font-size: 1.25rem;
+    line-height: 1;
+    border-radius: 2px;
 }
 
 /* Safe areas: the bottom tab bar must clear the home indicator, and full-bleed

@@ -5,7 +5,7 @@ import { Check, Star } from 'lucide';
 import type { ConfigRow } from '../../lib/db/repo';
 import { bucketFor } from '../../lib/health/score';
 
-import { flagEmoji } from '../../components/flag';
+import { flagIcon } from '../../components/flag';
 import { icon } from '../../components/icon';
 
 interface ConfigRowProps
@@ -52,7 +52,7 @@ const LATENCY_TONE: Record<string, string> =
  */
 export default component ConfigRow(props: ConfigRowProps)
 {
-    const flag = flagEmoji(props.row.country);
+    const flagCls = flagIcon(props.row.country);
 
     // Long-press to enter select mode. The timer only fires if the finger stays
     // put: any real scroll moves the pointer and cancels it (onPointerMove below),
@@ -137,8 +137,8 @@ export default component ConfigRow(props: ConfigRowProps)
             </span>
         </Show>
 
-        <Show when={ flag }>
-            <span class="shrink-0 text-lg leading-none">{ flag }</span>
+        <Show when={ flagCls }>
+            <span class={ `${ flagCls } shrink-0 flag-row` }></span>
         </Show>
 
         <div class="flex min-w-0 flex-1 flex-col gap-0.5">
