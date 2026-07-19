@@ -1,4 +1,4 @@
-import { For, createEffect, createMemo, createSignal, onCleanup } from 'azerothjs';
+import { For, createEffect, createMemo, createSignal, createVirtualizer, onCleanup } from 'azerothjs';
 
 interface VirtualListProps
 {
@@ -12,56 +12,35 @@ interface VirtualListProps
     children: (id: string) => HTMLElement;
 }
 
-interface Range
-{
-    first: number;
-    last: number;
-}
-
 /**
  * A windowed list: renders only the rows in view (plus a small overscan), so 8000
- * ids cost ~25 DOM nodes instead of 8000. AzerothJS ships no virtualization, so
- * this is hand-built - and fixed row height is the hard requirement that makes the
- * maths exact.
- *
- * Technique: an outer spacer holds the FULL scroll height (so the scrollbar is
- * honest), and an inner window is pushed down with a single `translateY`. Rows
- * inside sit in normal flow at fixed height. Scrolling changes one offset binding
- * and reconciles only the rows entering/leaving the window - never all 8000.
+ * ids cost ~25 DOM nodes instead of 8000. The windowing maths live in the
+ * framework's createVirtualizer - its equality-guarded range means scrolling
+ * WITHIN the current window is a reactive non-event, so rows reconcile only when
+ * the window actually moves. This component owns what the framework's packaged
+ * <VirtualList> does not offer yet: a ResizeObserver-measured viewport (rotate,
+ * window resize, a growing filter bar) and rows in normal flow behind one
+ * `translateY`, instead of an explicit fixed height with absolute rows.
  */
 export default component VirtualList(props: VirtualListProps)
 {
-    const overscan = props.overscan ?? 6;
-
-    const [scrollTop, setScrollTop] = createSignal(0);
     const [viewport, setViewport] = createSignal(0);
 
-    // Keeps the window valid when the id set shrinks under the current scroll
-    // (e.g. a filter that removes most rows): clamp rather than render past the end.
-    const range = createMemo<Range>(() =>
+    const virtualizer = createVirtualizer({
+        count: () => props.ids().length,
+        itemSize: props.rowHeight,
+        viewportSize: viewport,
+        overscan: props.overscan ?? 6
+    });
+
+    const windowIds = createMemo(() =>
     {
-        const total = props.ids().length;
-        const height = viewport();
+        const { start, end } = virtualizer.range();
 
-        if (height === 0 || total === 0)
-        {
-            return { first: 0, last: 0 };
-        }
+        return props.ids().slice(start, end + 1);
+    });
 
-        const visible = Math.ceil(height / props.rowHeight);
-        const first = Math.max(0, Math.min(
-            Math.floor(scrollTop() / props.rowHeight) - overscan,
-            Math.max(0, total - visible)
-        ));
-        const last = Math.min(total, first + visible + overscan * 2);
-
-        return { first, last };
-    }, { equals: (a, b) => a.first === b.first && a.last === b.last });
-
-    const windowIds = createMemo(() => props.ids().slice(range().first, range().last));
-
-    const totalHeight = (): number => props.ids().length * props.rowHeight;
-    const offsetY = (): number => range().first * props.rowHeight;
+    const offsetY = (): number => virtualizer.offsetOf(virtualizer.range().start);
 
     // The scroll element is measured with a ResizeObserver rather than a one-time
     // read: the viewport height changes on rotate, on window resize, and when the
@@ -80,9 +59,9 @@ export default component VirtualList(props: VirtualListProps)
     <div
         ref={ attach }
         class="relative h-full overflow-y-auto overflow-x-hidden overscroll-contain"
-        onScroll={ (event) => setScrollTop((event.target as HTMLElement).scrollTop) }
+        onScroll={ (event) => virtualizer.setScrollOffset((event.target as HTMLElement).scrollTop) }
     >
-        <div class="relative w-full" style:height={ `${ totalHeight() }px` }>
+        <div class="relative w-full" style:height={ `${ virtualizer.totalSize() }px` }>
             <div class="absolute inset-x-0 top-0" style:transform={ `translateY(${ offsetY() }px)` }>
                 <For each={ windowIds } key={ (id) => id }>
                     { (id) =>

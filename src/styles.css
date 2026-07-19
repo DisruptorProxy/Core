@@ -308,43 +308,102 @@
     transition: transform var(--g-dur-quick) var(--g-ease-in), opacity var(--g-dur-quick) var(--g-ease-in);
 }
 
-/* Toasts (toast-host.component). Enter slides up + fades in; leave reverses. Both
-   collapse under the reduced-motion block above, so a toast still appears and clears
-   instantly there. `forwards` holds the faded-out state during the removal delay. */
-@keyframes g-toast-in
+/* Toasts (toast-host.component). The <TransitionGroup name="g-toast"> family:
+   enter slides up + fades in on the pop spring; leave reverses, quicker. The group
+   defers DOM removal until leave completes, so the store carries no animation state.
+   Collapses under the reduced-motion block above. */
+.g-toast-enter-from
 {
-    from { opacity: 0; transform: translateY(16px) scale(0.95); }
-    to { opacity: 1; transform: none; }
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
 }
 
-@keyframes g-toast-out
+.g-toast-enter-active
 {
-    to { opacity: 0; transform: translateY(8px) scale(0.97); }
+    transition: opacity var(--g-dur-slow) var(--g-ease-pop), transform var(--g-dur-slow) var(--g-ease-pop);
 }
 
-@utility animate-toast-in
+.g-toast-enter-to
 {
-    animation: g-toast-in var(--g-dur-slow) var(--g-ease-pop);
+    opacity: 1;
+    transform: none;
 }
 
-@utility animate-toast-out
+.g-toast-leave-active
 {
-    animation: g-toast-out var(--g-dur-quick) var(--g-ease-in) forwards;
+    transition: opacity var(--g-dur-quick) var(--g-ease-in), transform var(--g-dur-quick) var(--g-ease-in);
 }
 
-/* Route entrance. <Routes> builds each page fresh when the match changes, so a
-   mount animation plays exactly once per navigation - a quiet fade with a small
-   upward settle. Vertical + opacity only, so it reads the same in LTR and RTL,
-   and the reduced-motion block above collapses it to an instant swap. */
-@keyframes g-page-in
+.g-toast-leave-to
 {
-    from { opacity: 0; transform: translateY(8px) scale(0.995); }
-    to { opacity: 1; transform: none; }
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
 }
 
-@utility animate-page-in
+/* Route transitions (<Routes transition> in the shell). Two directional families:
+   forward (push/replace) rises in while the old page lifts away; back (pop)
+   reverses the vertical. The OUTGOING page goes position:absolute so the incoming
+   one takes the flow - both are mounted during the swap. Vertical + opacity only,
+   so LTR and RTL read identically; the reduced-motion block above collapses both
+   families to an instant swap. */
+.g-page-enter-from
 {
-    animation: g-page-in var(--g-dur-slow) var(--g-ease-out);
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+}
+
+.g-page-enter-active
+{
+    transition: opacity var(--g-dur-slow) var(--g-ease-out), transform var(--g-dur-slow) var(--g-ease-out);
+}
+
+.g-page-enter-to
+{
+    opacity: 1;
+    transform: none;
+}
+
+.g-page-leave-active
+{
+    position: absolute;
+    inset: 0;
+    transition: opacity var(--g-dur-quick) var(--g-ease-in), transform var(--g-dur-quick) var(--g-ease-in);
+}
+
+.g-page-leave-to
+{
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+.g-page-back-enter-from
+{
+    opacity: 0;
+    transform: translateY(-10px) scale(0.995);
+}
+
+.g-page-back-enter-active
+{
+    transition: opacity var(--g-dur-slow) var(--g-ease-out), transform var(--g-dur-slow) var(--g-ease-out);
+}
+
+.g-page-back-enter-to
+{
+    opacity: 1;
+    transform: none;
+}
+
+.g-page-back-leave-active
+{
+    position: absolute;
+    inset: 0;
+    transition: opacity var(--g-dur-quick) var(--g-ease-in), transform var(--g-dur-quick) var(--g-ease-in);
+}
+
+.g-page-back-leave-to
+{
+    opacity: 0;
+    transform: translateY(8px);
 }
 
 /* Icon swap (titlebar window-mode toggle). The reactive icon binding mounts a
@@ -481,10 +540,19 @@
 .g-gate .g-core
 {
     fill: var(--g-surface);
-    /* The core's scale is driven imperatively with the motion() spring (see
-       connection-gate.component) so it can reverse mid-flight on a fast
-       connect -> disconnect; CSS owns only its colour. */
-    transition: stroke var(--g-dur-slower) ease;
+    /* The core's scale rides the linear() spring easing and reverses mid-flight
+       natively (a CSS transition retargets from the current computed style), so a
+       fast connect -> disconnect springs back from wherever it is - the behavior
+       the old imperative motion() spring existed for. fill-box/center makes the
+       SVG polygon scale around its own middle. */
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: stroke var(--g-dur-slower) ease, transform var(--g-dur-slower) var(--g-ease-spring);
+}
+
+.g-gate[data-phase="connected"] .g-core
+{
+    transform: scale(1.7);
 }
 
 .g-gate[data-phase="connecting"] .g-rosette,

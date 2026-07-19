@@ -3,7 +3,7 @@
  * indicator. Reversing what the name normalizer did: the flag was stripped from
  * the name into a country code, and here it becomes a single clean glyph in a
  * badge - one flag, in a known place, instead of emoji scattered through the name.
- * 
+ *
  * Prefer {@link flagIcon} for reliable rendering across platforms — flag emoji
  * font support varies (Windows often shows two letters instead of a combined
  * flag). This function is kept for contexts where text is the only option.

@@ -1,4 +1,4 @@
-import { For } from 'azerothjs';
+import { TransitionGroup } from 'azerothjs';
 
 import { CircleAlert, CircleCheck, Info, X } from 'lucide';
 import type { IconNode } from 'lucide';
@@ -42,11 +42,10 @@ export default component ToastHost()
         role="status"
         aria-live="polite"
     >
-        <For each={ toast.toasts() } key={ (item) => item.id }>
+        <TransitionGroup each={ toast.toasts() } key={ (item) => item.id } name="g-toast" duration={ 500 }>
             { (item) =>
                 <div
-                    class={ 'glass-strong pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl px-3 py-2.5 '
-                        + (item.leaving ? 'animate-toast-out' : 'animate-toast-in') }
+                    class="glass-strong pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl px-3 py-2.5"
                 >
                     { icon(GLYPH[item.kind], `size-5 shrink-0 ${ TONE[item.kind] }`) }
 
@@ -62,6 +61,6 @@ export default component ToastHost()
                     </button>
                 </div>
             }
-        </For>
+        </TransitionGroup>
     </div>
 }

@@ -34,7 +34,7 @@ export default component Shell()
         <div class="flex min-h-0 flex-1">
             <SideRail />
 
-            <main class="min-w-0 flex-1 overflow-hidden">
+            <main class="relative min-w-0 flex-1 overflow-hidden">
                 <ErrorBoundary
                     fallback={ (_error, reset) =>
                         <div class="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
@@ -46,7 +46,7 @@ export default component Shell()
                         </div>
                     }
                 >
-                    <Routes router={ router } />
+                    <Routes router={ router } transition={ (context) => context.navigation === 'pop' ? 'g-page-back' : 'g-page' } transitionDuration={ 500 } />
                 </ErrorBoundary>
             </main>
 
