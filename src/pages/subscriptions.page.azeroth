@@ -8,6 +8,7 @@ import { useLocale } from '../stores/locale';
 import { useSubscriptions } from '../stores/subscriptions';
 
 import Button from '../components/button.component.azeroth';
+import Card from '../components/card.component.azeroth';
 import EmptyState from '../components/empty-state.component.azeroth';
 import Screen from '../components/screen.component.azeroth';
 
@@ -84,10 +85,10 @@ export default component SubscriptionsPage()
             </Show>
 
             <Show when={ subscriptions.lastOutcome() }>
-                <div class="glass flex flex-col gap-2 rounded-2xl p-4">
+                <Card class="flex flex-col gap-2 p-4">
                     <span class="text-xs font-medium text-muted">{ t().subscriptions.statusOk }</span>
                     <UpdateReport diff={ subscriptions.lastOutcome()!.diff } />
-                </div>
+                </Card>
             </Show>
 
             <Show

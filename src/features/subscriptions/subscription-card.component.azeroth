@@ -8,6 +8,7 @@ import { formatBytes } from '../../lib/format/bytes';
 import { useLocale } from '../../stores/locale';
 import { useSubscriptions } from '../../stores/subscriptions';
 
+import Card from '../../components/card.component.azeroth';
 import { icon } from '../../components/icon';
 import { isStale, relativeTime } from '../../components/relative-time';
 
@@ -91,7 +92,7 @@ export default component SubscriptionCard(props: SubscriptionCardProps)
     // Only worth a row when the provider actually reported a quota or an expiry.
     const hasUsage = (): boolean => info() !== undefined && (totalBytes() > 0 || daysLeft() !== null);
 
-    <div class="glass flex flex-col gap-3 rounded-2xl p-4">
+    <Card class="flex flex-col gap-3 p-4">
         <div class="flex items-start justify-between gap-3">
             <div class="flex min-w-0 flex-col gap-0.5">
                 <span class="truncate text-sm font-semibold text-text">{ props.sub.name }</span>
@@ -155,5 +156,5 @@ export default component SubscriptionCard(props: SubscriptionCardProps)
                 </Show>
             </div>
         </Show>
-    </div>
+    </Card>
 }

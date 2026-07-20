@@ -11,6 +11,7 @@ import { useDetail } from '../../stores/detail';
 import { useLocale } from '../../stores/locale';
 
 import Button from '../../components/button.component.azeroth';
+import Card from '../../components/card.component.azeroth';
 import { flagIcon } from '../../components/flag';
 import { icon } from '../../components/icon';
 import Sparkline from '../../components/sparkline.component.azeroth';
@@ -54,7 +55,7 @@ export default component ConfigDetail()
         when={ config() }
         fallback={ () => detail.openId() === null ? emptyState(t().detail.emptyTitle, t().detail.emptyHint) : null }
     >
-        <div class="animate-page-in flex flex-col gap-4">
+        <div class="flex flex-col gap-4">
             <div class="flex items-center gap-2">
                 <Show when={ flagIcon(config()!.country) }>
                     <span class={ `${ flagIcon(config()!.country) } flag-detail` }></span>
@@ -62,7 +63,7 @@ export default component ConfigDetail()
                 <span class="readout truncate text-sm text-faint" dir="ltr">{ config()!.host }:{ config()!.port }</span>
             </div>
 
-            <div class="glass rounded-xl px-3">
+            <Card class="px-3">
                 <div class={ FIELD }>
                     <span class={ KEY }>{ t().detail.protocol }</span>
                     <span class={ `${ VAL } uppercase` }>{ config()!.protocol }</span>
@@ -79,9 +80,9 @@ export default component ConfigDetail()
                     <span class={ KEY }>{ t().detail.source }</span>
                     <span class={ VAL }>{ detail.sourceName() }</span>
                 </div>
-            </div>
+            </Card>
 
-            <div class="glass flex flex-col gap-2 rounded-xl p-3">
+            <Card class="flex flex-col gap-2 p-3">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-medium text-muted">{ t().detail.health }</span>
 
@@ -117,7 +118,7 @@ export default component ConfigDetail()
                 <Show when={ detail.record()?.lastError }>
                     <p class="text-xs text-poor">{ humanizeError(detail.record()?.lastError).title }</p>
                 </Show>
-            </div>
+            </Card>
 
             <Show when={ !canConnect(config()!.protocol) }>
                 <p class="rounded-xl border border-fair/40 bg-fair/5 px-3 py-2 text-xs text-fair">

@@ -3,6 +3,7 @@ import { Match, Show, Switch, Transition } from 'azerothjs';
 import { CircleStop, Download, Gauge, ListChecks, Server, X } from 'lucide';
 
 import { useConfigs } from '../stores/configs';
+import { useConnection } from '../stores/connection';
 import { useDetail } from '../stores/detail';
 import { useHealth } from '../stores/health';
 import { useLocale } from '../stores/locale';
@@ -19,6 +20,7 @@ import BulkBar from '../features/configs/bulk-bar.component.azeroth';
 import ConfigDetail from '../features/configs/config-detail.component.azeroth';
 import ConfigList from '../features/configs/config-list.component.azeroth';
 import FiltersBar from '../features/configs/filters-bar.component.azeroth';
+import ConnectionStatus from '../features/connection/connection-status.component.azeroth';
 import ImportSheet from '../features/import/import-sheet.component.azeroth';
 
 const ICON_BTN = 'flex size-11 items-center justify-center rounded-lg border border-border text-muted hover:bg-elevated press';
@@ -37,14 +39,32 @@ export default component ServersPage()
     const selection = useSelection();
     const health = useHealth();
     const detail = useDetail();
+    const connection = useConnection();
     const viewport = useViewport();
 
     state importOpen = false;
 
     derived hasServers = rows().length > 0;
 
+    // The side panel's live block: visible whenever a session is up or forming,
+    // so connecting never empties the panel - it gains the connection instead.
+    derived liveVisible = connection.activeConfig() !== null
+        && (connection.phase() === 'connected' || connection.phase() === 'connecting' || connection.switching());
+
+    derived liveSettled = connection.phase() === 'connected' && !connection.switching();
+
+    const liveLabel = (): string =>
+    {
+        if (connection.switching())
+        {
+            return t().home.switching;
+        }
+
+        return connection.phase() === 'connecting' ? t().home.connecting : t().home.connected;
+    };
+
     <div class="contents">
-    <div class="animate-page-in flex h-full min-h-0">
+    <div class="flex h-full min-h-0">
     <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col pb-14 md:pb-0">
         <header class="glass-bar shrink-0 border-b border-border">
             <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-4">
@@ -145,6 +165,17 @@ export default component ServersPage()
 
     <Show when={ viewport.isWide() }>
         <aside class="flex h-full min-h-0 w-80 shrink-0 flex-col border-s border-border">
+            <Show when={ liveVisible }>
+                <div class="shrink-0 border-b border-border px-4 py-4">
+                    <div class="mb-3 flex items-center justify-center gap-2">
+                        <span class={ () => `size-1.5 rounded-full ${ liveSettled ? 'bg-good' : 'animate-pulse bg-accent' }` }></span>
+                        <span class={ () => `text-xs font-semibold ${ liveSettled ? 'text-good' : 'text-accent' }` }>{ liveLabel() }</span>
+                    </div>
+
+                    <ConnectionStatus />
+                </div>
+            </Show>
+
             <Show when={ detail.openId() }>
                 <div class="glass-bar flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-4">
                     <span class="truncate text-sm font-semibold text-text">{ detail.config()?.name ?? '' }</span>

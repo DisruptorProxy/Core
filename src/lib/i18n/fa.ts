@@ -36,8 +36,14 @@ export const fa: Strings =
         disconnecting: 'در حال قطع…',
         failed: 'اتصال ناموفق',
         disconnect: 'قطع اتصال',
-        connectFastest: 'اتصال به سریع‌ترین',
-        duration: (text: string) => `متصل به مدت ${ text }`,
+        connectFastest: 'اتصال به سریع‌ترین'
+    },
+
+    status:
+    {
+        duration: 'مدت',
+        upload: 'آپلود',
+        download: 'دانلود',
         transferred: 'داده منتقل‌شده'
     },
 

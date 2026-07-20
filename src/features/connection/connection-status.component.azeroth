@@ -1,0 +1,64 @@
+import { Show } from 'azerothjs';
+
+import { formatBytes } from '../../lib/format/bytes';
+import { formatDuration } from '../../lib/format/duration';
+
+import { useConnection } from '../../stores/connection';
+import { useLocale } from '../../stores/locale';
+
+import { flagIcon } from '../../components/flag';
+
+const TILE = 'flex flex-col items-center gap-0.5 rounded-xl border border-border bg-surface px-2 py-2.5';
+const TILE_KEY = 'text-[11px] text-muted';
+const TILE_VAL = 'readout text-sm font-semibold text-text';
+
+/**
+ * The live connection readout - the active server's identity and the session's
+ * vitals as labelled stat tiles (duration, upload, download). One component
+ * renders it everywhere the connection shows up (the Connect screen, the servers
+ * side panel), so the two can never drift apart. Renders nothing without an
+ * active config; callers gate it with their own phase check.
+ */
+export default component ConnectionStatus()
+{
+    const { t } = useLocale();
+    const connection = useConnection();
+
+    <Show when={ connection.activeConfig() }>
+        <div class="flex flex-col gap-3">
+            <div class="flex flex-col items-center gap-0.5 text-center">
+                <div class="flex min-w-0 max-w-full items-center gap-2">
+                    <Show when={ flagIcon(connection.activeConfig()!.country) }>
+                        <span class={ `${ flagIcon(connection.activeConfig()!.country) } flag-detail` }></span>
+                    </Show>
+                    <span class="truncate text-sm font-semibold text-text">{ connection.activeConfig()!.name }</span>
+                </div>
+
+                <span class="readout max-w-full truncate text-xs text-faint" dir="ltr">
+                    { connection.activeConfig()!.host }:{ connection.activeConfig()!.port }
+                </span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+                <div class={ TILE }>
+                    <span class={ TILE_KEY }>{ t().status.duration }</span>
+                    <span class={ TILE_VAL } dir="ltr">{ formatDuration(connection.duration()) }</span>
+                </div>
+
+                <div class={ TILE }>
+                    <span class={ TILE_KEY }>{ t().status.upload }</span>
+                    <span class={ TILE_VAL } dir="ltr">{ formatBytes(connection.traffic().uplink) }</span>
+                </div>
+
+                <div class={ TILE }>
+                    <span class={ TILE_KEY }>{ t().status.download }</span>
+                    <span class={ TILE_VAL } dir="ltr">{ formatBytes(connection.traffic().downlink) }</span>
+                </div>
+            </div>
+
+            <p class="text-center text-xs text-faint">
+                { t().status.transferred } <span class="readout" dir="ltr">{ formatBytes(connection.traffic().uplink + connection.traffic().downlink) }</span>
+            </p>
+        </div>
+    </Show>
+}

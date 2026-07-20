@@ -40,7 +40,14 @@ export interface Strings
         failed: string;
         disconnect: string;
         connectFastest: string;
-        duration: (text: string) => string;
+    };
+
+    /** The live-connection readout, shared by the Connect screen and the servers side panel. */
+    status:
+    {
+        duration: string;
+        upload: string;
+        download: string;
         /** Label before the total bytes moved this session, e.g. "Transferred 12.4 MB". */
         transferred: string;
     };

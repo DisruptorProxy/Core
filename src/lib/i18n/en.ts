@@ -36,8 +36,14 @@ export const en: Strings =
         disconnecting: 'Disconnecting…',
         failed: 'Connection failed',
         disconnect: 'Disconnect',
-        connectFastest: 'Connect fastest',
-        duration: (text: string) => `Connected for ${ text }`,
+        connectFastest: 'Connect fastest'
+    },
+
+    status:
+    {
+        duration: 'Duration',
+        upload: 'Upload',
+        download: 'Download',
         transferred: 'Transferred'
     },
 

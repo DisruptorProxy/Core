@@ -9,6 +9,7 @@ import { useHealth } from './health';
 import { useLocale } from './locale';
 import { useSubscriptions } from './subscriptions';
 import { useToast } from './toast';
+import { useViewport } from './viewport';
 
 import { service } from '../features/connection/engine/service';
 
@@ -28,6 +29,7 @@ export const useDetail = createStore(() =>
     const health = useHealth();
     const subscriptions = useSubscriptions();
     const toast = useToast();
+    const viewport = useViewport();
     const { t } = useLocale();
 
     const [openId, setOpenId] = createSignal<string | null>(null);
@@ -86,7 +88,14 @@ export const useDetail = createStore(() =>
 
         if (current !== null)
         {
-            close();
+            // Dismiss only the phone sheet. On wide layouts the side panel is a
+            // permanent fixture - closing it here emptied the panel at the exact
+            // moment the user acted on a server, which read as it vanishing.
+            if (!viewport.isWide())
+            {
+                close();
+            }
+
             await connection.connect(current);
         }
     };
