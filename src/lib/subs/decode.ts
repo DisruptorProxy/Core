@@ -99,7 +99,7 @@ const decodeJson = (text: string): DecodedSubscription =>
     return {
         format: 'singbox',
         body: uris.join('\n'),
-        unsupported: uris.length === 0 ? 'The profile had no servers Guardian can read' : undefined
+        unsupported: uris.length === 0 ? 'The profile had no servers Disruptor Proxy can read' : undefined
     };
 };
 

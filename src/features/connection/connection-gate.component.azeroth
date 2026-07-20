@@ -1,30 +1,89 @@
+import { Show } from 'azerothjs';
+
+import { Power } from 'lucide';
+
+import { formatDuration } from '../../lib/format/duration';
+
+import { useLocale } from '../../stores/locale';
+
+import { icon } from '../../components/icon';
+
 import type { ConnectionPhase } from './engine/port';
 import { GIRIH } from './girih-geometry';
 
 interface GateProps
 {
     phase: () => ConnectionPhase;
+    /** Live seconds while connected - the gate shows the session clock in its core. */
+    duration: () => number;
+    /** Tap: connects when idle or errored, disconnects when up or connecting. */
+    onPress: () => void;
 }
 
 /**
- * The girih gate - the app's one signature. A pierced screen that lights and opens
- * as the connection establishes: idle is a dim closed lattice, connecting sets the
- * interlaced stars turning, connected lights the whole rosette and opens its core.
- * ALL state is CSS driven off `data-phase` - including the core's opening scale,
- * which rides the linear() spring easing and reverses mid-flight natively on a
- * fast connect -> disconnect. The global reduced-motion block collapses it.
+ * The girih gate - the app's one signature, and the PRIMARY control. A pierced
+ * screen that lights and opens as the connection establishes, with the important
+ * things living in its core: the session clock while connected, the power action
+ * otherwise. The whole gate is one big tap target (connect/disconnect), so the
+ * hero is the button rather than decoration next to one. Lattice state stays CSS
+ * driven off `data-phase`; the reduced-motion block collapses the animation.
  */
 export default component ConnectionGate(props: GateProps)
 {
-    <svg
-        class="g-gate size-56"
-        viewBox="0 0 200 200"
-        data-phase={ props.phase() }
-        aria-hidden="true"
+    const { t } = useLocale();
+
+    const isOn = (): boolean => props.phase() === 'connected' || props.phase() === 'connecting';
+    const busy = (): boolean => props.phase() === 'switching' || props.phase() === 'disconnecting';
+
+    const hint = (): string =>
+    {
+        if (props.phase() === 'connecting')
+        {
+            return t().home.connecting;
+        }
+
+        return props.phase() === 'switching' ? t().home.switching : t().home.tapConnect;
+    };
+
+    const iconTone = (): string =>
+    {
+        if (props.phase() === 'connecting' || props.phase() === 'switching')
+        {
+            return 'animate-pulse text-accent';
+        }
+
+        return props.phase() === 'error' ? 'text-poor' : 'text-muted';
+    };
+
+    <button
+        type="button"
+        class="press relative flex size-56 items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent/60"
+        aria-label={ isOn() ? t().home.tapDisconnect : t().home.tapConnect }
+        disabled={ busy() }
+        onClick={ () => props.onPress() }
     >
-        <polygon class="g-frame" points={ GIRIH.frame } />
-        <polygon class="g-rosette" points={ GIRIH.rosette } />
-        <polygon class="g-weave" points={ GIRIH.weave } />
-        <polygon class="g-core" points={ GIRIH.core } />
-    </svg>
+        <svg
+            class="g-gate absolute inset-0 size-full"
+            viewBox="0 0 200 200"
+            data-phase={ props.phase() }
+            aria-hidden="true"
+        >
+            <polygon class="g-frame" points={ GIRIH.frame } />
+            <polygon class="g-rosette" points={ GIRIH.rosette } />
+            <polygon class="g-weave" points={ GIRIH.weave } />
+            <polygon class="g-core" points={ GIRIH.core } />
+        </svg>
+
+        <span class="relative z-10 flex size-32 flex-col items-center justify-center gap-1.5 rounded-full bg-surface/70 backdrop-blur-md">
+            <Show when={ props.phase() === 'connected' }>
+                <span class="readout text-2xl font-semibold text-text" dir="ltr">{ formatDuration(props.duration()) }</span>
+                <span class="text-[11px] font-medium text-muted">{ t().home.tapDisconnect }</span>
+            </Show>
+
+            <Show when={ props.phase() !== 'connected' }>
+                <span class={ iconTone() }>{ icon(Power, 'size-8') }</span>
+                <span class="text-[11px] font-medium text-muted">{ hint() }</span>
+            </Show>
+        </span>
+    </button>
 }

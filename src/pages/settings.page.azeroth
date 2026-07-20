@@ -1,8 +1,7 @@
-import { Show } from 'azerothjs';
+import { For, Show } from 'azerothjs';
 
 import { useGeo } from '../stores/geo';
-import { useLocale } from '../stores/locale';
-import type { Locale } from '../stores/locale';
+import { LOCALES, LOCALE_LABELS, useLocale } from '../stores/locale';
 import { useTheme } from '../stores/theme';
 import type { ThemePreference } from '../stores/theme';
 import { useVersion } from '../stores/version';
@@ -38,12 +37,6 @@ export default component SettingsPage()
         { value: 'dark', label: () => t().settings.themeDark }
     ];
 
-    const localeOptions: SegmentedOption[] =
-    [
-        { value: 'en', label: () => t().settings.languageEnglish },
-        { value: 'fa', label: () => t().settings.languagePersian }
-    ];
-
     <Screen title={ t().settings.title } subtitle={ t().settings.subtitle }>
         <div class="flex flex-col gap-8 px-5 py-6">
             <section class="flex flex-col gap-4">
@@ -61,12 +54,23 @@ export default component SettingsPage()
 
                 <div class="flex flex-col gap-2">
                     <p class="text-sm font-medium text-text">{ t().settings.language }</p>
-                    <Segmented
-                        label={ t().settings.language }
-                        options={ localeOptions }
-                        value={ locale() }
-                        onSelect={ (value) => setLocale(value as Locale) }
-                    />
+
+                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        <For each={ LOCALES } key={ (code) => code }>
+                            { (code) =>
+                                <button
+                                    type="button"
+                                    class={ () => 'flex min-h-11 items-center justify-center rounded-xl border px-3 text-sm font-medium transition-colors '
+                                        + (locale() === code
+                                            ? 'border-accent bg-accent-soft text-accent'
+                                            : 'border-border bg-surface text-text hover:bg-elevated') }
+                                    onClick={ () => setLocale(code) }
+                                >
+                                    { LOCALE_LABELS[code] }
+                                </button>
+                            }
+                        </For>
+                    </div>
                 </div>
             </section>
 

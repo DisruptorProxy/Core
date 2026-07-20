@@ -1,0 +1,262 @@
+import type { Strings } from './types';
+
+export const ar: Strings =
+{
+    app:
+    {
+        name: 'The Disruptor Proxy',
+        tagline: 'خوادمك، مُقاسة.',
+        crashTitle: 'حدث خطأ ما',
+        crashHint: 'واجهت هذه الشاشة خطأً غير متوقع. خوادمك وإعداداتك بأمان.',
+        crashRetry: 'حاول مجددًا',
+        expandWindow: 'تكبير النافذة',
+        shrinkWindow: 'تصغير النافذة',
+        trayShow: 'إظهار The Disruptor Proxy',
+        trayQuit: 'خروج'
+    },
+
+    nav:
+    {
+        home: 'الاتصال',
+        servers: 'الخوادم',
+        subscriptions: 'الاشتراكات',
+        routing: 'التوجيه',
+        settings: 'الإعدادات'
+    },
+
+    home:
+    {
+        title: 'الاتصال',
+        subtitle: 'لمسة واحدة إلى أسرع خادم متاح.',
+        disconnected: 'غير متصل',
+        noServerSelected: 'اختر خادمًا للبدء.',
+        switching: 'جارٍ التبديل…',
+        connecting: 'جارٍ الاتصال…',
+        connected: 'متصل',
+        disconnecting: 'جارٍ قطع الاتصال…',
+        failed: 'فشل الاتصال',
+        disconnect: 'قطع الاتصال',
+        connectFastest: 'الاتصال بالأسرع',
+        tapConnect: 'انقر للاتصال',
+        tapDisconnect: 'انقر لقطع الاتصال'
+    },
+
+    status:
+    {
+        duration: 'المدة',
+        upload: 'رفع',
+        download: 'تنزيل',
+        transferred: 'المنقول'
+    },
+
+    servers:
+    {
+        title: 'الخوادم',
+        empty: 'لا توجد خوادم بعد.',
+        emptyAction: 'أضف اشتراكًا أو الصق رابط إعداد.',
+        countLabel: (count: number) => `${ count.toLocaleString('ar-EG') } خادمًا`,
+        searchPlaceholder: 'ابحث بالاسم أو المضيف أو الدولة…',
+        noMatches: 'لا توجد خوادم مطابقة لهذه المرشحات.',
+        sortName: 'الاسم',
+        sortLatency: 'التأخير',
+        sortCountry: 'الدولة',
+        select: 'تحديد',
+        selectAll: 'تحديد الكل',
+        selectedLabel: (count: number) => `${ count.toLocaleString('ar-EG') } محددة`,
+        deletedLabel: (count: number) => `تم حذف ${ count.toLocaleString('ar-EG') } خادمًا`,
+        delete: 'حذف',
+        cancel: 'إلغاء',
+        favoritesOnly: 'المفضلة',
+        protocol: 'البروتوكول',
+        source: 'المصدر',
+        all: 'الكل',
+        allSources: 'كل المصادر',
+        searchSource: 'بحث في المصادر',
+        test: 'اختبار',
+        testing: (done: number, total: number) =>
+            `جارٍ الاختبار ${ done.toLocaleString('ar-EG') } / ${ total.toLocaleString('ar-EG') }`,
+        stop: 'إيقاف'
+    },
+
+    importing:
+    {
+        progress: (parsed: number, total: number) =>
+            `قراءة ${ parsed.toLocaleString('ar-EG') } من ${ total.toLocaleString('ar-EG') } سطرًا…`,
+        added: 'أُضيف',
+        duplicates: 'مكررات',
+        invalid: 'غير مقروءة',
+        elapsed: 'استغرق',
+        duplicatesHint: 'خوادم متطابقة وردت بأسماء مختلفة، دُمجت في واحد.',
+        title: 'استيراد الخوادم',
+        openAction: 'استيراد',
+        placeholder: 'الصق روابط الإعدادات أو عنوان اشتراك أو قائمة base64…',
+        paste: 'لصق',
+        fromClipboard: 'من الحافظة',
+        fromFile: 'من ملف',
+        scanQr: 'مسح QR',
+        qrScanning: 'وجّه الكاميرا نحو رمز QR…',
+        submit: 'استيراد',
+        invalidDetail: 'أسطر غير مقروءة',
+        lineLabel: (line: number) => `السطر ${ line.toLocaleString('ar-EG') }`
+    },
+
+    subscriptions:
+    {
+        title: 'الاشتراكات',
+        subtitle: 'المصادر التي تُبقي قائمة خوادمك محدثة.',
+        empty: 'لا توجد اشتراكات بعد.',
+        emptyAction: 'أضف رابط اشتراك لجلب الخوادم تلقائيًا.',
+        add: 'إضافة اشتراك',
+        addTitle: 'إضافة اشتراك',
+        editTitle: 'تعديل الاشتراك',
+        urlLabel: 'رابط الاشتراك',
+        urlPlaceholder: 'https://…',
+        nameLabel: 'الاسم',
+        namePlaceholder: 'اختياري — المضيف افتراضيًا',
+        intervalLabel: 'تحديث تلقائي',
+        intervalManual: 'يدوي',
+        intervalHourly: 'كل ساعة',
+        intervalDaily: 'يوميًا',
+        save: 'حفظ',
+        cancel: 'إلغاء',
+        update: 'تحديث',
+        updating: 'جارٍ التحديث…',
+        delete: 'حذف',
+        countLabel: (count: number) => `${ count.toLocaleString('ar-EG') } خادمًا`,
+        statusNever: 'لم يُحدَّث قط',
+        statusOk: 'محدث',
+        statusStale: 'قديم',
+        statusFailed: 'فشل التحديث',
+        updatedAgo: (text: string) => `حُدِّث ${ text }`,
+        justNow: 'الآن',
+        minutesAgo: (n: number) => `قبل ${ n.toLocaleString('ar-EG') } دقيقة`,
+        hoursAgo: (n: number) => `قبل ${ n.toLocaleString('ar-EG') } ساعة`,
+        daysAgo: (n: number) => `قبل ${ n.toLocaleString('ar-EG') } يوم`,
+        deleteTitle: 'حذف الاشتراك',
+        deletePrompt: (name: string) => `ماذا يحدث لخوادم «${ name }»؟`,
+        deleteRemoveConfigs: 'حذف خوادمه',
+        deleteKeepConfigs: 'إبقاؤها غير مُدارة',
+        added: 'أُضيف',
+        removed: 'أُزيل',
+        unchanged: 'بلا تغيير',
+        keptFavorites: 'مفضلة محفوظة',
+        remaining: 'المتبقي',
+        daysLeft: (n: number) => `بقي ${ n.toLocaleString('ar-EG') } يومًا`,
+        expired: 'منتهٍ'
+    },
+
+    routing:
+    {
+        title: 'التوجيه',
+        empty: 'اختر كيفية تقسيم الحركة بين الوكيل والاتصال المباشر.',
+        subtitle: 'حدد ما يمر عبر الوكيل وما يبقى مباشرًا.',
+        presets: 'الأوضاع',
+        bypassCountry: 'تجاوز حسب الدولة',
+        bypassCountryHint: 'اختر مكانك: مواقع تلك الدولة وعناوينها تبقى مباشرة، وكل ما عداها يمر عبر الوكيل.',
+        rulesHeader: 'القواعد',
+        rulesHint: 'تُفحص من الأعلى إلى الأسفل — أول قاعدة مطابقة تُطبَّق.',
+        addRule: 'إضافة قاعدة',
+        editRule: 'تعديل القاعدة',
+        matchType: 'المطابقة',
+        matchValue: 'القيمة',
+        matchValuePlaceholder: 'مثل ‎.ir‎ أو category-ads-all أو 192.168.0.0/16',
+        action: 'الإجراء',
+        actionProxy: 'وكيل',
+        actionDirect: 'مباشر',
+        actionBlock: 'حظر',
+        save: 'حفظ',
+        cancel: 'إلغاء',
+        delete: 'حذف',
+        moveUp: 'أعلى',
+        moveDown: 'أسفل',
+        presetRulesName: 'ذكي',
+        presetRulesDesc: 'حظر الإعلانات، المواقع المحلية والإيرانية مباشرة، والباقي عبر الوكيل.',
+        presetBypassName: 'تجاوز إيران',
+        presetBypassDesc: 'المواقع الإيرانية مباشرة، وكل ما عداها عبر الوكيل.',
+        presetGlobalName: 'شامل',
+        presetGlobalDesc: 'كل الحركة عبر الوكيل.',
+        presetDirectLanName: 'الشبكة المحلية مباشرة',
+        presetDirectLanDesc: 'الشبكة المحلية فقط مباشرة؛ والباقي عبر الوكيل.',
+        presetCustomName: 'مخصص',
+        typeDomainSuffix: 'نطاق ينتهي بـ',
+        typeDomain: 'نطاق مطابق',
+        typeDomainKeyword: 'نطاق يحتوي',
+        typeGeosite: 'فئة مواقع',
+        typeGeoip: 'دولة IP',
+        typeIpCidr: 'نطاق IP',
+        typeProcess: 'تطبيق',
+        descDomainsEndingIn: (value: string) => `نطاقات تنتهي بـ ${ value }`,
+        descExactDomain: (value: string) => value,
+        descDomainsContaining: (value: string) => `نطاقات تحتوي «${ value }»`,
+        descIranianSites: 'مواقع إيرانية',
+        descAdsTrackers: 'إعلانات ومتعقبات',
+        descChineseSites: 'مواقع صينية',
+        descIranianIps: 'عناوين IP إيرانية',
+        descLocalNetwork: 'الشبكة المحلية',
+        descIpRange: (value: string) => `عناوين ضمن ${ value }`,
+        descGeosite: (value: string) => `مواقع ${ value }`,
+        descGeoip: (value: string) => `عناوين IP ${ value.toUpperCase() }`,
+        descApp: (value: string) => `تطبيق «${ value }»`,
+        descEverythingElse: 'كل ما تبقى'
+    },
+
+    settings:
+    {
+        title: 'الإعدادات',
+        subtitle: 'اللغة والمظهر وسلوك التطبيق.',
+        appearance: 'المظهر',
+        theme: 'السمة',
+        themeSystem: 'النظام',
+        themeLight: 'فاتح',
+        themeDark: 'داكن',
+        language: 'اللغة',
+        about: 'حول',
+        version: 'الإصدار',
+        checkUpdate: 'التحقق من التحديثات',
+        checking: 'جارٍ التحقق…',
+        upToDate: 'أنت على أحدث إصدار.',
+        updateAvailable: (version: string) => `الإصدار ${ version } متاح.`,
+        download: 'تنزيل',
+        geoFiles: 'ملفات Geo',
+        geoFilesDesc: 'قواعد بيانات لقواعد التوجيه حسب الدولة وفئة المواقع. حدِّثها لتبقى قواعد التجاوز والحظر دقيقة.',
+        geoInstalled: 'مثبت',
+        geoMissing: 'غير مثبت',
+        updateGeoFiles: 'تحديث ملفات Geo',
+        updatingGeoFiles: 'جارٍ التنزيل…',
+        geoFilesUpdated: 'ملفات Geo محدثة.'
+    },
+
+    detail:
+    {
+        protocol: 'البروتوكول',
+        transport: 'النقل',
+        security: 'الأمان',
+        latency: 'التأخير',
+        successRate: 'معدل النجاح',
+        source: 'من',
+        unmanaged: 'ليس من اشتراك',
+        health: 'الحالة',
+        untested: 'لم يُختبر بعد.',
+        lastError: 'آخر خطأ',
+        connect: 'اتصال',
+        disconnect: 'قطع الاتصال',
+        copyLink: 'نسخ الرابط',
+        copied: 'نُسخ',
+        addFavorite: 'إضافة إلى المفضلة',
+        removeFavorite: 'إزالة من المفضلة',
+        delete: 'حذف',
+        ping: 'فحص',
+        pinging: 'جارٍ الفحص…',
+        notSupported: 'هذا البروتوكول غير مدعوم في النواة الحالية.',
+        emptyTitle: 'لم يُحدد خادم',
+        emptyHint: 'اختر خادمًا من القائمة لعرض تفاصيله.',
+        close: 'إغلاق التفاصيل'
+    },
+
+    common:
+    {
+        close: 'تم',
+        dismiss: 'إخفاء',
+        serverNotFound: 'الخادم غير موجود. ربما تم حذفه.'
+    }
+};

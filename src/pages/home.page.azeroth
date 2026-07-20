@@ -36,11 +36,28 @@ export default component HomePage()
 {
     const { t } = useLocale();
     const connection = useConnection();
+    const { rows } = useConfigs();
 
     // During a server-swap we override the phase so the gate, the status text, and
     // the button all show the transitional state together.
     const gatePhase = (): ConnectionPhase =>
         connection.switching() ? 'switching' : connection.phase();
+
+    // The gate is the primary control: a tap connects (fastest healthy server) or
+    // disconnects - the explicit buttons below mirror the same actions.
+    const gateAction = async (): Promise<void> =>
+    {
+        const phase = gatePhase();
+
+        if (phase === 'connected' || phase === 'connecting')
+        {
+            await connection.disconnect();
+        }
+        else if (phase === 'idle' || phase === 'error')
+        {
+            await connection.connectFastest(rows().map((row) => row.id));
+        }
+    };
 
     const statusText = (): string =>
     {
@@ -76,7 +93,7 @@ export default component HomePage()
 
     <Screen title={ t().home.title } subtitle={ t().home.subtitle }>
         <div class="flex flex-col items-center gap-8 px-5 py-10">
-            <ConnectionGate phase={ gatePhase } />
+            <ConnectionGate phase={ gatePhase } duration={ connection.duration } onPress={ () => void gateAction() } />
 
             <div class="flex w-full flex-col items-center gap-4">
                 <p class={ `text-xl font-semibold tracking-tight ${ PHASE_TONE[gatePhase()] ?? '' }${ gatePhase() === 'switching' ? ' animate-pulse' : '' }` }>

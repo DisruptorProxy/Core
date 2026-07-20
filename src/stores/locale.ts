@@ -1,10 +1,18 @@
 import { createEffect, createSignal, createStore } from 'azerothjs';
 
+import { ar } from '../lib/i18n/ar';
 import { en } from '../lib/i18n/en';
+import { es } from '../lib/i18n/es';
 import { fa } from '../lib/i18n/fa';
+import { hi } from '../lib/i18n/hi';
+import { id } from '../lib/i18n/id';
+import { ru } from '../lib/i18n/ru';
+import { tr } from '../lib/i18n/tr';
+import { vi } from '../lib/i18n/vi';
+import { zh } from '../lib/i18n/zh';
 import type { Strings } from '../lib/i18n/types';
 
-export type Locale = 'en' | 'fa';
+export type Locale = 'en' | 'fa' | 'ar' | 'zh' | 'ru' | 'tr' | 'hi' | 'es' | 'vi' | 'id';
 type Direction = 'ltr' | 'rtl';
 
 const STORAGE_KEY = 'guardian.locale';
@@ -12,12 +20,42 @@ const STORAGE_KEY = 'guardian.locale';
 const DICTIONARIES: Record<Locale, Strings> =
 {
     en,
-    fa
+    fa,
+    ar,
+    zh,
+    ru,
+    tr,
+    hi,
+    es,
+    vi,
+    id
 };
 
-const RTL_LOCALES: ReadonlySet<Locale> = new Set<Locale>(['fa']);
+/** Display order of the language picker. */
+export const LOCALES: Locale[] = ['en', 'fa', 'ar', 'zh', 'ru', 'tr', 'hi', 'es', 'vi', 'id'];
 
-const isLocale = (value: string | null): value is Locale => value === 'en' || value === 'fa';
+/**
+ * Each language named in ITSELF (endonym) - deliberately identical across
+ * locales, so the picker stays readable to someone stuck in the wrong language.
+ */
+export const LOCALE_LABELS: Record<Locale, string> =
+{
+    en: 'English',
+    fa: 'فارسی',
+    ar: 'العربية',
+    zh: '中文',
+    ru: 'Русский',
+    tr: 'Türkçe',
+    hi: 'हिन्दी',
+    es: 'Español',
+    vi: 'Tiếng Việt',
+    id: 'Bahasa Indonesia'
+};
+
+const RTL_LOCALES: ReadonlySet<Locale> = new Set<Locale>(['fa', 'ar']);
+
+const isLocale = (value: string | null): value is Locale =>
+    value !== null && (LOCALES as string[]).includes(value);
 
 const readStored = (): Locale =>
 {

@@ -5,7 +5,7 @@ import { listen } from '@tauri-apps/api/event';
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-const NOT_DESKTOP = 'Geo files can only be updated in the Guardian desktop app.';
+const NOT_DESKTOP = 'Geo files can only be updated in the Disruptor Proxy desktop app.';
 
 /** Presence of xray's geoip.dat / geosite.dat, mirrored from the Rust side. */
 interface GeoStatus

@@ -4,14 +4,14 @@ export const fa: Strings =
 {
     app:
     {
-        name: 'گاردین',
+        name: 'The Disruptor Proxy',
         tagline: 'سرورهای شما، اندازه‌گیری‌شده.',
         crashTitle: 'مشکلی پیش آمد',
         crashHint: 'این صفحه با خطای غیرمنتظره‌ای مواجه شد. سرورها و تنظیمات شما در امان هستند.',
         crashRetry: 'تلاش دوباره',
         expandWindow: 'بزرگ‌کردن پنجره',
         shrinkWindow: 'کوچک‌کردن پنجره',
-        trayShow: 'نمایش گاردین',
+        trayShow: 'نمایش The Disruptor Proxy',
         trayQuit: 'خروج'
     },
 
@@ -36,7 +36,9 @@ export const fa: Strings =
         disconnecting: 'در حال قطع…',
         failed: 'اتصال ناموفق',
         disconnect: 'قطع اتصال',
-        connectFastest: 'اتصال به سریع‌ترین'
+        connectFastest: 'اتصال به سریع‌ترین',
+        tapConnect: 'برای اتصال ضربه بزنید',
+        tapDisconnect: 'برای قطع ضربه بزنید'
     },
 
     status:
@@ -151,6 +153,8 @@ export const fa: Strings =
         empty: 'انتخاب کنید ترافیک چگونه بین پروکسی و اتصال مستقیم تقسیم شود.',
         subtitle: 'تعیین کنید چه چیزی از پروکسی عبور کند و چه چیزی مستقیم بماند.',
         presets: 'حالت‌ها',
+        bypassCountry: 'دور زدن بر اساس کشور',
+        bypassCountryHint: 'کشور خود را انتخاب کنید: سایت‌ها و IPهای آن کشور مستقیم می‌مانند و بقیه از پروکسی عبور می‌کند.',
         rulesHeader: 'قوانین',
         rulesHint: 'از بالا به پایین بررسی می‌شود — نخستین قانون منطبق اعمال می‌شود.',
         addRule: 'افزودن قانون',
@@ -208,8 +212,6 @@ export const fa: Strings =
         themeLight: 'روشن',
         themeDark: 'تیره',
         language: 'زبان',
-        languageEnglish: 'English',
-        languagePersian: 'فارسی',
         about: 'درباره',
         version: 'نسخه',
         checkUpdate: 'بررسی به‌روزرسانی',

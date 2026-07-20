@@ -40,6 +40,8 @@ export interface Strings
         failed: string;
         disconnect: string;
         connectFastest: string;
+        tapConnect: string;
+        tapDisconnect: string;
     };
 
     /** The live-connection readout, shared by the Connect screen and the servers side panel. */
@@ -155,6 +157,8 @@ export interface Strings
         empty: string;
         subtitle: string;
         presets: string;
+        bypassCountry: string;
+        bypassCountryHint: string;
         rulesHeader: string;
         rulesHint: string;
         addRule: string;
@@ -215,8 +219,6 @@ export interface Strings
         themeLight: string;
         themeDark: string;
         language: string;
-        languageEnglish: string;
-        languagePersian: string;
         about: string;
         version: string;
         checkUpdate: string;

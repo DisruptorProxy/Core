@@ -53,15 +53,24 @@ export const installTray = (labels: () => TrayLabels): void =>
 
     installed = true;
 
-    let acquiring: Promise<TrayIcon> | null = null;
-
     const acquire = async (initial: TrayLabels): Promise<TrayIcon> =>
     {
         // Tray icons are owned by the TAURI process, not this webview context: a
         // dev reload resets `installed` but leaves the previous context's tray -
-        // its callbacks now dead - sitting in the tray area. Remove any stale one
-        // before creating, or every reload stacks another icon.
-        await TrayIcon.removeById('guardian');
+        // its callbacks now dead - sitting in the tray area. Remove it only when
+        // it actually exists; a blind removeById on a fresh start must not be
+        // able to reject the whole install.
+        try
+        {
+            if (await TrayIcon.getById('guardian') !== null)
+            {
+                await TrayIcon.removeById('guardian');
+            }
+        }
+        catch
+        {
+            // A failed stale-probe never blocks creating the live tray.
+        }
 
         return TrayIcon.new({
             id: 'guardian',
@@ -79,21 +88,34 @@ export const installTray = (labels: () => TrayLabels): void =>
         });
     };
 
+    // All runs chain on one always-RESOLVING promise: concurrent effect firings
+    // (the locale store settling at startup) serialize instead of racing two
+    // TrayIcon.new calls, and a failed attempt passes `null` along - so the next
+    // run RETRIES the creation rather than pinning a rejected promise forever
+    // (which would leave the app permanently without a tray).
+    let chain: Promise<TrayIcon | null> = Promise.resolve(null);
+
     createEffect(() =>
     {
         const current = labels();
 
-        void (async (): Promise<void> =>
+        chain = chain.then(async (existing) =>
         {
-            // ??= serializes concurrent runs: a second effect firing during
-            // creation (the locale store settling at startup) must relabel the
-            // SAME tray, not race a second TrayIcon.new into a duplicate.
-            acquiring ??= acquire(current);
+            try
+            {
+                const tray = existing ?? await acquire(current);
 
-            const tray = await acquiring;
+                await tray.setTooltip(current.tooltip);
+                await tray.setMenu(await buildMenu(current));
 
-            await tray.setTooltip(current.tooltip);
-            await tray.setMenu(await buildMenu(current));
-        })();
+                return tray;
+            }
+            catch (trayError)
+            {
+                console.warn('tray install failed:', trayError);
+
+                return existing;
+            }
+        });
     }, { name: 'tray-locale' });
 };

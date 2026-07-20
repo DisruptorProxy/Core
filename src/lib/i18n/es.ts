@@ -1,0 +1,262 @@
+import type { Strings } from './types';
+
+export const es: Strings =
+{
+    app:
+    {
+        name: 'The Disruptor Proxy',
+        tagline: 'Tus servidores, medidos.',
+        crashTitle: 'Algo salió mal',
+        crashHint: 'Esta pantalla encontró un error inesperado. Tus servidores y ajustes están a salvo.',
+        crashRetry: 'Reintentar',
+        expandWindow: 'Ampliar ventana',
+        shrinkWindow: 'Reducir ventana',
+        trayShow: 'Mostrar The Disruptor Proxy',
+        trayQuit: 'Salir'
+    },
+
+    nav:
+    {
+        home: 'Conectar',
+        servers: 'Servidores',
+        subscriptions: 'Suscripciones',
+        routing: 'Rutas',
+        settings: 'Ajustes'
+    },
+
+    home:
+    {
+        title: 'Conectar',
+        subtitle: 'Un toque hasta el servidor sano más rápido.',
+        disconnected: 'Sin conexión',
+        noServerSelected: 'Elige un servidor para empezar.',
+        switching: 'Cambiando…',
+        connecting: 'Conectando…',
+        connected: 'Conectado',
+        disconnecting: 'Desconectando…',
+        failed: 'Falló la conexión',
+        disconnect: 'Desconectar',
+        connectFastest: 'Conectar al más rápido',
+        tapConnect: 'Toca para conectar',
+        tapDisconnect: 'Toca para desconectar'
+    },
+
+    status:
+    {
+        duration: 'Duración',
+        upload: 'Subida',
+        download: 'Bajada',
+        transferred: 'Transferido'
+    },
+
+    servers:
+    {
+        title: 'Servidores',
+        empty: 'Aún no hay servidores.',
+        emptyAction: 'Añade una suscripción o pega un enlace de configuración.',
+        countLabel: (count: number) => `${ count.toLocaleString('es-ES') } servidores`,
+        searchPlaceholder: 'Buscar nombre, host, país…',
+        noMatches: 'Ningún servidor coincide con estos filtros.',
+        sortName: 'Nombre',
+        sortLatency: 'Latencia',
+        sortCountry: 'País',
+        select: 'Seleccionar',
+        selectAll: 'Seleccionar todo',
+        selectedLabel: (count: number) => `${ count.toLocaleString('es-ES') } seleccionados`,
+        deletedLabel: (count: number) => `${ count.toLocaleString('es-ES') } servidores eliminados`,
+        delete: 'Eliminar',
+        cancel: 'Cancelar',
+        favoritesOnly: 'Favoritos',
+        protocol: 'Protocolo',
+        source: 'Origen',
+        all: 'Todos',
+        allSources: 'Todos los orígenes',
+        searchSource: 'Buscar orígenes',
+        test: 'Probar',
+        testing: (done: number, total: number) =>
+            `Probando ${ done.toLocaleString('es-ES') } / ${ total.toLocaleString('es-ES') }`,
+        stop: 'Detener'
+    },
+
+    importing:
+    {
+        progress: (parsed: number, total: number) =>
+            `Leyendo ${ parsed.toLocaleString('es-ES') } de ${ total.toLocaleString('es-ES') } líneas…`,
+        added: 'Añadidos',
+        duplicates: 'Duplicados',
+        invalid: 'Ilegibles',
+        elapsed: 'Tardó',
+        duplicatesHint: 'Servidores idénticos con nombres distintos, fusionados en uno.',
+        title: 'Importar servidores',
+        openAction: 'Importar',
+        placeholder: 'Pega enlaces de configuración, una URL de suscripción o una lista base64…',
+        paste: 'Pegar',
+        fromClipboard: 'Del portapapeles',
+        fromFile: 'Desde archivo',
+        scanQr: 'Escanear QR',
+        qrScanning: 'Apunta la cámara al código QR…',
+        submit: 'Importar',
+        invalidDetail: 'Líneas ilegibles',
+        lineLabel: (line: number) => `Línea ${ line }`
+    },
+
+    subscriptions:
+    {
+        title: 'Suscripciones',
+        subtitle: 'Fuentes que mantienen tu lista de servidores al día.',
+        empty: 'Aún no hay suscripciones.',
+        emptyAction: 'Añade un enlace de suscripción para traer servidores automáticamente.',
+        add: 'Añadir suscripción',
+        addTitle: 'Añadir suscripción',
+        editTitle: 'Editar suscripción',
+        urlLabel: 'URL de la suscripción',
+        urlPlaceholder: 'https://…',
+        nameLabel: 'Nombre',
+        namePlaceholder: 'Opcional — por defecto, el host',
+        intervalLabel: 'Actualización automática',
+        intervalManual: 'Manual',
+        intervalHourly: 'Cada hora',
+        intervalDaily: 'Diaria',
+        save: 'Guardar',
+        cancel: 'Cancelar',
+        update: 'Actualizar',
+        updating: 'Actualizando…',
+        delete: 'Eliminar',
+        countLabel: (count: number) => `${ count.toLocaleString('es-ES') } servidores`,
+        statusNever: 'Nunca actualizada',
+        statusOk: 'Al día',
+        statusStale: 'Desfasada',
+        statusFailed: 'Error al actualizar',
+        updatedAgo: (text: string) => `Actualizada ${ text }`,
+        justNow: 'justo ahora',
+        minutesAgo: (n: number) => `hace ${ n } min`,
+        hoursAgo: (n: number) => `hace ${ n } h`,
+        daysAgo: (n: number) => `hace ${ n } d`,
+        deleteTitle: 'Eliminar suscripción',
+        deletePrompt: (name: string) => `¿Qué hacemos con los servidores de «${ name }»?`,
+        deleteRemoveConfigs: 'Eliminar sus servidores',
+        deleteKeepConfigs: 'Conservarlos sin gestionar',
+        added: 'Añadidos',
+        removed: 'Eliminados',
+        unchanged: 'Sin cambios',
+        keptFavorites: 'Favoritos conservados',
+        remaining: 'Restante',
+        daysLeft: (n: number) => `Quedan ${ n } días`,
+        expired: 'Caducada'
+    },
+
+    routing:
+    {
+        title: 'Rutas',
+        empty: 'Elige cómo repartir el tráfico entre el proxy y tu conexión directa.',
+        subtitle: 'Decide qué pasa por el proxy y qué va directo.',
+        presets: 'Modos',
+        bypassCountry: 'Omitir un país',
+        bypassCountryHint: 'Elige dónde estás: los sitios e IP de ese país van directos, todo lo demás pasa por el proxy.',
+        rulesHeader: 'Reglas',
+        rulesHint: 'Se evalúan de arriba abajo — gana la primera que coincida.',
+        addRule: 'Añadir regla',
+        editRule: 'Editar regla',
+        matchType: 'Coincidencia',
+        matchValue: 'Valor',
+        matchValuePlaceholder: 'p. ej. .ir, category-ads-all, 192.168.0.0/16',
+        action: 'Acción',
+        actionProxy: 'Proxy',
+        actionDirect: 'Directo',
+        actionBlock: 'Bloquear',
+        save: 'Guardar',
+        cancel: 'Cancelar',
+        delete: 'Eliminar',
+        moveUp: 'Subir',
+        moveDown: 'Bajar',
+        presetRulesName: 'Inteligente',
+        presetRulesDesc: 'Bloquear anuncios, sitios locales e iraníes directos, el resto por proxy.',
+        presetBypassName: 'Omitir Irán',
+        presetBypassDesc: 'Sitios iraníes directos, todo lo demás por el proxy.',
+        presetGlobalName: 'Global',
+        presetGlobalDesc: 'Todo el tráfico por el proxy.',
+        presetDirectLanName: 'LAN directa',
+        presetDirectLanDesc: 'Solo la red local va directa; el resto por el proxy.',
+        presetCustomName: 'Personalizado',
+        typeDomainSuffix: 'Dominio termina en',
+        typeDomain: 'Dominio exacto',
+        typeDomainKeyword: 'Dominio contiene',
+        typeGeosite: 'Categoría de sitios',
+        typeGeoip: 'País de IP',
+        typeIpCidr: 'Rango de IP',
+        typeProcess: 'Aplicación',
+        descDomainsEndingIn: (value: string) => `Dominios que terminan en ${ value }`,
+        descExactDomain: (value: string) => value,
+        descDomainsContaining: (value: string) => `Dominios que contienen «${ value }»`,
+        descIranianSites: 'Sitios iraníes',
+        descAdsTrackers: 'Anuncios y rastreadores',
+        descChineseSites: 'Sitios chinos',
+        descIranianIps: 'Direcciones IP iraníes',
+        descLocalNetwork: 'Red local',
+        descIpRange: (value: string) => `IPs en ${ value }`,
+        descGeosite: (value: string) => `Sitios ${ value }`,
+        descGeoip: (value: string) => `Direcciones IP de ${ value.toUpperCase() }`,
+        descApp: (value: string) => `Aplicación «${ value }»`,
+        descEverythingElse: 'Todo lo demás'
+    },
+
+    settings:
+    {
+        title: 'Ajustes',
+        subtitle: 'Idioma, tema y comportamiento de la app.',
+        appearance: 'Apariencia',
+        theme: 'Tema',
+        themeSystem: 'Sistema',
+        themeLight: 'Claro',
+        themeDark: 'Oscuro',
+        language: 'Idioma',
+        about: 'Acerca de',
+        version: 'Versión',
+        checkUpdate: 'Buscar actualizaciones',
+        checking: 'Comprobando…',
+        upToDate: 'Tienes la última versión.',
+        updateAvailable: (version: string) => `La versión ${ version } está disponible.`,
+        download: 'Descargar',
+        geoFiles: 'Archivos geo',
+        geoFilesDesc: 'Bases de datos para reglas de rutas por país y categoría de sitios. Actualízalas para que las reglas de omisión y bloqueo sigan siendo precisas.',
+        geoInstalled: 'Instalado',
+        geoMissing: 'No instalado',
+        updateGeoFiles: 'Actualizar archivos geo',
+        updatingGeoFiles: 'Descargando…',
+        geoFilesUpdated: 'Los archivos geo están al día.'
+    },
+
+    detail:
+    {
+        protocol: 'Protocolo',
+        transport: 'Transporte',
+        security: 'Seguridad',
+        latency: 'Latencia',
+        successRate: 'Tasa de éxito',
+        source: 'Origen',
+        unmanaged: 'No proviene de una suscripción',
+        health: 'Salud',
+        untested: 'Aún sin probar.',
+        lastError: 'Último error',
+        connect: 'Conectar',
+        disconnect: 'Desconectar',
+        copyLink: 'Copiar enlace',
+        copied: 'Copiado',
+        addFavorite: 'Añadir a favoritos',
+        removeFavorite: 'Quitar de favoritos',
+        delete: 'Eliminar',
+        ping: 'Ping',
+        pinging: 'Haciendo ping…',
+        notSupported: 'El núcleo actual no admite este protocolo.',
+        emptyTitle: 'Ningún servidor seleccionado',
+        emptyHint: 'Elige un servidor de la lista para ver sus detalles.',
+        close: 'Cerrar detalles'
+    },
+
+    common:
+    {
+        close: 'Hecho',
+        dismiss: 'Descartar',
+        serverNotFound: 'Servidor no encontrado. Puede que se haya eliminado.'
+    }
+};

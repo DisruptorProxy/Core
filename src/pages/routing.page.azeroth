@@ -4,14 +4,17 @@ import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide';
 
 import type { Strings } from '../lib/i18n/types';
 import { describeRule } from '../lib/routing/describe';
-import { PRESET_IDS } from '../lib/routing/presets';
+import { BYPASS_COUNTRIES, PRESET_IDS } from '../lib/routing/presets';
 import type { ProfileId, Rule, RuleAction } from '../lib/routing/types';
 
 import { useLocale } from '../stores/locale';
 import { useRouting } from '../stores/routing';
 
+import { flagIcon } from '../components/flag';
 import { icon } from '../components/icon';
 import Screen from '../components/screen.component.azeroth';
+
+const COUNTRIES: string[] = [...BYPASS_COUNTRIES];
 
 import RuleEditor from '../features/routing/rule-editor.component.azeroth';
 
@@ -24,10 +27,10 @@ const ACTION_TONE: Record<RuleAction, string> =
 
 const ICON_BTN = 'flex size-8 items-center justify-center rounded-md text-faint hover:bg-elevated hover:text-text';
 
-const presetName = (id: Exclude<ProfileId, 'custom'>, s: Strings): string =>
+const presetName = (id: Exclude<ProfileId, 'custom' | 'bypass-country'>, s: Strings): string =>
     ({ rules: s.routing.presetRulesName, 'bypass-iran': s.routing.presetBypassName, global: s.routing.presetGlobalName, 'direct-lan': s.routing.presetDirectLanName })[id];
 
-const presetDesc = (id: Exclude<ProfileId, 'custom'>, s: Strings): string =>
+const presetDesc = (id: Exclude<ProfileId, 'custom' | 'bypass-country'>, s: Strings): string =>
     ({ rules: s.routing.presetRulesDesc, 'bypass-iran': s.routing.presetBypassDesc, global: s.routing.presetGlobalDesc, 'direct-lan': s.routing.presetDirectLanDesc })[id];
 
 /**
@@ -38,8 +41,15 @@ const presetDesc = (id: Exclude<ProfileId, 'custom'>, s: Strings): string =>
  */
 export default component RoutingPage()
 {
-    const { t } = useLocale();
+    const { t, locale } = useLocale();
     const routing = useRouting();
+
+    // Country names come from the platform, localized for free in every language.
+    const regionName = (code: string): string =>
+        new Intl.DisplayNames([locale()], { type: 'region' }).of(code.toUpperCase()) ?? code.toUpperCase();
+
+    const countryActive = (code: string): boolean =>
+        routing.profileId() === 'bypass-country' && routing.bypassCountry() === code;
 
     state editorOpen = false;
     state editing = null as Rule | null;
@@ -96,6 +106,32 @@ export default component RoutingPage()
                                     { presetName(id, t()) }
                                 </span>
                                 <span class="text-[11px] leading-snug text-muted">{ presetDesc(id, t()) }</span>
+                            </button>
+                        }
+                    </For>
+                </div>
+            </section>
+
+            <section class="flex flex-col gap-3">
+                <h2 class="text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]">{ t().routing.bypassCountry }</h2>
+
+                <p class="text-[11px] text-faint">{ t().routing.bypassCountryHint }</p>
+
+                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+                    <For each={ COUNTRIES } key={ (code) => code }>
+                        { (code) =>
+                            <button
+                                type="button"
+                                class={ () => 'flex items-center gap-2 rounded-xl border px-3 py-2.5 text-start transition-colors '
+                                    + (countryActive(code)
+                                        ? 'border-accent bg-accent-soft'
+                                        : 'border-border bg-surface hover:bg-elevated') }
+                                onClick={ () => routing.useCountryBypass(code) }
+                            >
+                                <span class={ `${ flagIcon(code) } flag-row shrink-0` }></span>
+                                <span class={ () => 'truncate text-sm font-medium ' + (countryActive(code) ? 'text-accent' : 'text-text') }>
+                                    { regionName(code) }
+                                </span>
                             </button>
                         }
                     </For>

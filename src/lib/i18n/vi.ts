@@ -1,0 +1,262 @@
+import type { Strings } from './types';
+
+export const vi: Strings =
+{
+    app:
+    {
+        name: 'The Disruptor Proxy',
+        tagline: 'Máy chủ của bạn, được đo lường.',
+        crashTitle: 'Đã xảy ra lỗi',
+        crashHint: 'Màn hình này gặp lỗi không mong muốn. Máy chủ và cài đặt của bạn vẫn an toàn.',
+        crashRetry: 'Thử lại',
+        expandWindow: 'Phóng to cửa sổ',
+        shrinkWindow: 'Thu nhỏ cửa sổ',
+        trayShow: 'Hiện The Disruptor Proxy',
+        trayQuit: 'Thoát'
+    },
+
+    nav:
+    {
+        home: 'Kết nối',
+        servers: 'Máy chủ',
+        subscriptions: 'Gói đăng ký',
+        routing: 'Định tuyến',
+        settings: 'Cài đặt'
+    },
+
+    home:
+    {
+        title: 'Kết nối',
+        subtitle: 'Một chạm tới máy chủ khỏe nhanh nhất.',
+        disconnected: 'Chưa kết nối',
+        noServerSelected: 'Chọn một máy chủ để bắt đầu.',
+        switching: 'Đang chuyển…',
+        connecting: 'Đang kết nối…',
+        connected: 'Đã kết nối',
+        disconnecting: 'Đang ngắt…',
+        failed: 'Kết nối thất bại',
+        disconnect: 'Ngắt kết nối',
+        connectFastest: 'Kết nối nhanh nhất',
+        tapConnect: 'Chạm để kết nối',
+        tapDisconnect: 'Chạm để ngắt'
+    },
+
+    status:
+    {
+        duration: 'Thời lượng',
+        upload: 'Tải lên',
+        download: 'Tải xuống',
+        transferred: 'Đã truyền'
+    },
+
+    servers:
+    {
+        title: 'Máy chủ',
+        empty: 'Chưa có máy chủ nào.',
+        emptyAction: 'Thêm gói đăng ký hoặc dán liên kết cấu hình.',
+        countLabel: (count: number) => `${ count.toLocaleString('vi-VN') } máy chủ`,
+        searchPlaceholder: 'Tìm theo tên, host, quốc gia…',
+        noMatches: 'Không có máy chủ nào khớp bộ lọc.',
+        sortName: 'Tên',
+        sortLatency: 'Độ trễ',
+        sortCountry: 'Quốc gia',
+        select: 'Chọn',
+        selectAll: 'Chọn tất cả',
+        selectedLabel: (count: number) => `Đã chọn ${ count.toLocaleString('vi-VN') }`,
+        deletedLabel: (count: number) => `Đã xóa ${ count.toLocaleString('vi-VN') } máy chủ`,
+        delete: 'Xóa',
+        cancel: 'Hủy',
+        favoritesOnly: 'Yêu thích',
+        protocol: 'Giao thức',
+        source: 'Nguồn',
+        all: 'Tất cả',
+        allSources: 'Mọi nguồn',
+        searchSource: 'Tìm nguồn',
+        test: 'Kiểm tra',
+        testing: (done: number, total: number) =>
+            `Đang kiểm tra ${ done.toLocaleString('vi-VN') } / ${ total.toLocaleString('vi-VN') }`,
+        stop: 'Dừng'
+    },
+
+    importing:
+    {
+        progress: (parsed: number, total: number) =>
+            `Đang đọc ${ parsed.toLocaleString('vi-VN') } / ${ total.toLocaleString('vi-VN') } dòng…`,
+        added: 'Đã thêm',
+        duplicates: 'Trùng lặp',
+        invalid: 'Không đọc được',
+        elapsed: 'Mất',
+        duplicatesHint: 'Các máy chủ giống hệt nhau nhưng khác tên đã được gộp làm một.',
+        title: 'Nhập máy chủ',
+        openAction: 'Nhập',
+        placeholder: 'Dán liên kết cấu hình, URL gói đăng ký hoặc danh sách base64…',
+        paste: 'Dán',
+        fromClipboard: 'Từ bộ nhớ tạm',
+        fromFile: 'Từ tệp',
+        scanQr: 'Quét QR',
+        qrScanning: 'Hướng camera vào mã QR…',
+        submit: 'Nhập',
+        invalidDetail: 'Các dòng không đọc được',
+        lineLabel: (line: number) => `Dòng ${ line }`
+    },
+
+    subscriptions:
+    {
+        title: 'Gói đăng ký',
+        subtitle: 'Các nguồn giữ danh sách máy chủ của bạn luôn mới.',
+        empty: 'Chưa có gói đăng ký nào.',
+        emptyAction: 'Thêm liên kết gói đăng ký để tự động lấy máy chủ.',
+        add: 'Thêm gói đăng ký',
+        addTitle: 'Thêm gói đăng ký',
+        editTitle: 'Sửa gói đăng ký',
+        urlLabel: 'URL gói đăng ký',
+        urlPlaceholder: 'https://…',
+        nameLabel: 'Tên',
+        namePlaceholder: 'Tùy chọn — mặc định là host',
+        intervalLabel: 'Tự động cập nhật',
+        intervalManual: 'Thủ công',
+        intervalHourly: 'Mỗi giờ',
+        intervalDaily: 'Hằng ngày',
+        save: 'Lưu',
+        cancel: 'Hủy',
+        update: 'Cập nhật',
+        updating: 'Đang cập nhật…',
+        delete: 'Xóa',
+        countLabel: (count: number) => `${ count.toLocaleString('vi-VN') } máy chủ`,
+        statusNever: 'Chưa từng cập nhật',
+        statusOk: 'Mới nhất',
+        statusStale: 'Đã cũ',
+        statusFailed: 'Cập nhật thất bại',
+        updatedAgo: (text: string) => `Cập nhật ${ text }`,
+        justNow: 'vừa xong',
+        minutesAgo: (n: number) => `${ n } phút trước`,
+        hoursAgo: (n: number) => `${ n } giờ trước`,
+        daysAgo: (n: number) => `${ n } ngày trước`,
+        deleteTitle: 'Xóa gói đăng ký',
+        deletePrompt: (name: string) => `Xử lý thế nào với các máy chủ từ “${ name }”?`,
+        deleteRemoveConfigs: 'Xóa máy chủ của nó',
+        deleteKeepConfigs: 'Giữ lại, không quản lý',
+        added: 'Thêm',
+        removed: 'Xóa',
+        unchanged: 'Không đổi',
+        keptFavorites: 'Giữ mục yêu thích',
+        remaining: 'Còn lại',
+        daysLeft: (n: number) => `Còn ${ n } ngày`,
+        expired: 'Hết hạn'
+    },
+
+    routing:
+    {
+        title: 'Định tuyến',
+        empty: 'Chọn cách chia lưu lượng giữa proxy và kết nối trực tiếp.',
+        subtitle: 'Quyết định thứ gì đi qua proxy, thứ gì đi thẳng.',
+        presets: 'Chế độ',
+        bypassCountry: 'Bỏ qua theo quốc gia',
+        bypassCountryHint: 'Chọn nơi bạn ở: trang web và IP của quốc gia đó đi thẳng, mọi thứ khác qua proxy.',
+        rulesHeader: 'Quy tắc',
+        rulesHint: 'Xét từ trên xuống — quy tắc khớp đầu tiên thắng.',
+        addRule: 'Thêm quy tắc',
+        editRule: 'Sửa quy tắc',
+        matchType: 'Khớp',
+        matchValue: 'Giá trị',
+        matchValuePlaceholder: 'vd. .ir, category-ads-all, 192.168.0.0/16',
+        action: 'Hành động',
+        actionProxy: 'Proxy',
+        actionDirect: 'Trực tiếp',
+        actionBlock: 'Chặn',
+        save: 'Lưu',
+        cancel: 'Hủy',
+        delete: 'Xóa',
+        moveUp: 'Lên',
+        moveDown: 'Xuống',
+        presetRulesName: 'Thông minh',
+        presetRulesDesc: 'Chặn quảng cáo, trang nội địa và Iran đi thẳng, còn lại qua proxy.',
+        presetBypassName: 'Bỏ qua Iran',
+        presetBypassDesc: 'Trang Iran đi thẳng, mọi thứ khác qua proxy.',
+        presetGlobalName: 'Toàn cầu',
+        presetGlobalDesc: 'Mọi lưu lượng đều qua proxy.',
+        presetDirectLanName: 'LAN trực tiếp',
+        presetDirectLanDesc: 'Chỉ mạng nội bộ đi thẳng; còn lại qua proxy.',
+        presetCustomName: 'Tùy chỉnh',
+        typeDomainSuffix: 'Tên miền kết thúc bằng',
+        typeDomain: 'Tên miền chính xác',
+        typeDomainKeyword: 'Tên miền chứa',
+        typeGeosite: 'Nhóm trang web',
+        typeGeoip: 'Quốc gia IP',
+        typeIpCidr: 'Dải IP',
+        typeProcess: 'Ứng dụng',
+        descDomainsEndingIn: (value: string) => `Tên miền kết thúc bằng ${ value }`,
+        descExactDomain: (value: string) => value,
+        descDomainsContaining: (value: string) => `Tên miền chứa “${ value }”`,
+        descIranianSites: 'Trang web Iran',
+        descAdsTrackers: 'Quảng cáo và trình theo dõi',
+        descChineseSites: 'Trang web Trung Quốc',
+        descIranianIps: 'Địa chỉ IP Iran',
+        descLocalNetwork: 'Mạng nội bộ',
+        descIpRange: (value: string) => `IP trong ${ value }`,
+        descGeosite: (value: string) => `Trang ${ value }`,
+        descGeoip: (value: string) => `Địa chỉ IP ${ value.toUpperCase() }`,
+        descApp: (value: string) => `Ứng dụng “${ value }”`,
+        descEverythingElse: 'Mọi thứ còn lại'
+    },
+
+    settings:
+    {
+        title: 'Cài đặt',
+        subtitle: 'Ngôn ngữ, giao diện và hành vi ứng dụng.',
+        appearance: 'Giao diện',
+        theme: 'Chủ đề',
+        themeSystem: 'Theo hệ thống',
+        themeLight: 'Sáng',
+        themeDark: 'Tối',
+        language: 'Ngôn ngữ',
+        about: 'Giới thiệu',
+        version: 'Phiên bản',
+        checkUpdate: 'Kiểm tra cập nhật',
+        checking: 'Đang kiểm tra…',
+        upToDate: 'Bạn đang dùng phiên bản mới nhất.',
+        updateAvailable: (version: string) => `Đã có phiên bản ${ version }.`,
+        download: 'Tải về',
+        geoFiles: 'Tệp geo',
+        geoFilesDesc: 'Cơ sở dữ liệu cho quy tắc định tuyến theo quốc gia và nhóm trang web. Cập nhật để quy tắc bỏ qua và chặn luôn chính xác.',
+        geoInstalled: 'Đã cài',
+        geoMissing: 'Chưa cài',
+        updateGeoFiles: 'Cập nhật tệp geo',
+        updatingGeoFiles: 'Đang tải…',
+        geoFilesUpdated: 'Tệp geo đã mới nhất.'
+    },
+
+    detail:
+    {
+        protocol: 'Giao thức',
+        transport: 'Vận chuyển',
+        security: 'Bảo mật',
+        latency: 'Độ trễ',
+        successRate: 'Tỷ lệ thành công',
+        source: 'Từ',
+        unmanaged: 'Không thuộc gói đăng ký nào',
+        health: 'Tình trạng',
+        untested: 'Chưa kiểm tra.',
+        lastError: 'Lỗi gần nhất',
+        connect: 'Kết nối',
+        disconnect: 'Ngắt kết nối',
+        copyLink: 'Sao chép liên kết',
+        copied: 'Đã sao chép',
+        addFavorite: 'Thêm vào yêu thích',
+        removeFavorite: 'Bỏ yêu thích',
+        delete: 'Xóa',
+        ping: 'Ping',
+        pinging: 'Đang ping…',
+        notSupported: 'Lõi hiện tại không hỗ trợ giao thức này.',
+        emptyTitle: 'Chưa chọn máy chủ',
+        emptyHint: 'Chọn một máy chủ trong danh sách để xem chi tiết.',
+        close: 'Đóng chi tiết'
+    },
+
+    common:
+    {
+        close: 'Xong',
+        dismiss: 'Bỏ qua',
+        serverNotFound: 'Không tìm thấy máy chủ. Có thể nó đã bị xóa.'
+    }
+};

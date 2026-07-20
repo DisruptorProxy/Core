@@ -1,7 +1,7 @@
 import { createSignal, createStore } from 'azerothjs';
 
 import { getSetting, putSetting } from '../lib/db/repo';
-import { PRESET_RULES } from '../lib/routing/presets';
+import { PRESET_RULES, countryBypassRules } from '../lib/routing/presets';
 import { newRuleId } from '../lib/routing/types';
 import type { ProfileId, Rule, RoutingProfile } from '../lib/routing/types';
 
@@ -21,10 +21,11 @@ export const useRouting = createStore(() =>
 {
     const [profileId, setProfileId] = createSignal<ProfileId>('rules');
     const [rules, setRules] = createSignal<Rule[]>(clone(PRESET_RULES.rules));
+    const [bypassCountry, setBypassCountry] = createSignal<string | null>(null);
 
-    const persist = (id: ProfileId, next: Rule[]): void =>
+    const persist = (id: ProfileId, next: Rule[], country?: string): void =>
     {
-        void putSetting<RoutingProfile>(STORAGE_KEY, { id, rules: next });
+        void putSetting<RoutingProfile>(STORAGE_KEY, { id, rules: next, country });
     };
 
     const load = async (): Promise<void> =>
@@ -35,23 +36,37 @@ export const useRouting = createStore(() =>
         {
             setProfileId(stored.id);
             setRules(stored.rules);
+            setBypassCountry(stored.country ?? null);
         }
     };
 
     /** Loads a preset's rules wholesale. */
-    const usePreset = (id: Exclude<ProfileId, 'custom'>): void =>
+    const usePreset = (id: Exclude<ProfileId, 'custom' | 'bypass-country'>): void =>
     {
         const next = clone(PRESET_RULES[id]);
 
         setProfileId(id);
+        setBypassCountry(null);
         setRules(next);
         persist(id, next);
+    };
+
+    /** Bypass one country: its sites/IPs/ccTLD direct, everything else proxied. */
+    const useCountryBypass = (country: string): void =>
+    {
+        const next = countryBypassRules(country);
+
+        setProfileId('bypass-country');
+        setBypassCountry(country);
+        setRules(next);
+        persist('bypass-country', next, country);
     };
 
     // Any edit diverges from the preset, so the active profile becomes `custom`.
     const commit = (next: Rule[]): void =>
     {
         setProfileId('custom');
+        setBypassCountry(null);
         setRules(next);
         persist('custom', next);
     };
@@ -106,7 +121,9 @@ export const useRouting = createStore(() =>
     return {
         profileId,
         rules,
+        bypassCountry,
         usePreset,
+        useCountryBypass,
         addRule,
         updateRule,
         removeRule,

@@ -21,13 +21,18 @@ export interface Rule
     action: RuleAction;
 }
 
-/** A preset id, or `custom` once the user has edited the rules. */
-export type ProfileId = 'global' | 'rules' | 'bypass-iran' | 'direct-lan' | 'custom';
+/**
+ * A preset id, `bypass-country` (parameterized by {@link RoutingProfile.country}),
+ * or `custom` once the user has edited the rules.
+ */
+export type ProfileId = 'global' | 'rules' | 'bypass-iran' | 'direct-lan' | 'bypass-country' | 'custom';
 
 export interface RoutingProfile
 {
     id: ProfileId;
     rules: Rule[];
+    /** The ISO-3166 alpha-2 code a `bypass-country` profile keeps direct. */
+    country?: string;
 }
 
 /** A stable rule id without a uuid dependency. */

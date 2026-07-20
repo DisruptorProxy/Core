@@ -19,7 +19,7 @@ const PRIVATE_RANGES = ['127.0.0.0/8', '10.0.0.0/8', '172.16.0.0/12', '192.168.0
 const privateDirect = (): Rule[] =>
     PRIVATE_RANGES.map((cidr, i) => rule(`p-lan-${ i }`, 'ip-cidr', cidr, 'direct'));
 
-export const PRESET_RULES: Record<Exclude<ProfileId, 'custom'>, Rule[]> =
+export const PRESET_RULES: Record<Exclude<ProfileId, 'custom' | 'bypass-country'>, Rule[]> =
 {
     // Everything through the proxy - the safest default under heavy filtering.
     global:
@@ -57,4 +57,39 @@ export const PRESET_RULES: Record<Exclude<ProfileId, 'custom'>, Rule[]> =
     ]
 };
 
-export const PRESET_IDS: Exclude<ProfileId, 'custom'>[] = ['rules', 'bypass-iran', 'global', 'direct-lan'];
+export const PRESET_IDS: Exclude<ProfileId, 'custom' | 'bypass-country'>[] = ['rules', 'bypass-iran', 'global', 'direct-lan'];
+
+/**
+ * The country-bypass picker: keep THIS country's web direct, proxy the rest -
+ * the bypass-iran recipe generalized. Ten markets where a proxy client matters
+ * most; names render via Intl.DisplayNames so they localize for free.
+ */
+export const BYPASS_COUNTRIES = ['ir', 'cn', 'ru', 'tr', 'ae', 'sa', 'in', 'pk', 'id', 'vn'] as const;
+
+// Only these have a curated per-country category in the standard geosite.dat;
+// every other country relies on geoip + its ccTLD, which is still the bulk of
+// what "domestic web" means in practice.
+const GEOSITE_BY_COUNTRY: Record<string, string> =
+{
+    ir: 'category-ir',
+    cn: 'cn',
+    ru: 'category-ru'
+};
+
+/** Builds the ordered bypass rules for one country: sites + IPs + ccTLD direct, rest proxied. */
+export const countryBypassRules = (country: string): Rule[] =>
+{
+    const list: Rule[] = [];
+    const site = GEOSITE_BY_COUNTRY[country];
+
+    if (site !== undefined)
+    {
+        list.push(rule(`bc-geosite-${ country }`, 'geosite', site, 'direct'));
+    }
+
+    list.push(rule(`bc-geoip-${ country }`, 'geoip', country, 'direct'));
+    list.push(rule(`bc-suffix-${ country }`, 'domain-suffix', `.${ country }`, 'direct'));
+    list.push(rule(`bc-final-${ country }`, 'final', '', 'proxy'));
+
+    return list;
+};

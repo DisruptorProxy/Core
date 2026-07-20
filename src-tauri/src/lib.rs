@@ -494,7 +494,7 @@ async fn fetch_subscription(url: String) -> Result<SubscriptionResponse, String>
 
     let response = client
         .get(&url)
-        .header("User-Agent", "Guardian")
+        .header("User-Agent", "DisruptorProxy")
         .send()
         .await
         .map_err(|_| "Could not reach the subscription URL".to_string())?;
@@ -634,7 +634,7 @@ async fn download_file(
 ) -> Result<(), String> {
     let mut response = client
         .get(url)
-        .header("User-Agent", "Guardian")
+        .header("User-Agent", "DisruptorProxy")
         .send()
         .await
         .map_err(|_| format!("Could not reach {url}"))?;

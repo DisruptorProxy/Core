@@ -1,0 +1,262 @@
+import type { Strings } from './types';
+
+export const hi: Strings =
+{
+    app:
+    {
+        name: 'The Disruptor Proxy',
+        tagline: 'आपके सर्वर, मापे हुए।',
+        crashTitle: 'कुछ गलत हो गया',
+        crashHint: 'इस स्क्रीन पर अप्रत्याशित त्रुटि आई। आपके सर्वर और सेटिंग्स सुरक्षित हैं।',
+        crashRetry: 'फिर कोशिश करें',
+        expandWindow: 'विंडो बड़ी करें',
+        shrinkWindow: 'विंडो छोटी करें',
+        trayShow: 'The Disruptor Proxy दिखाएँ',
+        trayQuit: 'बंद करें'
+    },
+
+    nav:
+    {
+        home: 'कनेक्ट',
+        servers: 'सर्वर',
+        subscriptions: 'सदस्यताएँ',
+        routing: 'रूटिंग',
+        settings: 'सेटिंग्स'
+    },
+
+    home:
+    {
+        title: 'कनेक्ट',
+        subtitle: 'एक टैप में सबसे तेज़ स्वस्थ सर्वर।',
+        disconnected: 'कनेक्ट नहीं है',
+        noServerSelected: 'शुरू करने के लिए एक सर्वर चुनें।',
+        switching: 'बदला जा रहा है…',
+        connecting: 'कनेक्ट हो रहा है…',
+        connected: 'कनेक्टेड',
+        disconnecting: 'डिस्कनेक्ट हो रहा है…',
+        failed: 'कनेक्शन विफल',
+        disconnect: 'डिस्कनेक्ट',
+        connectFastest: 'सबसे तेज़ से जुड़ें',
+        tapConnect: 'कनेक्ट करने के लिए टैप करें',
+        tapDisconnect: 'डिस्कनेक्ट करने के लिए टैप करें'
+    },
+
+    status:
+    {
+        duration: 'अवधि',
+        upload: 'अपलोड',
+        download: 'डाउनलोड',
+        transferred: 'स्थानांतरित'
+    },
+
+    servers:
+    {
+        title: 'सर्वर',
+        empty: 'अभी कोई सर्वर नहीं।',
+        emptyAction: 'एक सदस्यता जोड़ें या कॉन्फ़िग लिंक चिपकाएँ।',
+        countLabel: (count: number) => `${ count.toLocaleString('hi-IN') } सर्वर`,
+        searchPlaceholder: 'नाम, होस्ट, देश खोजें…',
+        noMatches: 'इन फ़िल्टरों से मेल खाता कोई सर्वर नहीं।',
+        sortName: 'नाम',
+        sortLatency: 'विलंबता',
+        sortCountry: 'देश',
+        select: 'चुनें',
+        selectAll: 'सभी चुनें',
+        selectedLabel: (count: number) => `${ count.toLocaleString('hi-IN') } चुने गए`,
+        deletedLabel: (count: number) => `${ count.toLocaleString('hi-IN') } सर्वर हटाए गए`,
+        delete: 'हटाएँ',
+        cancel: 'रद्द करें',
+        favoritesOnly: 'पसंदीदा',
+        protocol: 'प्रोटोकॉल',
+        source: 'स्रोत',
+        all: 'सभी',
+        allSources: 'सभी स्रोत',
+        searchSource: 'स्रोत खोजें',
+        test: 'परीक्षण',
+        testing: (done: number, total: number) =>
+            `परीक्षण ${ done.toLocaleString('hi-IN') } / ${ total.toLocaleString('hi-IN') }`,
+        stop: 'रोकें'
+    },
+
+    importing:
+    {
+        progress: (parsed: number, total: number) =>
+            `${ total.toLocaleString('hi-IN') } में से ${ parsed.toLocaleString('hi-IN') } पंक्तियाँ पढ़ी जा रही हैं…`,
+        added: 'जोड़े गए',
+        duplicates: 'डुप्लिकेट',
+        invalid: 'अपठनीय',
+        elapsed: 'समय लगा',
+        duplicatesHint: 'अलग-अलग नामों से सूचीबद्ध एक जैसे सर्वर एक में मिला दिए गए।',
+        title: 'सर्वर आयात करें',
+        openAction: 'आयात',
+        placeholder: 'कॉन्फ़िग लिंक, सदस्यता URL, या base64 सूची चिपकाएँ…',
+        paste: 'चिपकाएँ',
+        fromClipboard: 'क्लिपबोर्ड से',
+        fromFile: 'फ़ाइल से',
+        scanQr: 'QR स्कैन करें',
+        qrScanning: 'कैमरे को QR कोड की ओर करें…',
+        submit: 'आयात',
+        invalidDetail: 'अपठनीय पंक्तियाँ',
+        lineLabel: (line: number) => `पंक्ति ${ line.toLocaleString('hi-IN') }`
+    },
+
+    subscriptions:
+    {
+        title: 'सदस्यताएँ',
+        subtitle: 'वे स्रोत जो आपकी सर्वर सूची ताज़ा रखते हैं।',
+        empty: 'अभी कोई सदस्यता नहीं।',
+        emptyAction: 'सर्वर अपने आप लाने के लिए एक सदस्यता लिंक जोड़ें।',
+        add: 'सदस्यता जोड़ें',
+        addTitle: 'सदस्यता जोड़ें',
+        editTitle: 'सदस्यता संपादित करें',
+        urlLabel: 'सदस्यता URL',
+        urlPlaceholder: 'https://…',
+        nameLabel: 'नाम',
+        namePlaceholder: 'वैकल्पिक — डिफ़ॉल्ट रूप से होस्ट',
+        intervalLabel: 'स्वतः अपडेट',
+        intervalManual: 'मैनुअल',
+        intervalHourly: 'हर घंटे',
+        intervalDaily: 'रोज़ाना',
+        save: 'सहेजें',
+        cancel: 'रद्द करें',
+        update: 'अपडेट',
+        updating: 'अपडेट हो रहा है…',
+        delete: 'हटाएँ',
+        countLabel: (count: number) => `${ count.toLocaleString('hi-IN') } सर्वर`,
+        statusNever: 'कभी अपडेट नहीं हुई',
+        statusOk: 'अद्यतित',
+        statusStale: 'पुरानी',
+        statusFailed: 'अपडेट विफल',
+        updatedAgo: (text: string) => `अपडेट हुई ${ text }`,
+        justNow: 'अभी-अभी',
+        minutesAgo: (n: number) => `${ n.toLocaleString('hi-IN') } मिनट पहले`,
+        hoursAgo: (n: number) => `${ n.toLocaleString('hi-IN') } घंटे पहले`,
+        daysAgo: (n: number) => `${ n.toLocaleString('hi-IN') } दिन पहले`,
+        deleteTitle: 'सदस्यता हटाएँ',
+        deletePrompt: (name: string) => `“${ name }” के सर्वरों का क्या किया जाए?`,
+        deleteRemoveConfigs: 'इसके सर्वर हटाएँ',
+        deleteKeepConfigs: 'अप्रबंधित रूप में रखें',
+        added: 'जोड़े गए',
+        removed: 'हटाए गए',
+        unchanged: 'अपरिवर्तित',
+        keptFavorites: 'रखे गए पसंदीदा',
+        remaining: 'शेष',
+        daysLeft: (n: number) => `${ n.toLocaleString('hi-IN') } दिन बाक़ी`,
+        expired: 'समाप्त'
+    },
+
+    routing:
+    {
+        title: 'रूटिंग',
+        empty: 'चुनें कि ट्रैफ़िक प्रॉक्सी और सीधे कनेक्शन के बीच कैसे बँटे।',
+        subtitle: 'तय करें कि क्या प्रॉक्सी से जाए और क्या सीधा रहे।',
+        presets: 'मोड',
+        bypassCountry: 'देश के हिसाब से बायपास',
+        bypassCountryHint: 'अपना देश चुनें: उस देश की साइटें और IP सीधे रहेंगे, बाक़ी सब प्रॉक्सी से जाएगा।',
+        rulesHeader: 'नियम',
+        rulesHint: 'ऊपर से नीचे जाँचे जाते हैं — जो नियम पहले मेल खाए वही लागू होता है।',
+        addRule: 'नियम जोड़ें',
+        editRule: 'नियम संपादित करें',
+        matchType: 'मिलान',
+        matchValue: 'मान',
+        matchValuePlaceholder: 'जैसे .ir, category-ads-all, 192.168.0.0/16',
+        action: 'कार्रवाई',
+        actionProxy: 'प्रॉक्सी',
+        actionDirect: 'सीधा',
+        actionBlock: 'ब्लॉक',
+        save: 'सहेजें',
+        cancel: 'रद्द करें',
+        delete: 'हटाएँ',
+        moveUp: 'ऊपर',
+        moveDown: 'नीचे',
+        presetRulesName: 'स्मार्ट',
+        presetRulesDesc: 'विज्ञापन ब्लॉक, स्थानीय और ईरानी साइटें सीधी, बाक़ी प्रॉक्सी से।',
+        presetBypassName: 'ईरान बायपास',
+        presetBypassDesc: 'ईरानी साइटें सीधी, बाक़ी सब प्रॉक्सी से।',
+        presetGlobalName: 'ग्लोबल',
+        presetGlobalDesc: 'सारा ट्रैफ़िक प्रॉक्सी से भेजें।',
+        presetDirectLanName: 'LAN सीधा',
+        presetDirectLanDesc: 'सिर्फ़ स्थानीय नेटवर्क सीधा; बाक़ी सब प्रॉक्सी से।',
+        presetCustomName: 'कस्टम',
+        typeDomainSuffix: 'डोमेन जिसका अंत हो',
+        typeDomain: 'सटीक डोमेन',
+        typeDomainKeyword: 'डोमेन जिसमें हो',
+        typeGeosite: 'साइट श्रेणी',
+        typeGeoip: 'IP देश',
+        typeIpCidr: 'IP रेंज',
+        typeProcess: 'ऐप',
+        descDomainsEndingIn: (value: string) => `${ value } पर ख़त्म होने वाले डोमेन`,
+        descExactDomain: (value: string) => value,
+        descDomainsContaining: (value: string) => `“${ value }” वाले डोमेन`,
+        descIranianSites: 'ईरानी साइटें',
+        descAdsTrackers: 'विज्ञापन और ट्रैकर',
+        descChineseSites: 'चीनी साइटें',
+        descIranianIps: 'ईरानी IP पते',
+        descLocalNetwork: 'स्थानीय नेटवर्क',
+        descIpRange: (value: string) => `${ value } के IP`,
+        descGeosite: (value: string) => `${ value } साइटें`,
+        descGeoip: (value: string) => `${ value.toUpperCase() } IP पते`,
+        descApp: (value: string) => `ऐप “${ value }”`,
+        descEverythingElse: 'बाक़ी सब कुछ'
+    },
+
+    settings:
+    {
+        title: 'सेटिंग्स',
+        subtitle: 'भाषा, थीम और ऐप का व्यवहार।',
+        appearance: 'रूप',
+        theme: 'थीम',
+        themeSystem: 'सिस्टम',
+        themeLight: 'हल्की',
+        themeDark: 'गहरी',
+        language: 'भाषा',
+        about: 'परिचय',
+        version: 'संस्करण',
+        checkUpdate: 'अपडेट जाँचें',
+        checking: 'जाँच हो रही है…',
+        upToDate: 'आप नवीनतम संस्करण पर हैं।',
+        updateAvailable: (version: string) => `संस्करण ${ version } उपलब्ध है।`,
+        download: 'डाउनलोड',
+        geoFiles: 'Geo फ़ाइलें',
+        geoFilesDesc: 'देश और साइट-श्रेणी रूटिंग नियमों के लिए डेटाबेस। बायपास और ब्लॉकिंग नियम सटीक रखने के लिए इन्हें अपडेट करें।',
+        geoInstalled: 'इंस्टॉल है',
+        geoMissing: 'इंस्टॉल नहीं',
+        updateGeoFiles: 'Geo फ़ाइलें अपडेट करें',
+        updatingGeoFiles: 'डाउनलोड हो रहा है…',
+        geoFilesUpdated: 'Geo फ़ाइलें अद्यतित हैं।'
+    },
+
+    detail:
+    {
+        protocol: 'प्रोटोकॉल',
+        transport: 'ट्रांसपोर्ट',
+        security: 'सुरक्षा',
+        latency: 'विलंबता',
+        successRate: 'सफलता दर',
+        source: 'स्रोत',
+        unmanaged: 'किसी सदस्यता से नहीं',
+        health: 'स्थिति',
+        untested: 'अभी परीक्षण नहीं हुआ।',
+        lastError: 'अंतिम त्रुटि',
+        connect: 'कनेक्ट',
+        disconnect: 'डिस्कनेक्ट',
+        copyLink: 'लिंक कॉपी करें',
+        copied: 'कॉपी हो गया',
+        addFavorite: 'पसंदीदा में जोड़ें',
+        removeFavorite: 'पसंदीदा से हटाएँ',
+        delete: 'हटाएँ',
+        ping: 'पिंग',
+        pinging: 'पिंग हो रहा है…',
+        notSupported: 'वर्तमान कोर इस प्रोटोकॉल का समर्थन नहीं करता।',
+        emptyTitle: 'कोई सर्वर चुना नहीं गया',
+        emptyHint: 'विवरण देखने के लिए सूची से एक सर्वर चुनें।',
+        close: 'विवरण बंद करें'
+    },
+
+    common:
+    {
+        close: 'हो गया',
+        dismiss: 'हटाएँ',
+        serverNotFound: 'सर्वर नहीं मिला। शायद हटा दिया गया है।'
+    }
+};

@@ -4,14 +4,14 @@ export const en: Strings =
 {
     app:
     {
-        name: 'Guardian',
+        name: 'The Disruptor Proxy',
         tagline: 'Your servers, measured.',
         crashTitle: 'Something went wrong',
         crashHint: 'This screen hit an unexpected error. Your servers and settings are safe.',
         crashRetry: 'Try again',
         expandWindow: 'Expand window',
         shrinkWindow: 'Shrink window',
-        trayShow: 'Show Guardian',
+        trayShow: 'Show The Disruptor Proxy',
         trayQuit: 'Quit'
     },
 
@@ -36,7 +36,9 @@ export const en: Strings =
         disconnecting: 'Disconnecting…',
         failed: 'Connection failed',
         disconnect: 'Disconnect',
-        connectFastest: 'Connect fastest'
+        connectFastest: 'Connect fastest',
+        tapConnect: 'Tap to connect',
+        tapDisconnect: 'Tap to disconnect'
     },
 
     status:
@@ -149,6 +151,8 @@ export const en: Strings =
         empty: 'Choose how traffic is split between the proxy and your direct connection.',
         subtitle: 'Decide what goes through the proxy and what stays direct.',
         presets: 'Modes',
+        bypassCountry: 'Bypass a country',
+        bypassCountryHint: 'Pick where you are: that country’s sites and IPs stay direct, everything else goes through the proxy.',
         rulesHeader: 'Rules',
         rulesHint: 'Checked top to bottom — the first rule that matches wins.',
         addRule: 'Add rule',
@@ -206,8 +210,6 @@ export const en: Strings =
         themeLight: 'Light',
         themeDark: 'Dark',
         language: 'Language',
-        languageEnglish: 'English',
-        languagePersian: 'فارسی',
         about: 'About',
         version: 'Version',
         checkUpdate: 'Check for updates',

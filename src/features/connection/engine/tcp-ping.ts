@@ -17,7 +17,7 @@ export const tcpProbe = async (config: ProxyConfig, _signal: AbortSignal): Promi
 {
     if (!isTauri())
     {
-        return { ok: false, error: 'Testing is only available in the Guardian desktop app.' };
+        return { ok: false, error: 'Testing is only available in the Disruptor Proxy desktop app.' };
     }
 
     try

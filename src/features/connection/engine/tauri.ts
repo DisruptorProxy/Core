@@ -14,7 +14,7 @@ import type { ConnectionService, ConnectionStatus, PingResult, TrafficSample } f
 /** True inside the Tauri desktop webview; false in a plain browser. */
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-const NOT_DESKTOP = 'Connecting is only available in the Guardian desktop app.';
+const NOT_DESKTOP = 'Connecting is only available in the Disruptor Proxy desktop app.';
 
 /**
  * The real engine. Generates an Xray config from the server + active routing
