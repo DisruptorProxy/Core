@@ -25,17 +25,18 @@ export default component ConnectionStatus()
     const connection = useConnection();
 
     <Show when={ connection.activeConfig() }>
+        { (activeConfig) =>
         <div class="flex flex-col gap-3">
             <div class="flex flex-col items-center gap-0.5 text-center">
                 <div class="flex min-w-0 max-w-full items-center gap-2">
-                    <Show when={ flagIcon(connection.activeConfig()!.country) }>
-                        <span class={ `${ flagIcon(connection.activeConfig()!.country) } flag-detail` }></span>
+                    <Show when={ flagIcon(activeConfig().country) }>
+                        <span class={ `${ flagIcon(activeConfig().country) } flag-detail` }></span>
                     </Show>
-                    <span class="truncate text-sm font-semibold text-text">{ connection.activeConfig()!.name }</span>
+                    <span class="truncate text-sm font-semibold text-text">{ activeConfig().name }</span>
                 </div>
 
                 <span class="readout max-w-full truncate text-xs text-faint" dir="ltr">
-                    { connection.activeConfig()!.host }:{ connection.activeConfig()!.port }
+                    { activeConfig().host }:{ activeConfig().port }
                 </span>
             </div>
 
@@ -63,5 +64,6 @@ export default component ConnectionStatus()
                 </span>
             </div>
         </div>
+        }
     </Show>
 }

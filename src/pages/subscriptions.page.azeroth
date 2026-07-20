@@ -85,10 +85,12 @@ export default component SubscriptionsPage()
             </Show>
 
             <Show when={ subscriptions.lastOutcome() }>
+                { (outcome) =>
                 <Card class="flex flex-col gap-2 p-4">
                     <span class="text-xs font-medium text-muted">{ t().subscriptions.statusOk }</span>
-                    <UpdateReport diff={ subscriptions.lastOutcome()!.diff } />
+                    <UpdateReport diff={ outcome().diff } />
                 </Card>
+                }
             </Show>
 
             <Show

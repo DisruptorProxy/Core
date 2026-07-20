@@ -140,6 +140,20 @@ export default component HomePage()
                             <p class="text-sm font-medium text-poor">{ humanizeError(connection.error()).title }</p>
                             <p class="mt-1 text-xs leading-relaxed text-muted">{ humanizeError(connection.error()).fix }</p>
                         </div>
+
+                        <Button
+                            label={ t().app.crashRetry }
+                            leading={ Power }
+                            block={ true }
+                            onPress={ () => {
+                                const failed = connection.activeConfig();
+
+                                if (failed !== null)
+                                {
+                                    void connection.connectToId(failed.id);
+                                }
+                            } }
+                        />
                     </Match>
 
                     <Match when={ true }>

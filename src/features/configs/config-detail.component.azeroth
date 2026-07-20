@@ -55,26 +55,27 @@ export default component ConfigDetail()
         when={ config() }
         fallback={ () => detail.openId() === null ? emptyState(t().detail.emptyTitle, t().detail.emptyHint) : null }
     >
+        { (config) =>
         <div class="flex flex-col gap-4">
             <div class="flex items-center gap-2">
-                <Show when={ flagIcon(config()!.country) }>
-                    <span class={ `${ flagIcon(config()!.country) } flag-detail` }></span>
+                <Show when={ flagIcon(config().country) }>
+                    <span class={ `${ flagIcon(config().country) } flag-detail` }></span>
                 </Show>
-                <span class="readout truncate text-sm text-faint" dir="ltr">{ config()!.host }:{ config()!.port }</span>
+                <span class="readout truncate text-sm text-faint" dir="ltr">{ config().host }:{ config().port }</span>
             </div>
 
             <Card class="px-3">
                 <div class={ FIELD }>
                     <span class={ KEY }>{ t().detail.protocol }</span>
-                    <span class={ `${ VAL } uppercase` }>{ config()!.protocol }</span>
+                    <span class={ `${ VAL } uppercase` }>{ config().protocol }</span>
                 </div>
                 <div class={ FIELD }>
                     <span class={ KEY }>{ t().detail.transport }</span>
-                    <span class={ VAL }>{ config()!.transport }</span>
+                    <span class={ VAL }>{ config().transport }</span>
                 </div>
                 <div class={ FIELD }>
                     <span class={ KEY }>{ t().detail.security }</span>
-                    <span class={ VAL }>{ config()!.security }</span>
+                    <span class={ VAL }>{ config().security }</span>
                 </div>
                 <div class={ FIELD }>
                     <span class={ KEY }>{ t().detail.source }</span>
@@ -89,7 +90,7 @@ export default component ConfigDetail()
                     <button
                         type="button"
                         class="flex min-h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium text-muted hover:bg-elevated disabled:opacity-40"
-                        disabled={ detail.pinging() || !canConnect(config()!.protocol) }
+                        disabled={ detail.pinging() || !canConnect(config().protocol) }
                         onClick={ () => void detail.pingNow() }
                     >
                         { icon(Activity, detail.pinging() ? 'size-3.5 animate-pulse' : 'size-3.5') }
@@ -120,7 +121,7 @@ export default component ConfigDetail()
                 </Show>
             </Card>
 
-            <Show when={ !canConnect(config()!.protocol) }>
+            <Show when={ !canConnect(config().protocol) }>
                 <p class="rounded-xl border border-fair/40 bg-fair/5 px-3 py-2 text-xs text-fair">
                     { t().detail.notSupported }
                 </p>
@@ -151,7 +152,7 @@ export default component ConfigDetail()
                             label={ t().detail.connect }
                             leading={ Power }
                             block={ true }
-                            disabled={ !canConnect(config()!.protocol) }
+                            disabled={ !canConnect(config().protocol) }
                             onPress={ () => void detail.connect() }
                         />
                     </Show>
@@ -185,6 +186,7 @@ export default component ConfigDetail()
                 </button>
             </div>
         </div>
+        }
     </Show>
 }
 

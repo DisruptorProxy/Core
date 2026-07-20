@@ -1,6 +1,6 @@
 import type { ConfigRow } from '../db/repo';
 
-export type SortKey = 'name' | 'latency' | 'country';
+export type SortKey = 'name' | 'latency' | 'country' | 'subscription';
 
 interface Filters
 {
@@ -22,6 +22,14 @@ interface Filters
  */
 type LatencyLookup = (id: string) => number | undefined;
 
+/**
+ * A row only carries its subscription's id, not its name (the name can be renamed
+ * or the subscription deleted without touching every row it owns), so grouping by
+ * subscription needs the name looked up. A manually-added config (no subId) has no
+ * name to look up either way - it sinks to its own group after every subscription.
+ */
+type SubNameLookup = (subId: string | undefined) => string | undefined;
+
 // One shared collator, reused across the ~100k comparisons a single sort of 8000
 // rows makes. `String.prototype.localeCompare` builds a fresh collator per call;
 // hoisting one here is several times faster on every keystroke, chip, and sort.
@@ -38,7 +46,8 @@ const collator = new Intl.Collator();
 export const applyFilters = (
     rows: ConfigRow[],
     filters: Filters,
-    latencyOf: LatencyLookup
+    latencyOf: LatencyLookup,
+    subNameOf: SubNameLookup
 ): string[] =>
 {
     // Tokenized AND search: "de ws" matches a row whose haystack contains both,
@@ -70,12 +79,16 @@ export const applyFilters = (
         return tokens.every((token) => row.haystack.includes(token));
     });
 
-    matched.sort(comparator(filters.sort, latencyOf));
+    matched.sort(comparator(filters.sort, latencyOf, subNameOf));
 
     return matched.map((row) => row.id);
 };
 
-const comparator = (sort: SortKey, latencyOf: LatencyLookup): (a: ConfigRow, b: ConfigRow) => number =>
+const comparator = (
+    sort: SortKey,
+    latencyOf: LatencyLookup,
+    subNameOf: SubNameLookup
+): (a: ConfigRow, b: ConfigRow) => number =>
 {
     if (sort === 'latency')
     {
@@ -92,6 +105,15 @@ const comparator = (sort: SortKey, latencyOf: LatencyLookup): (a: ConfigRow, b: 
     if (sort === 'country')
     {
         return (a, b) => collator.compare(a.country ?? 'zz', b.country ?? 'zz') || collator.compare(a.name, b.name);
+    }
+
+    if (sort === 'subscription')
+    {
+        // A manually-added row (no subId, so no name) sorts after every named
+        // subscription - '￿' collates after any real name in every locale.
+        return (a, b) =>
+            collator.compare(subNameOf(a.subId) ?? '￿', subNameOf(b.subId) ?? '￿')
+            || collator.compare(a.name, b.name);
     }
 
     return (a, b) => collator.compare(a.name, b.name);

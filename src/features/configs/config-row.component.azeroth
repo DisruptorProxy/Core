@@ -15,6 +15,10 @@ interface ConfigRowProps
     isSelected: () => boolean;
     /** Reactive: the server currently carrying traffic gets a marker. */
     isActive: () => boolean;
+    /** Reactive: this row's detail is the one currently open (sheet or side panel) - a
+     *  neutral tint, distinct from isActive's accent tint, so "which one am I looking
+     *  at" never gets confused with "which one is connected". */
+    isOpen: () => boolean;
     /** Reactive EWMA latency in ms, or undefined when untested. */
     latency: () => number | undefined;
     /** Tap: toggles selection in select mode, otherwise opens the row. */
@@ -111,7 +115,14 @@ export default component ConfigRow(props: ConfigRowProps)
             return `${ base } bg-accent-soft`;
         }
 
-        return props.isActive() ? `${ base } bg-accent-soft active:bg-accent-soft/80` : `${ base } active:bg-elevated`;
+        if (props.isActive())
+        {
+            return `${ base } bg-accent-soft active:bg-accent-soft/80`;
+        }
+
+        // Open (viewing this row's detail) is a calm, neutral tint - accent-soft is
+        // reserved for "connected" so the two states never read as the same thing.
+        return props.isOpen() ? `${ base } bg-elevated active:bg-elevated/80` : `${ base } active:bg-elevated`;
     };
 
     <div

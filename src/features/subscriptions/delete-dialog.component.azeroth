@@ -29,9 +29,11 @@ export default component DeleteDialog(props: DeleteDialogProps)
     <Sheet open={ open } onClose={ props.onClose } title={ t().subscriptions.deleteTitle }>
         <div class="flex flex-col gap-4">
             <Show when={ props.sub() }>
+                { (sub) =>
                 <p class="text-sm leading-relaxed text-muted">
-                    { t().subscriptions.deletePrompt(props.sub()!.name) }
+                    { t().subscriptions.deletePrompt(sub().name) }
                 </p>
+                }
             </Show>
 
             <div class="flex flex-col gap-2">

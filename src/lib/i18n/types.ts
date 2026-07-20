@@ -61,9 +61,11 @@ export interface Strings
         countLabel: (count: number) => string;
         searchPlaceholder: string;
         noMatches: string;
+        sort: string;
         sortName: string;
         sortLatency: string;
         sortCountry: string;
+        sortSubscription: string;
         select: string;
         selectAll: string;
         selectedLabel: (count: number) => string;

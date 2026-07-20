@@ -5,6 +5,7 @@ import type { SortKey } from '../lib/search/filter';
 
 import { useConfigs } from './configs';
 import { useHealth } from './health';
+import { useSubscriptions } from './subscriptions';
 
 /**
  * The list's query state, and the single memo that turns 8000 rows into the ids to
@@ -15,13 +16,17 @@ export const useServerQuery = createStore(() =>
 {
     const { rows } = useConfigs();
     const health = useHealth();
+    const subscriptions = useSubscriptions();
 
     const [query, setQuery] = createSignal('');
     const [protocols, setProtocols] = createSignal<ReadonlySet<string>>(new Set());
     const [security, setSecurity] = createSignal<ReadonlySet<string>>(new Set());
     const [subId, setSubId] = createSignal<string | null>(null);
     const [favoritesOnly, setFavoritesOnly] = createSignal(false);
-    const [sort, setSort] = createSignal<SortKey>('name');
+    // Grouped-by-subscription is the default: a flat name/latency/country sort
+    // interleaves servers from different sources, which reads as clutter once more
+    // than one subscription is added.
+    const [sort, setSort] = createSignal<SortKey>('subscription');
 
     // Only the TEXT is debounced. Chips and sort apply instantly - a debounce on a
     // single-click toggle would feel broken. `createDeferred` is the framework's
@@ -32,6 +37,12 @@ export const useServerQuery = createStore(() =>
     // so a health update re-sorts the list only while sort is 'latency' - the list
     // re-ranks live during a test, and stays still otherwise.
     const latencyOf = (id: string): number | undefined => health.latencyOf(id);
+
+    // Subscription id -> name, rebuilt only when the subscription list itself
+    // changes (add/remove/rename) - not on every filter/sort change.
+    const subNames = createMemo(() => new Map(subscriptions.subs().map((sub) => [sub.id, sub.name])));
+    const subNameOf = (subId: string | undefined): string | undefined =>
+        subId === undefined ? undefined : subNames().get(subId);
 
     /** The ids to render, recomputed only when a filter or the row set changes. */
     const visibleIds = createMemo(() =>
@@ -45,7 +56,8 @@ export const useServerQuery = createStore(() =>
                 favoritesOnly: favoritesOnly(),
                 sort: sort()
             },
-            latencyOf
+            latencyOf,
+            subNameOf
         ));
 
     const facets = createMemo(() => collectFacets(rows()));

@@ -4,6 +4,8 @@ import { useLocale } from '../stores/locale';
 
 import { icon } from '../components/icon';
 
+import logoUrl from '../assets/logo-icon.png';
+
 import { NAV_ITEMS } from './nav';
 import { router } from './router';
 
@@ -28,9 +30,13 @@ export default component SideRail()
         class="glass-bar hidden w-56 shrink-0 border-e border-border md:flex md:flex-col md:gap-1 md:p-3"
         aria-label={ t().app.name }
     >
-        <div class="px-3 py-4">
-            <p class="text-sm font-semibold tracking-tight text-text">{ t().app.name }</p>
-            <p class="text-xs text-faint">{ t().app.tagline }</p>
+        <div class="flex items-center gap-2.5 px-3 py-4">
+            <img src={ logoUrl } alt="" class="size-8 shrink-0 rounded-lg" />
+
+            <div class="flex min-w-0 flex-col">
+                <p class="truncate text-sm font-semibold tracking-tight text-text">{ t().app.name }</p>
+                <p class="truncate text-xs text-faint">{ t().app.tagline }</p>
+            </div>
         </div>
 
         <For each={ NAV_ITEMS } key={ (item) => item.path }>

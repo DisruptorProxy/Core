@@ -6,6 +6,8 @@ import { useWindowMode } from '../stores/window-mode';
 
 import { icon } from '../components/icon';
 
+import logoUrl from '../assets/logo-icon.png';
+
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
 const CTRL = 'flex size-7 items-center justify-center rounded-lg text-muted press';
@@ -39,7 +41,7 @@ export default component Titlebar()
 
     <div class="glass-bar pt-safe flex h-10 shrink-0 select-none items-center border-b border-border pe-2 ps-3">
         <div data-tauri-drag-region class="flex h-full flex-1 items-center gap-2">
-            <span class="size-2.5 rounded-full bg-accent shadow-[0_0_8px_var(--g-accent)]"></span>
+            <img src={ logoUrl } alt="" class="size-4 shrink-0 rounded" />
             <span class="text-xs font-semibold tracking-wide text-text">{ t().app.name }</span>
         </div>
 

@@ -34,9 +34,11 @@ export default component SubscriptionEditor(props: SubscriptionEditorProps)
 
     // Reseed the form each time the sheet opens, from the record being edited or
     // blank for a new one - so a cancelled edit never leaks into the next open.
-    // Auto-tracked on props.open(); it writes the form state but never reads it,
-    // so typing does not retrigger a reseed.
-    effect {
+    // Explicit dep on props.open() only: initial() is read but NOT tracked, so a
+    // change to the underlying record while the sheet is open (e.g. a background
+    // subscription update) can never wipe an in-progress edit.
+    effect (props.open())
+    {
         if (props.open())
         {
             const record = props.initial();

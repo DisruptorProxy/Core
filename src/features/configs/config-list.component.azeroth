@@ -59,6 +59,7 @@ export default component ConfigList()
                     selectMode: selection.active,
                     isSelected: () => selection.isSelected(id),
                     isActive: () => connection.isActive(id),
+                    isOpen: () => detail.openId() === id,
                     latency: () => health.latencyOf(id),
                     onTap: () => tap(id),
                     onHold: () => selection.begin(id)

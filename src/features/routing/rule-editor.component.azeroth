@@ -50,8 +50,11 @@ export default component RuleEditor(props: RuleEditorProps)
         return labels[mt] ?? mt;
     };
 
-    // Seed from the rule being edited each time the sheet opens.
-    effect {
+    // Seed from the rule being edited each time the sheet opens. Explicit dep on
+    // props.open() only: initial() is read but NOT tracked, so a change to the
+    // underlying rule while the sheet is open can never wipe an in-progress edit.
+    effect (props.open())
+    {
         if (props.open())
         {
             const rule = props.initial();
