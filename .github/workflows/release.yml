@@ -2,20 +2,20 @@ name: Release
 
 # Pushing a `v*` tag builds and signs the Windows installer once, then publishes it
 # to TWO places:
-#   1. A draft release on THIS repo (DisruptorProxy/ClientCore, private) - an
+#   1. A draft release on THIS repo (DisruptorProxy/Core, private) - an
 #      internal record, using the default GITHUB_TOKEN (which can only ever touch
 #      the repo the workflow runs in).
 #   2. A draft release on DisruptorProxy/Xray-Client (public) - what real users and the
 #      updater plugin actually see. tauri.conf.json's updater endpoint points at
 #      Client's releases/latest/download/latest.json, so THIS is the publish that
-#      makes auto-update work; ClientCore's release does not.
+#      makes auto-update work; Core's release does not.
 #
 # Both releases are created as DRAFTS on purpose (matches the previous single-repo
 # setup) - review each one on GitHub and publish it manually. A draft is invisible
 # to the updater and to anonymous downloads, so a bad build never reaches anyone
 # until you say so.
 #
-# Required secrets (Settings > Secrets and variables > Actions, on ClientCore):
+# Required secrets (Settings > Secrets and variables > Actions, on Core):
 #   TAURI_SIGNING_PRIVATE_KEY           the updater signing key (already in use)
 #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password (already in use)
 #   CLIENT_REPO_TOKEN                   a fine-grained PAT scoped to ONLY
@@ -54,7 +54,7 @@ jobs:
 
             -   run: npm ci
 
-            # Builds + signs once, and publishes the private ClientCore release.
+            # Builds + signs once, and publishes the private Core release.
             -   uses: tauri-apps/tauri-action@v0
                 env:
                     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

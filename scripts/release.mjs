@@ -5,7 +5,7 @@
 // src-tauri/Cargo.lock's own entry), commits that as one release commit, tags it, and
 // pushes both. Pushing the tag is the whole handoff - .github/workflows/release.yml picks
 // it up from there: builds, signs with the updater keypair, and publishes DRAFT releases
-// to both this repo (ClientCore, private) and DisruptorProxy/Xray-Client (public). This script
+// to both this repo (Core, private) and DisruptorProxy/Xray-Client (public). This script
 // never builds, signs, or publishes anything itself, and never touches GitHub Releases.
 //
 // Usage:
@@ -135,7 +135,7 @@ Usage:  npm run release -- <version | patch | minor | major> [options]
 Bumps package.json + src-tauri/Cargo.toml (+ syncs Cargo.lock's own entry),
 commits, tags, and pushes. Pushing the tag is the whole handoff -
 .github/workflows/release.yml takes it from there: builds, signs, and
-publishes DRAFT releases to both ClientCore and DisruptorProxy/Xray-Client.
+publishes DRAFT releases to both Core and DisruptorProxy/Xray-Client.
 
 Examples:
   npm run release -- 1.2.0
@@ -209,6 +209,6 @@ act('git', ['push', 'origin', 'HEAD']);
 act('git', ['push', 'origin', tag]);
 
 log(`\nDone: ${ next }`);
-log('CI is now building, signing, and publishing draft releases to ClientCore + Client.');
+log('CI is now building, signing, and publishing draft releases to Core + Xray-Client.');
 log('Review both drafts on GitHub, then publish each one manually when ready - a draft is');
 log('invisible to the updater and to anonymous downloads until you do.');
