@@ -46,7 +46,7 @@ export default component Shell()
                         </div>
                     }
                 >
-                    <Routes router={ router } transition={ (context) => context.navigation === 'pop' ? 'g-page-back' : 'g-page' } transitionDuration={ 500 } />
+                    <Routes router={ router } transition={ (context) => context.navigation === 'pop' ? 'g-page-back' : 'g-page' } transitionDuration={ 340 } />
                 </ErrorBoundary>
             </main>
 

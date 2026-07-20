@@ -69,6 +69,21 @@ export default component SubscriptionCard(props: SubscriptionCardProps)
         return usage ? Math.max(usage.total - usage.upload - usage.download, 0) : 0;
     };
 
+    const usedBytes = (): number => Math.max(totalBytes() - remainingBytes(), 0);
+
+    const usedPct = (): number => (totalBytes() > 0 ? Math.min((usedBytes() / totalBytes()) * 100, 100) : 0);
+
+    /** The quota bar's fill colour: calm until the plan is three-quarters gone. */
+    const usageTone = (): string =>
+    {
+        if (usedPct() >= 90)
+        {
+            return 'bg-poor';
+        }
+
+        return usedPct() >= 75 ? 'bg-fair' : 'bg-accent';
+    };
+
     /** Whole days until expiry; <= 0 once past, null when the provider sent no expiry. */
     const daysLeft = (): number | null =>
     {
@@ -140,18 +155,29 @@ export default component SubscriptionCard(props: SubscriptionCardProps)
         </div>
 
         <Show when={ hasUsage() }>
-            <div class="flex items-center justify-between gap-2 border-t border-border/60 pt-2 text-[11px]">
-                <Show when={ totalBytes() > 0 } fallback={ () => document.createElement('span') }>
-                    <span class="text-muted">
-                        { t().subscriptions.remaining }
-                        <span class="readout text-text" dir="ltr"> { formatBytes(remainingBytes()) } </span>
-                        <span class="text-faint">/ { formatBytes(totalBytes()) }</span>
-                    </span>
-                </Show>
+            <div class="flex flex-col gap-1.5 border-t border-border/60 pt-2.5 text-[11px]">
+                <div class="flex items-baseline justify-between gap-2">
+                    <Show when={ totalBytes() > 0 } fallback={ () => document.createElement('span') }>
+                        <span class="flex items-baseline gap-1 text-muted">
+                            <span>{ t().subscriptions.remaining }</span>
+                            <span class="readout font-medium text-text" dir="ltr">{ formatBytes(remainingBytes()) }</span>
+                        </span>
+                    </Show>
 
-                <Show when={ daysLeft() !== null }>
-                    <span class={ `readout font-medium ${ (daysLeft() ?? 0) <= 3 ? 'text-poor' : 'text-muted' }` }>
-                        { expiryText() }
+                    <Show when={ daysLeft() !== null }>
+                        <span class={ `readout font-medium ${ (daysLeft() ?? 0) <= 3 ? 'text-poor' : 'text-muted' }` }>
+                            { expiryText() }
+                        </span>
+                    </Show>
+                </div>
+
+                <Show when={ totalBytes() > 0 }>
+                    <div class="h-1 w-full overflow-hidden rounded-full bg-border/50">
+                        <div class={ `h-full rounded-full ${ usageTone() }` } style:width={ `${ usedPct() }%` }></div>
+                    </div>
+
+                    <span class="readout self-end text-faint" dir="ltr">
+                        { `${ formatBytes(usedBytes()) } / ${ formatBytes(totalBytes()) }` }
                     </span>
                 </Show>
             </div>

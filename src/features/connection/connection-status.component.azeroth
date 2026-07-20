@@ -56,9 +56,12 @@ export default component ConnectionStatus()
                 </div>
             </div>
 
-            <p class="text-center text-xs text-faint">
-                { t().status.transferred } <span class="readout" dir="ltr">{ formatBytes(connection.traffic().uplink + connection.traffic().downlink) }</span>
-            </p>
+            <div class="flex items-center justify-between border-t border-border/60 pt-2 text-xs">
+                <span class="text-muted">{ t().status.transferred }</span>
+                <span class="readout font-medium text-text" dir="ltr">
+                    { formatBytes(connection.traffic().uplink + connection.traffic().downlink) }
+                </span>
+            </div>
         </div>
     </Show>
 }

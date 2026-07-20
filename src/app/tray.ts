@@ -53,7 +53,31 @@ export const installTray = (labels: () => TrayLabels): void =>
 
     installed = true;
 
-    let tray: TrayIcon | null = null;
+    let acquiring: Promise<TrayIcon> | null = null;
+
+    const acquire = async (initial: TrayLabels): Promise<TrayIcon> =>
+    {
+        // Tray icons are owned by the TAURI process, not this webview context: a
+        // dev reload resets `installed` but leaves the previous context's tray -
+        // its callbacks now dead - sitting in the tray area. Remove any stale one
+        // before creating, or every reload stacks another icon.
+        await TrayIcon.removeById('guardian');
+
+        return TrayIcon.new({
+            id: 'guardian',
+            tooltip: initial.tooltip,
+            icon: (await defaultWindowIcon()) ?? undefined,
+            showMenuOnLeftClick: false,
+            menu: await buildMenu(initial),
+            action: (event) =>
+            {
+                if (event.type === 'Click' && event.button === 'Left' && event.buttonState === 'Down')
+                {
+                    void showWindow();
+                }
+            }
+        });
+    };
 
     createEffect(() =>
     {
@@ -61,28 +85,15 @@ export const installTray = (labels: () => TrayLabels): void =>
 
         void (async (): Promise<void> =>
         {
-            if (tray === null)
-            {
-                tray = await TrayIcon.new({
-                    id: 'guardian',
-                    tooltip: current.tooltip,
-                    icon: (await defaultWindowIcon()) ?? undefined,
-                    showMenuOnLeftClick: false,
-                    menu: await buildMenu(current),
-                    action: (event) =>
-                    {
-                        if (event.type === 'Click' && event.button === 'Left' && event.buttonState === 'Down')
-                        {
-                            void showWindow();
-                        }
-                    }
-                });
-            }
-            else
-            {
-                await tray.setTooltip(current.tooltip);
-                await tray.setMenu(await buildMenu(current));
-            }
+            // ??= serializes concurrent runs: a second effect firing during
+            // creation (the locale store settling at startup) must relabel the
+            // SAME tray, not race a second TrayIcon.new into a duplicate.
+            acquiring ??= acquire(current);
+
+            const tray = await acquiring;
+
+            await tray.setTooltip(current.tooltip);
+            await tray.setMenu(await buildMenu(current));
         })();
     }, { name: 'tray-locale' });
 };

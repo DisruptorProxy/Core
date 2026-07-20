@@ -1,6 +1,7 @@
 import { createSignal, createStore } from 'azerothjs';
 
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -14,6 +15,17 @@ interface GeoStatus
 }
 
 type GeoState = 'idle' | 'updating' | 'ready' | 'error';
+
+/** One chunk of a geo download, emitted by the Rust side as `geo-progress`. */
+interface GeoProgressEvent
+{
+    file: string;
+    received: number;
+    total: number;
+}
+
+/** The two files download sequentially in this order; the overall bar spans both. */
+const DOWNLOAD_ORDER = ['geoip.dat', 'geosite.dat'];
 
 /**
  * The geo databases xray uses for `geoip:`/`geosite:` routing rules.
@@ -31,6 +43,11 @@ export const useGeo = createStore(() =>
     const [geosite, setGeosite] = createSignal(false);
     const [state, setState] = createSignal<GeoState>('idle');
     const [error, setError] = createSignal<string | null>(null);
+
+    // Overall download percentage across BOTH sequential files (geoip spans 0-50,
+    // geosite 50-100); null while updating means the server sent no size to
+    // measure against, so the bar shows indeterminate instead of a fake number.
+    const [progress, setProgress] = createSignal<number | null>(null);
 
     const apply = (status: GeoStatus): void =>
     {
@@ -66,7 +83,23 @@ export const useGeo = createStore(() =>
         }
 
         setError(null);
+        setProgress(null);
         setState('updating');
+
+        const unlisten = await listen<GeoProgressEvent>('geo-progress', (event) =>
+        {
+            const { file, received, total } = event.payload;
+            const index = DOWNLOAD_ORDER.indexOf(file);
+
+            if (index === -1 || total === 0)
+            {
+                return;
+            }
+
+            const fraction = Math.min(received / total, 1);
+
+            setProgress(Math.round(((index + fraction) / DOWNLOAD_ORDER.length) * 100));
+        });
 
         try
         {
@@ -78,6 +111,11 @@ export const useGeo = createStore(() =>
             setError(typeof updateError === 'string' ? updateError : 'Could not update the geo files');
             setState('error');
         }
+        finally
+        {
+            unlisten();
+            setProgress(null);
+        }
     };
 
     void refresh();
@@ -87,6 +125,7 @@ export const useGeo = createStore(() =>
         geosite,
         state,
         error,
+        progress,
         update,
         refresh
     };

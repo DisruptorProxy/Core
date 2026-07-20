@@ -86,6 +86,25 @@ export default component SettingsPage()
                         <span class={ geoStatusClass(geo.geosite()) }>{ geoStatusLabel(geo.geosite()) }</span>
                     </div>
 
+                    <Show when={ geo.state() === 'updating' }>
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-muted">{ t().settings.updatingGeoFiles }</span>
+
+                                <Show when={ geo.progress() !== null }>
+                                    <span class="readout font-medium text-accent" dir="ltr">{ geo.progress() }%</span>
+                                </Show>
+                            </div>
+
+                            <div class="h-1 w-full overflow-hidden rounded-full bg-border/50">
+                                <div
+                                    class={ `h-full rounded-full bg-accent transition-[width] duration-300 ${ geo.progress() === null ? 'animate-pulse' : '' }` }
+                                    style:width={ `${ geo.progress() ?? 100 }%` }
+                                ></div>
+                            </div>
+                        </div>
+                    </Show>
+
                     <Show when={ geo.state() === 'ready' }>
                         <p class="text-xs text-good">{ t().settings.geoFilesUpdated }</p>
                     </Show>
@@ -94,13 +113,14 @@ export default component SettingsPage()
                         <p class="text-xs text-poor">{ geo.error() }</p>
                     </Show>
 
-                    <Button
-                        label={ geo.state() === 'updating' ? t().settings.updatingGeoFiles : t().settings.updateGeoFiles }
-                        variant="ghost"
-                        block={ true }
-                        disabled={ geo.state() === 'updating' }
-                        onPress={ () => void geo.update() }
-                    />
+                    <div class="flex justify-end">
+                        <Button
+                            label={ geo.state() === 'updating' ? t().settings.updatingGeoFiles : t().settings.updateGeoFiles }
+                            variant="ghost"
+                            disabled={ geo.state() === 'updating' }
+                            onPress={ () => void geo.update() }
+                        />
+                    </div>
                 </Card>
             </section>
 
@@ -139,13 +159,14 @@ export default component SettingsPage()
                         <p class="text-xs text-poor">{ version.error() }</p>
                     </Show>
 
-                    <Button
-                        label={ version.state() === 'checking' ? t().settings.checking : t().settings.checkUpdate }
-                        variant="ghost"
-                        block={ true }
-                        disabled={ version.state() === 'checking' }
-                        onPress={ () => void version.check() }
-                    />
+                    <div class="flex justify-end">
+                        <Button
+                            label={ version.state() === 'checking' ? t().settings.checking : t().settings.checkUpdate }
+                            variant="ghost"
+                            disabled={ version.state() === 'checking' }
+                            onPress={ () => void version.check() }
+                        />
+                    </div>
                 </Card>
             </section>
         </div>

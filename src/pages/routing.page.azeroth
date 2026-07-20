@@ -75,7 +75,7 @@ export default component RoutingPage()
         }
     };
 
-    <div class="contents">
+    <div class="h-full">
     <Screen title={ t().routing.title } subtitle={ t().routing.subtitle }>
         <div class="flex flex-col gap-6 px-5 py-6">
             <section class="flex flex-col gap-3">

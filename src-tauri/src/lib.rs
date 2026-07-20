@@ -4,6 +4,7 @@ use std::process::Command;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
 use tauri::path::BaseDirectory;
@@ -609,12 +610,29 @@ fn geo_files_status(app: tauri::AppHandle) -> Result<GeoStatus, String> {
     Ok(geo_status_of(&resource_assets_dir(&app)?))
 }
 
+/// One chunk's worth of download progress, emitted to the webview as `geo-progress`
+/// so the Settings card can show a live percentage. `total` is 0 when the server
+/// sent no Content-Length; the frontend shows an indeterminate bar for that.
+#[derive(Clone, serde::Serialize)]
+struct GeoProgress {
+    file: String,
+    received: u64,
+    total: u64,
+}
+
 /// Downloads a single file fully into memory, then writes it in one call. The geo
 /// `.dat` files are a couple of MB, so buffering is cheap and the on-disk file is
 /// only ever replaced by a complete download (a truncated write would make xray
-/// reject every geo rule).
-async fn download_file(client: &reqwest::Client, url: &str, dest: &Path) -> Result<(), String> {
-    let response = client
+/// reject every geo rule). Streamed chunk by chunk purely so progress can be
+/// emitted as the bytes arrive.
+async fn download_file(
+    app: &tauri::AppHandle,
+    client: &reqwest::Client,
+    url: &str,
+    dest: &Path,
+    name: &str,
+) -> Result<(), String> {
+    let mut response = client
         .get(url)
         .header("User-Agent", "Guardian")
         .send()
@@ -625,7 +643,20 @@ async fn download_file(client: &reqwest::Client, url: &str, dest: &Path) -> Resu
         return Err(format!("Download failed: the server returned {}", response.status()));
     }
 
-    let bytes = response.bytes().await.map_err(|e| format!("Failed to read the download: {e}"))?;
+    let total = response.content_length().unwrap_or(0);
+    let mut bytes: Vec<u8> = Vec::with_capacity(total as usize);
+
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(|e| format!("Failed to read the download: {e}"))?
+    {
+        bytes.extend_from_slice(&chunk);
+        let _ = app.emit(
+            "geo-progress",
+            GeoProgress { file: name.into(), received: bytes.len() as u64, total },
+        );
+    }
 
     std::fs::write(dest, &bytes).map_err(|e| format!("Failed to write {}: {e}", dest.display()))?;
 
@@ -646,8 +677,8 @@ async fn update_geo_files(app: tauri::AppHandle) -> Result<GeoStatus, String> {
         .build()
         .map_err(|e| format!("Failed to build http client: {e}"))?;
 
-    download_file(&client, GEOIP_URL, &dir.join("geoip.dat")).await?;
-    download_file(&client, GEOSITE_URL, &dir.join("geosite.dat")).await?;
+    download_file(&app, &client, GEOIP_URL, &dir.join("geoip.dat"), "geoip.dat").await?;
+    download_file(&app, &client, GEOSITE_URL, &dir.join("geosite.dat"), "geosite.dat").await?;
 
     Ok(geo_status_of(&dir))
 }

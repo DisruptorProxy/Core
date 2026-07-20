@@ -63,7 +63,9 @@ export default component ServersPage()
         return connection.phase() === 'connecting' ? t().home.connecting : t().home.connected;
     };
 
-    <div class="contents">
+    { /* A real block root (not `contents`): the route transition animates THIS element,
+         and a display:contents box cannot paint a transform or fade. */ }
+    <div class="h-full">
     <div class="flex h-full min-h-0">
     <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col pb-14 md:pb-0">
         <header class="glass-bar shrink-0 border-b border-border">

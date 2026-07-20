@@ -191,6 +191,18 @@
         overflow-x: hidden;
     }
 
+    /* Tailwind v4's preflight leaves buttons on `cursor: default` (the native-app
+       convention). Guardian's controls are web-idiom clickables, so restore the
+       pointer affordance on everything interactive - except while disabled. */
+    button:not(:disabled),
+    [role="button"]:not(:disabled),
+    summary,
+    label:has(> input[type="checkbox"]),
+    label:has(> input[type="radio"])
+    {
+        cursor: pointer;
+    }
+
     /* Mobile feel on the desktop: every surface scrolls by wheel, trackpad, or
        touch, but no scrollbar is ever drawn. This is what makes the horizontal
        chip rows and the long lists read like a phone app rather than a window. */
@@ -341,15 +353,15 @@
 }
 
 /* Route transitions (<Routes transition> in the shell). Two directional families:
-   forward (push/replace) rises in while the old page lifts away; back (pop)
-   reverses the vertical. The OUTGOING page goes position:absolute so the incoming
-   one takes the flow - both are mounted during the swap. Vertical + opacity only,
-   so LTR and RTL read identically; the reduced-motion block above collapses both
-   families to an instant swap. */
+   forward (push/replace) rises the new page in; back (pop) descends it in. The
+   OUTGOING page goes position:absolute and simply FADES - one moving element per
+   swap, so the two pages never fight, and no scale, which smears glass text
+   mid-animation. Vertical + opacity only, so LTR and RTL read identically; the
+   reduced-motion block above collapses both families to an instant swap. */
 .g-page-enter-from
 {
     opacity: 0;
-    transform: translateY(10px) scale(0.995);
+    transform: translateY(8px);
 }
 
 .g-page-enter-active
@@ -367,19 +379,18 @@
 {
     position: absolute;
     inset: 0;
-    transition: opacity var(--g-dur-quick) var(--g-ease-in), transform var(--g-dur-quick) var(--g-ease-in);
+    transition: opacity var(--g-dur-quick) var(--g-ease-in);
 }
 
 .g-page-leave-to
 {
     opacity: 0;
-    transform: translateY(-6px);
 }
 
 .g-page-back-enter-from
 {
     opacity: 0;
-    transform: translateY(-10px) scale(0.995);
+    transform: translateY(-8px);
 }
 
 .g-page-back-enter-active
@@ -397,13 +408,12 @@
 {
     position: absolute;
     inset: 0;
-    transition: opacity var(--g-dur-quick) var(--g-ease-in), transform var(--g-dur-quick) var(--g-ease-in);
+    transition: opacity var(--g-dur-quick) var(--g-ease-in);
 }
 
 .g-page-back-leave-to
 {
     opacity: 0;
-    transform: translateY(8px);
 }
 
 /* Icon swap (titlebar window-mode toggle). The reactive icon binding mounts a
