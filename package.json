@@ -1,4 +1,7 @@
 {
+    "name": "disruptor-proxy",
+    "version": "1.0.0",
+    "private": true,
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -11,7 +14,8 @@
         "desktop-build": "npm run tauri build",
         "android": "npm run tauri android dev",
         "android-aab": "npm run tauri android build -- --aab",
-        "android-apk": "npm run tauri android build -- --apk"
+        "android-apk": "npm run tauri android build -- --apk",
+        "release": "node scripts/release.mjs"
     },
     "dependencies": {
         "@fontsource-variable/vazirmatn": "^5.2.8",

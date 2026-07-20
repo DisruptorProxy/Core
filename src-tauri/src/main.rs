@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    guardian_lib::run()
+    disruptor_proxy_lib::run()
 }

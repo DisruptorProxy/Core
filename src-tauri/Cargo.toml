@@ -1,10 +1,10 @@
 [package]
-name = "guardian"
+name = "disruptor-proxy"
 version = "1.0.0"
 edition = "2021"
 
 [lib]
-name = "guardian_lib"
+name = "disruptor_proxy_lib"
 crate-type = [ "staticlib", "cdylib", "rlib" ]
 
 [build-dependencies]

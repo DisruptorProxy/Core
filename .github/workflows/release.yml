@@ -1,13 +1,36 @@
 name: Release
 
-# Pushing a `v*` tag builds the Windows installer, signs the update artifact
-# with TAURI_SIGNING_PRIVATE_KEY, and publishes both to a GitHub Release
-# together with the `latest.json` manifest the updater plugin polls
-# (tauri.conf.json's plugins.updater.endpoints points at this repo's
-# releases/latest/download/latest.json). The signing keypair is generated
-# once (scripts: none - it was created locally via `tauri signer generate`);
-# only the PRIVATE key ever needs to exist as a secret, the public half is
-# already committed inline in tauri.conf.json.
+# Pushing a `v*` tag builds and signs the Windows installer once, then publishes it
+# to TWO places:
+#   1. A draft release on THIS repo (DisruptorProxy/ClientCore, private) - an
+#      internal record, using the default GITHUB_TOKEN (which can only ever touch
+#      the repo the workflow runs in).
+#   2. A draft release on DisruptorProxy/Xray-Client (public) - what real users and the
+#      updater plugin actually see. tauri.conf.json's updater endpoint points at
+#      Client's releases/latest/download/latest.json, so THIS is the publish that
+#      makes auto-update work; ClientCore's release does not.
+#
+# Both releases are created as DRAFTS on purpose (matches the previous single-repo
+# setup) - review each one on GitHub and publish it manually. A draft is invisible
+# to the updater and to anonymous downloads, so a bad build never reaches anyone
+# until you say so.
+#
+# Required secrets (Settings > Secrets and variables > Actions, on ClientCore):
+#   TAURI_SIGNING_PRIVATE_KEY           the updater signing key (already in use)
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password (already in use)
+#   CLIENT_REPO_TOKEN                   a fine-grained PAT scoped to ONLY
+#                                        DisruptorProxy/Xray-Client, with Contents:
+#                                        Read and write - nothing else. The
+#                                        default GITHUB_TOKEN cannot publish to a
+#                                        different repo than the one running the
+#                                        workflow, so this is the only way step 2
+#                                        can reach Xray-Client at all.
+#
+# NOTE: the artifact glob below is Tauri v2's documented bundle-output convention,
+# not something verified against a real build in this environment - check the
+# first real run's logs confirm every expected file (installer + .sig +
+# latest.json) actually got matched and uploaded to both releases.
+
 on:
     push:
         tags:
@@ -31,6 +54,7 @@ jobs:
 
             -   run: npm ci
 
+            # Builds + signs once, and publishes the private ClientCore release.
             -   uses: tauri-apps/tauri-action@v0
                 env:
                     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,3 +65,20 @@ jobs:
                     releaseName: 'The Disruptor Proxy ${{ github.ref_name }}'
                     releaseDraft: true
                     prerelease: false
+
+            # Re-publishes the SAME signed artifacts to the public Xray-Client repo - the
+            # release the updater plugin and real users actually fetch from.
+            -   uses: softprops/action-gh-release@v2
+                with:
+                    repository: DisruptorProxy/Xray-Client
+                    token: ${{ secrets.CLIENT_REPO_TOKEN }}
+                    tag_name: ${{ github.ref_name }}
+                    name: 'The Disruptor Proxy ${{ github.ref_name }}'
+                    draft: true
+                    prerelease: false
+                    files: |
+                        src-tauri/target/release/bundle/**/*.msi
+                        src-tauri/target/release/bundle/**/*.msi.sig
+                        src-tauri/target/release/bundle/**/*.exe
+                        src-tauri/target/release/bundle/**/*.exe.sig
+                        src-tauri/target/release/bundle/**/*.json
