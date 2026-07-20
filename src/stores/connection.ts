@@ -4,9 +4,12 @@ import { getConfig, getConfigsByIds } from '../lib/db/repo';
 import type { ProxyConfig } from '../lib/proxy/types';
 import { canConnect } from '../lib/xray/config';
 
+import { useRouting } from './routing';
 import { useHealth } from './health';
 import { useLocale } from './locale';
 import { useToast } from './toast';
+
+import type { Rule } from '../lib/routing/types';
 
 import type { ConnectionPhase, TrafficSample } from '../features/connection/engine/port';
 import { service } from '../features/connection/engine/service';
@@ -200,6 +203,31 @@ export const useConnection = createStore(() =>
 
         return true;
     };
+
+    /**
+     * When the routing profile is edited while a server is active, restart xray so
+     * the new rules take effect immediately. The watcher compares the rules array
+     * reference — any store mutation (`commit` / `usePreset`) produces a new array,
+     * so the effect fires exactly once per edit and skips the status-transition
+     * noise that follows as the engine cycles through disconnect → reconnect.
+     */
+    const routing = useRouting();
+    let savedRules: Rule[] = routing.rules();
+
+    createEffect(() =>
+    {
+        const currentRules = routing.rules();
+        const config = status().config;
+
+        if (config !== null && status().phase === 'connected' && currentRules !== savedRules)
+        {
+            savedRules = currentRules;
+
+            // connect() already handles the full disconnect → connect cycle and
+            // manages the switching signal, so all UI layers stay consistent.
+            void connect(config);
+        }
+    }, { name: 'routing-restart' });
 
     return {
         switching,
