@@ -24,7 +24,17 @@ const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNA
 const readStored = (): WindowMode =>
     (localStorage.getItem(STORAGE_KEY) === 'expanded' ? 'expanded' : 'compact');
 
-/** Resizes/centres the native window for `mode`; a no-op in a plain browser. */
+/**
+ * Resizes/centres the native window for `mode`; a no-op in a plain browser.
+ *
+ * Each call is its own IPC round-trip to the OS, so five sequential `await`s
+ * read as a visible lag between tapping the titlebar button and the window
+ * actually moving. The two bound calls (min/max) are independent of each other
+ * and safe to fire together; only their ORDER relative to `setSize` matters
+ * (bounds must land first, or an intermediate clamp fights the resize) - so
+ * this batches everything that can overlap and keeps only the true dependency
+ * chain sequential.
+ */
 const applyToWindow = async (mode: WindowMode): Promise<void> =>
 {
     if (!isTauri())
@@ -36,22 +46,26 @@ const applyToWindow = async (mode: WindowMode): Promise<void> =>
 
     if (mode === 'expanded')
     {
-        await current.setResizable(true);
-        await current.setMinSize(EXPANDED_MIN);
-        await current.setMaxSize(EXPANDED_MAX);
+        await Promise.all([
+            current.setResizable(true),
+            current.setMinSize(EXPANDED_MIN),
+            current.setMaxSize(EXPANDED_MAX)
+        ]);
         await current.setSize(EXPANDED);
+        await current.center();
     }
     else
     {
-        // Pin both bounds to the fixed size BEFORE resizing so no intermediate
-        // clamp fights the resize, then lock resizing again.
-        await current.setMinSize(COMPACT);
-        await current.setMaxSize(COMPACT);
+        await Promise.all([
+            current.setMinSize(COMPACT),
+            current.setMaxSize(COMPACT)
+        ]);
         await current.setSize(COMPACT);
-        await current.setResizable(false);
+        await Promise.all([
+            current.setResizable(false),
+            current.center()
+        ]);
     }
-
-    await current.center();
 };
 
 /**

@@ -37,8 +37,7 @@ export const vi: Strings =
         failed: 'Kết nối thất bại',
         disconnect: 'Ngắt kết nối',
         connectFastest: 'Kết nối nhanh nhất',
-        tapConnect: 'Chạm để kết nối',
-        tapDisconnect: 'Chạm để ngắt'
+        switchServer: 'Đổi máy chủ'
     },
 
     status:
@@ -153,6 +152,10 @@ export const vi: Strings =
         presets: 'Chế độ',
         bypassCountry: 'Bỏ qua theo quốc gia',
         bypassCountryHint: 'Chọn nơi bạn ở: trang web và IP của quốc gia đó đi thẳng, mọi thứ khác qua proxy.',
+        countryModeLabel: 'Chế độ định tuyến',
+        countryModeSmart: 'Thông minh',
+        countryModeBypass: 'Bỏ qua',
+        countryModeSmartHint: 'Chặn quảng cáo, mạng nội bộ và trang web của quốc gia đó đi thẳng, còn lại qua proxy.',
         rulesHeader: 'Quy tắc',
         rulesHint: 'Xét từ trên xuống — quy tắc khớp đầu tiên thắng.',
         addRule: 'Thêm quy tắc',
@@ -169,10 +172,6 @@ export const vi: Strings =
         delete: 'Xóa',
         moveUp: 'Lên',
         moveDown: 'Xuống',
-        presetRulesName: 'Thông minh',
-        presetRulesDesc: 'Chặn quảng cáo, trang nội địa và Iran đi thẳng, còn lại qua proxy.',
-        presetBypassName: 'Bỏ qua Iran',
-        presetBypassDesc: 'Trang Iran đi thẳng, mọi thứ khác qua proxy.',
         presetGlobalName: 'Toàn cầu',
         presetGlobalDesc: 'Mọi lưu lượng đều qua proxy.',
         presetDirectLanName: 'LAN trực tiếp',
@@ -216,7 +215,8 @@ export const vi: Strings =
         checking: 'Đang kiểm tra…',
         upToDate: 'Bạn đang dùng phiên bản mới nhất.',
         updateAvailable: (version: string) => `Đã có phiên bản ${ version }.`,
-        download: 'Tải về',
+        installUpdate: 'Cài đặt bản cập nhật',
+        installingUpdate: 'Đang cài đặt bản cập nhật…',
         geoFiles: 'Tệp geo',
         geoFilesDesc: 'Cơ sở dữ liệu cho quy tắc định tuyến theo quốc gia và nhóm trang web. Cập nhật để quy tắc bỏ qua và chặn luôn chính xác.',
         geoInstalled: 'Đã cài',
@@ -249,8 +249,7 @@ export const vi: Strings =
         pinging: 'Đang ping…',
         notSupported: 'Lõi hiện tại không hỗ trợ giao thức này.',
         emptyTitle: 'Chưa chọn máy chủ',
-        emptyHint: 'Chọn một máy chủ trong danh sách để xem chi tiết.',
-        close: 'Đóng chi tiết'
+        emptyHint: 'Chọn một máy chủ trong danh sách để xem chi tiết.'
     },
 
     common:

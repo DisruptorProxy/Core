@@ -1,0 +1,43 @@
+name: Release
+
+# Pushing a `v*` tag builds the Windows installer, signs the update artifact
+# with TAURI_SIGNING_PRIVATE_KEY, and publishes both to a GitHub Release
+# together with the `latest.json` manifest the updater plugin polls
+# (tauri.conf.json's plugins.updater.endpoints points at this repo's
+# releases/latest/download/latest.json). The signing keypair is generated
+# once (scripts: none - it was created locally via `tauri signer generate`);
+# only the PRIVATE key ever needs to exist as a secret, the public half is
+# already committed inline in tauri.conf.json.
+on:
+    push:
+        tags:
+            - 'v*'
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: windows-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: actions/setup-node@v6
+                with:
+                    node-version: 24
+                    cache: npm
+
+            -   uses: dtolnay/rust-toolchain@stable
+
+            -   run: npm ci
+
+            -   uses: tauri-apps/tauri-action@v0
+                env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+                with:
+                    tagName: ${{ github.ref_name }}
+                    releaseName: 'The Disruptor Proxy ${{ github.ref_name }}'
+                    releaseDraft: true
+                    prerelease: false

@@ -19,13 +19,15 @@
         "@fontsource/ibm-plex-sans": "^5.2.8",
         "@tailwindcss/vite": "^4.3.2",
         "@tauri-apps/api": "^2.11.1",
+        "@tauri-apps/plugin-process": "^2.3.1",
+        "@tauri-apps/plugin-updater": "^2.10.1",
         "azerothjs": "^0.9.0-beta.2",
         "flag-icons": "^7.5.0",
         "lucide": "^1.24.0",
         "tailwindcss": "^4.3.2"
     },
     "devDependencies": {
-        "@azerothjs/compiler": "^0.9.0-beta.2",
+        "@azerothjs/compiler": "file:C:/Users/IntelligentQuantum/Documents/Projects/AzerothJS/packages/compiler",
         "@azerothjs/devtools": "^0.9.0-beta.2",
         "@azerothjs/eslint-plugin": "^0.9.0-beta.2",
         "@azerothjs/language-server": "^0.9.0-beta.2",

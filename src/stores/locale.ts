@@ -52,6 +52,25 @@ export const LOCALE_LABELS: Record<Locale, string> =
     id: 'Bahasa Indonesia'
 };
 
+/**
+ * A representative country per language, for the picker's flag - a visual anchor,
+ * not a claim of ownership (zh/es/ar all span many countries; these are simply the
+ * most recognizable choice for each).
+ */
+export const LOCALE_COUNTRY: Record<Locale, string> =
+{
+    en: 'us',
+    fa: 'ir',
+    ar: 'sa',
+    zh: 'cn',
+    ru: 'ru',
+    tr: 'tr',
+    hi: 'in',
+    es: 'es',
+    vi: 'vn',
+    id: 'id'
+};
+
 const RTL_LOCALES: ReadonlySet<Locale> = new Set<Locale>(['fa', 'ar']);
 
 const isLocale = (value: string | null): value is Locale =>

@@ -37,8 +37,7 @@ export const en: Strings =
         failed: 'Connection failed',
         disconnect: 'Disconnect',
         connectFastest: 'Connect fastest',
-        tapConnect: 'Tap to connect',
-        tapDisconnect: 'Tap to disconnect'
+        switchServer: 'Switch server'
     },
 
     status:
@@ -153,6 +152,10 @@ export const en: Strings =
         presets: 'Modes',
         bypassCountry: 'Bypass a country',
         bypassCountryHint: 'Pick where you are: that country’s sites and IPs stay direct, everything else goes through the proxy.',
+        countryModeLabel: 'Routing mode',
+        countryModeSmart: 'Smart',
+        countryModeBypass: 'Bypass',
+        countryModeSmartHint: 'Block ads, keep the local network and that country’s sites direct, proxy the rest.',
         rulesHeader: 'Rules',
         rulesHint: 'Checked top to bottom — the first rule that matches wins.',
         addRule: 'Add rule',
@@ -169,10 +172,6 @@ export const en: Strings =
         delete: 'Delete',
         moveUp: 'Move up',
         moveDown: 'Move down',
-        presetRulesName: 'Smart',
-        presetRulesDesc: 'Block ads, keep local and Iranian sites direct, proxy the rest.',
-        presetBypassName: 'Bypass Iran',
-        presetBypassDesc: 'Iranian sites direct, everything else through the proxy.',
         presetGlobalName: 'Global',
         presetGlobalDesc: 'Send all traffic through the proxy.',
         presetDirectLanName: 'Direct LAN',
@@ -216,7 +215,8 @@ export const en: Strings =
         checking: 'Checking…',
         upToDate: 'You’re on the latest version.',
         updateAvailable: (version: string) => `Version ${ version } is available.`,
-        download: 'Download',
+        installUpdate: 'Install update',
+        installingUpdate: 'Installing update…',
         geoFiles: 'Geo files',
         geoFilesDesc: 'Databases for country and site-category routing rules. Update them to keep bypass and blocking rules accurate.',
         geoInstalled: 'Installed',
@@ -249,8 +249,7 @@ export const en: Strings =
         pinging: 'Pinging…',
         notSupported: 'This protocol is not supported by the current core.',
         emptyTitle: 'No server selected',
-        emptyHint: 'Pick a server from the list to see its details.',
-        close: 'Close details'
+        emptyHint: 'Pick a server from the list to see its details.'
     },
 
     common:

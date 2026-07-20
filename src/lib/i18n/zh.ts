@@ -37,8 +37,7 @@ export const zh: Strings =
         failed: '连接失败',
         disconnect: '断开连接',
         connectFastest: '连接最快',
-        tapConnect: '点按连接',
-        tapDisconnect: '点按断开'
+        switchServer: '切换服务器'
     },
 
     status:
@@ -153,6 +152,10 @@ export const zh: Strings =
         presets: '模式',
         bypassCountry: '按国家绕行',
         bypassCountryHint: '选择你所在的国家：该国的网站和 IP 保持直连，其余全部走代理。',
+        countryModeLabel: '路由模式',
+        countryModeSmart: '智能',
+        countryModeBypass: '绕行',
+        countryModeSmartHint: '拦截广告，局域网和该国网站直连，其余走代理。',
         rulesHeader: '规则',
         rulesHint: '自上而下匹配 — 第一条命中的规则生效。',
         addRule: '添加规则',
@@ -169,10 +172,6 @@ export const zh: Strings =
         delete: '删除',
         moveUp: '上移',
         moveDown: '下移',
-        presetRulesName: '智能',
-        presetRulesDesc: '拦截广告，本地与伊朗网站直连，其余走代理。',
-        presetBypassName: '绕过伊朗',
-        presetBypassDesc: '伊朗网站直连，其余全部走代理。',
         presetGlobalName: '全局',
         presetGlobalDesc: '所有流量都走代理。',
         presetDirectLanName: '局域网直连',
@@ -216,7 +215,8 @@ export const zh: Strings =
         checking: '检查中…',
         upToDate: '已是最新版本。',
         updateAvailable: (version: string) => `新版本 ${ version } 可用。`,
-        download: '下载',
+        installUpdate: '安装更新',
+        installingUpdate: '正在安装更新…',
         geoFiles: 'Geo 数据库',
         geoFilesDesc: '用于国家和网站类别路由规则的数据库。及时更新以保证绕行与拦截规则准确。',
         geoInstalled: '已安装',
@@ -249,8 +249,7 @@ export const zh: Strings =
         pinging: '测速中…',
         notSupported: '当前内核不支持此协议。',
         emptyTitle: '未选择服务器',
-        emptyHint: '从列表中选择一个服务器查看详情。',
-        close: '关闭详情'
+        emptyHint: '从列表中选择一个服务器查看详情。'
     },
 
     common:

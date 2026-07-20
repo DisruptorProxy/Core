@@ -37,8 +37,7 @@ export const fa: Strings =
         failed: 'اتصال ناموفق',
         disconnect: 'قطع اتصال',
         connectFastest: 'اتصال به سریع‌ترین',
-        tapConnect: 'برای اتصال ضربه بزنید',
-        tapDisconnect: 'برای قطع ضربه بزنید'
+        switchServer: 'تعویض سرور'
     },
 
     status:
@@ -155,6 +154,10 @@ export const fa: Strings =
         presets: 'حالت‌ها',
         bypassCountry: 'دور زدن بر اساس کشور',
         bypassCountryHint: 'کشور خود را انتخاب کنید: سایت‌ها و IPهای آن کشور مستقیم می‌مانند و بقیه از پروکسی عبور می‌کند.',
+        countryModeLabel: 'حالت مسیریابی',
+        countryModeSmart: 'هوشمند',
+        countryModeBypass: 'دور زدن',
+        countryModeSmartHint: 'مسدودسازی تبلیغات، شبکه محلی و سایت‌های آن کشور مستقیم، بقیه از پروکسی.',
         rulesHeader: 'قوانین',
         rulesHint: 'از بالا به پایین بررسی می‌شود — نخستین قانون منطبق اعمال می‌شود.',
         addRule: 'افزودن قانون',
@@ -171,10 +174,6 @@ export const fa: Strings =
         delete: 'حذف',
         moveUp: 'بالا',
         moveDown: 'پایین',
-        presetRulesName: 'هوشمند',
-        presetRulesDesc: 'مسدودسازی تبلیغات، سایت‌های محلی و ایرانی مستقیم، بقیه از پروکسی.',
-        presetBypassName: 'دور زدن ایران',
-        presetBypassDesc: 'سایت‌های ایرانی مستقیم، بقیه از پروکسی.',
         presetGlobalName: 'سراسری',
         presetGlobalDesc: 'همه ترافیک از پروکسی عبور کند.',
         presetDirectLanName: 'شبکه محلی مستقیم',
@@ -218,7 +217,8 @@ export const fa: Strings =
         checking: 'در حال بررسی…',
         upToDate: 'شما آخرین نسخه را دارید.',
         updateAvailable: (version: string) => `نسخه ${ version } در دسترس است.`,
-        download: 'دریافت',
+        installUpdate: 'نصب به‌روزرسانی',
+        installingUpdate: 'در حال نصب به‌روزرسانی…',
         geoFiles: 'فایل‌های جغرافیایی',
         geoFilesDesc: 'پایگاه‌داده‌های قوانین مسیریابی بر پایه کشور و دسته سایت. برای دقیق‌ماندن قوانین دور زدن و مسدودسازی، آن‌ها را به‌روز کنید.',
         geoInstalled: 'نصب‌شده',
@@ -251,8 +251,7 @@ export const fa: Strings =
         pinging: 'در حال پینگ…',
         notSupported: 'این پروتکل توسط هسته فعلی پشتیبانی نمی‌شود.',
         emptyTitle: 'سروری انتخاب نشده',
-        emptyHint: 'برای دیدن جزئیات، سروری را از فهرست انتخاب کنید.',
-        close: 'بستن جزئیات'
+        emptyHint: 'برای دیدن جزئیات، سروری را از فهرست انتخاب کنید.'
     },
 
     common:

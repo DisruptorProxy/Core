@@ -37,8 +37,7 @@ export const ru: Strings =
         failed: 'Не удалось подключиться',
         disconnect: 'Отключить',
         connectFastest: 'К самому быстрому',
-        tapConnect: 'Нажмите, чтобы подключиться',
-        tapDisconnect: 'Нажмите, чтобы отключиться'
+        switchServer: 'Сменить сервер'
     },
 
     status:
@@ -153,6 +152,10 @@ export const ru: Strings =
         presets: 'Режимы',
         bypassCountry: 'Обход по стране',
         bypassCountryHint: 'Выберите, где вы находитесь: сайты и IP этой страны идут напрямую, всё остальное — через прокси.',
+        countryModeLabel: 'Режим маршрутизации',
+        countryModeSmart: 'Умный',
+        countryModeBypass: 'Обход',
+        countryModeSmartHint: 'Блокировать рекламу, локальную сеть и сайты этой страны напрямую, остальное через прокси.',
         rulesHeader: 'Правила',
         rulesHint: 'Проверяются сверху вниз — срабатывает первое совпавшее.',
         addRule: 'Добавить правило',
@@ -169,10 +172,6 @@ export const ru: Strings =
         delete: 'Удалить',
         moveUp: 'Вверх',
         moveDown: 'Вниз',
-        presetRulesName: 'Умный',
-        presetRulesDesc: 'Блокировать рекламу, местные и иранские сайты — напрямую, остальное через прокси.',
-        presetBypassName: 'Обход Ирана',
-        presetBypassDesc: 'Иранские сайты напрямую, всё остальное через прокси.',
         presetGlobalName: 'Глобальный',
         presetGlobalDesc: 'Весь трафик через прокси.',
         presetDirectLanName: 'Локальная сеть',
@@ -216,7 +215,8 @@ export const ru: Strings =
         checking: 'Проверка…',
         upToDate: 'У вас последняя версия.',
         updateAvailable: (version: string) => `Доступна версия ${ version }.`,
-        download: 'Скачать',
+        installUpdate: 'Установить обновление',
+        installingUpdate: 'Установка обновления…',
         geoFiles: 'Geo-файлы',
         geoFilesDesc: 'Базы для правил маршрутизации по странам и категориям сайтов. Обновляйте их, чтобы обход и блокировки оставались точными.',
         geoInstalled: 'Установлен',
@@ -249,8 +249,7 @@ export const ru: Strings =
         pinging: 'Пинг…',
         notSupported: 'Этот протокол не поддерживается текущим ядром.',
         emptyTitle: 'Сервер не выбран',
-        emptyHint: 'Выберите сервер из списка, чтобы увидеть детали.',
-        close: 'Закрыть'
+        emptyHint: 'Выберите сервер из списка, чтобы увидеть детали.'
     },
 
     common:

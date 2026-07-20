@@ -1,10 +1,11 @@
-import type { ProfileId, Rule } from './types';
+import type { CountryMode, ProfileId, Rule } from './types';
 
 /**
- * The four routing modes, tuned for the audience: someone in Iran who wants the
- * censored web through the proxy and the local/Iranian web direct (fast, and not
- * pointlessly tunnelled). Rules are ORDERED - first match wins - and every profile
- * ends in a `final` rule so nothing is ever unrouted.
+ * The two country-agnostic modes. Rules are ORDERED - first match wins - and
+ * every profile ends in a `final` rule so nothing is ever unrouted. Country-
+ * specific modes (once dedicated `rules`/`bypass-iran` presets, Iran-only) now
+ * live entirely in {@link countryRules} below - one mechanism for every
+ * supported country, Iran included, instead of a hardcoded special case.
  *
  * These are the SAME rule primitives a real Xray/sing-box config uses, so a
  * profile here lowers directly to an engine routing table when the sidecar lands.
@@ -19,34 +20,12 @@ const PRIVATE_RANGES = ['127.0.0.0/8', '10.0.0.0/8', '172.16.0.0/12', '192.168.0
 const privateDirect = (): Rule[] =>
     PRIVATE_RANGES.map((cidr, i) => rule(`p-lan-${ i }`, 'ip-cidr', cidr, 'direct'));
 
-export const PRESET_RULES: Record<Exclude<ProfileId, 'custom' | 'bypass-country'>, Rule[]> =
+export const PRESET_RULES: Record<Exclude<ProfileId, 'custom' | 'country'>, Rule[]> =
 {
     // Everything through the proxy - the safest default under heavy filtering.
     global:
     [
         rule('g-final', 'final', '', 'proxy')
-    ],
-
-    // The smart default: block ads, keep the local and Iranian web direct, proxy
-    // the rest. What most people actually want, spelled out.
-    rules:
-    [
-        rule('r-ads', 'geosite', 'category-ads-all', 'block'),
-        ...privateDirect(),
-        rule('r-geosite-ir', 'geosite', 'category-ir', 'direct'),
-        rule('r-geoip-ir', 'geoip', 'ir', 'direct'),
-        rule('r-suffix-ir', 'domain-suffix', '.ir', 'direct'),
-        rule('r-final', 'final', '', 'proxy')
-    ],
-
-    // Iranian sites direct, everything else proxied. The classic circumvention
-    // setup - do not tunnel domestic traffic that already works.
-    'bypass-iran':
-    [
-        rule('bi-geosite-ir', 'geosite', 'category-ir', 'direct'),
-        rule('bi-geoip-ir', 'geoip', 'ir', 'direct'),
-        rule('bi-suffix-ir', 'domain-suffix', '.ir', 'direct'),
-        rule('bi-final', 'final', '', 'proxy')
     ],
 
     // Only the local network is direct; everything else is proxied.
@@ -57,12 +36,11 @@ export const PRESET_RULES: Record<Exclude<ProfileId, 'custom' | 'bypass-country'
     ]
 };
 
-export const PRESET_IDS: Exclude<ProfileId, 'custom' | 'bypass-country'>[] = ['rules', 'bypass-iran', 'global', 'direct-lan'];
+export const PRESET_IDS: Exclude<ProfileId, 'custom' | 'country'>[] = ['global', 'direct-lan'];
 
 /**
- * The country-bypass picker: keep THIS country's web direct, proxy the rest -
- * the bypass-iran recipe generalized. Ten markets where a proxy client matters
- * most; names render via Intl.DisplayNames so they localize for free.
+ * The country picker: ten markets where a proxy client matters most. Names render
+ * via Intl.DisplayNames so they localize for free.
  */
 export const BYPASS_COUNTRIES = ['ir', 'cn', 'ru', 'tr', 'ae', 'sa', 'in', 'pk', 'id', 'vn'] as const;
 
@@ -76,8 +54,8 @@ const GEOSITE_BY_COUNTRY: Record<string, string> =
     ru: 'category-ru'
 };
 
-/** Builds the ordered bypass rules for one country: sites + IPs + ccTLD direct, rest proxied. */
-export const countryBypassRules = (country: string): Rule[] =>
+/** The direct-traffic rules shared by both country modes: sites (where curated) + IPs + ccTLD. */
+const countryDirect = (country: string): Rule[] =>
 {
     const list: Rule[] = [];
     const site = GEOSITE_BY_COUNTRY[country];
@@ -89,6 +67,27 @@ export const countryBypassRules = (country: string): Rule[] =>
 
     list.push(rule(`bc-geoip-${ country }`, 'geoip', country, 'direct'));
     list.push(rule(`bc-suffix-${ country }`, 'domain-suffix', `.${ country }`, 'direct'));
+
+    return list;
+};
+
+/**
+ * Builds one country's ordered rules for either mode - `smart` layers the 'rules'
+ * preset's ad-block + local-network-direct recipe on top of the country-direct
+ * rules; `bypass` is just the country direct, everything else proxied (the
+ * original bypass-iran recipe, generalized).
+ */
+export const countryRules = (country: string, mode: CountryMode): Rule[] =>
+{
+    const list: Rule[] = [];
+
+    if (mode === 'smart')
+    {
+        list.push(rule(`bc-ads-${ country }`, 'geosite', 'category-ads-all', 'block'));
+        list.push(...privateDirect());
+    }
+
+    list.push(...countryDirect(country));
     list.push(rule(`bc-final-${ country }`, 'final', '', 'proxy'));
 
     return list;

@@ -4,7 +4,7 @@ import type { Rule, RuleAction } from '../routing/types';
 /**
  * Turns a parsed ProxyConfig + routing profile into a real Xray config.
  *
- * This is the bridge between Guardian's model and the actual proxy core: every
+ * This is the bridge between The Disruptor Proxy's model and the actual proxy core: every
  * field the parsers recovered (REALITY keys, vless flow, ws path, ss cipher) has
  * to land in the exact place app-xray.exe expects, or the connection silently fails.
  * The functions here are pure and JSON-only, so they can be unit-tested against
@@ -19,7 +19,7 @@ import type { Rule, RuleAction } from '../routing/types';
  * is the near-universal default for other proxy clients (v2rayN, Clash, a user's
  * own xray), and if one already holds it the core cannot bind and the connection
  * dies at startup with "Only one usage of each socket address". This uncommon port
- * keeps Guardian out of their way. Guardian routes the whole device via TUN anyway;
+ * keeps The Disruptor Proxy out of their way. The Disruptor Proxy routes the whole device via TUN anyway;
  * this inbound is only for apps that opt into the SOCKS proxy directly.
  */
 const CONNECT_SOCKS_PORT = 1080;
@@ -36,7 +36,7 @@ const API_PORT = 10085;
 const SUPPORTED_PROTOCOLS: ReadonlySet<Protocol> = new Set<Protocol>(['vmess', 'vless', 'trojan', 'shadowsocks']);
 
 /**
- * Whether Guardian can connect to this protocol with the current core. hysteria2
+ * Whether The Disruptor Proxy can connect to this protocol with the current core. hysteria2
  * and tuic parse and list fine, but connecting needs an outbound mapper the core
  * (hysteria) or the core itself (tuic) does not yet give us.
  */
@@ -270,7 +270,7 @@ const isUnresolvableGeoRule = (rule: Rule, geo: GeoAssets): boolean =>
     (rule.type === 'geosite' && !geo.geosite) || (rule.type === 'geoip' && !geo.geoip);
 
 /**
- * Translates Guardian's plain-language routing rules into Xray routing rules,
+ * Translates The Disruptor Proxy's plain-language routing rules into Xray routing rules,
  * preserving order (first match wins in both models). The `final` rule becomes a
  * catch-all that matches all TCP+UDP, so nothing is ever left unrouted. Geo rules
  * are skipped when their database is missing, so a config never references a

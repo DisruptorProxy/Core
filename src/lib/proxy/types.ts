@@ -1,4 +1,4 @@
-/** The protocols Guardian can read. Anything else is reported, never silently dropped. */
+/** The protocols The Disruptor Proxy can read. Anything else is reported, never silently dropped. */
 export type Protocol = 'vmess' | 'vless' | 'trojan' | 'shadowsocks' | 'hysteria2' | 'tuic';
 
 /** Stream transport. Providers spell these a dozen ways; parsers normalize to these. */

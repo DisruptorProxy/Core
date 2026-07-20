@@ -54,17 +54,6 @@ export const useDetail = createStore(() =>
         }
     }, { name: 'detail-load' });
 
-    // Crossing wide -> narrow morphs the passive side panel into a MODAL sheet:
-    // an open selection would make that sheet pop up uninvited at the breakpoint.
-    // Drop the selection instead; a sheet opens only when the user taps a row.
-    createEffect(() =>
-    {
-        if (!viewport.isWide())
-        {
-            setOpenId(null);
-        }
-    }, { name: 'detail-narrow-close' });
-
     const record = (): ReturnType<typeof health.recordOf> =>
     {
         const current = config();

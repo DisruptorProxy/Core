@@ -16,6 +16,11 @@ dist-ssr
 *.local
 .env
 
+# Updater signing keypair - the private half must NEVER be committed. It lives
+# only on this machine and as the TAURI_SIGNING_PRIVATE_KEY repo secret.
+src-tauri/.updater-key.pem
+src-tauri/.updater-key.pem.pub
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

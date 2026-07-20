@@ -1,6 +1,6 @@
 import { Match, Show, Switch, Transition } from 'azerothjs';
 
-import { CircleStop, Download, Gauge, ListChecks, Server, X } from 'lucide';
+import { CircleStop, Download, Gauge, ListChecks, Server } from 'lucide';
 
 import { useConfigs } from '../stores/configs';
 import { useConnection } from '../stores/connection';
@@ -179,18 +179,8 @@ export default component ServersPage()
             </Show>
 
             <Show when={ detail.openId() }>
-                <div class="glass-bar flex shrink-0 items-center justify-between gap-2 border-b border-border px-4 py-4">
+                <div class="glass-bar shrink-0 border-b border-border px-4 py-4">
                     <span class="truncate text-sm font-semibold text-text">{ detail.config()?.name ?? '' }</span>
-
-                    <button
-                        type="button"
-                        class="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface"
-                        aria-label={ t().detail.close }
-                        data-tip={ t().detail.close }
-                        onClick={ () => detail.close() }
-                    >
-                        { icon(X, 'size-4') }
-                    </button>
                 </div>
             </Show>
 

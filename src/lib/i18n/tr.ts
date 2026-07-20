@@ -37,8 +37,7 @@ export const tr: Strings =
         failed: 'Bağlantı başarısız',
         disconnect: 'Bağlantıyı kes',
         connectFastest: 'En hızlıya bağlan',
-        tapConnect: 'Bağlanmak için dokunun',
-        tapDisconnect: 'Kesmek için dokunun'
+        switchServer: 'Sunucu değiştir'
     },
 
     status:
@@ -153,6 +152,10 @@ export const tr: Strings =
         presets: 'Modlar',
         bypassCountry: 'Ülkeye göre atla',
         bypassCountryHint: 'Bulunduğunuz yeri seçin: o ülkenin siteleri ve IP’leri doğrudan kalır, geri kalan her şey vekilden geçer.',
+        countryModeLabel: 'Yönlendirme modu',
+        countryModeSmart: 'Akıllı',
+        countryModeBypass: 'Atla',
+        countryModeSmartHint: 'Reklamları engelle, yerel ağ ve o ülkenin siteleri doğrudan kalsın, kalanı vekilden geçsin.',
         rulesHeader: 'Kurallar',
         rulesHint: 'Yukarıdan aşağıya denetlenir — eşleşen ilk kural kazanır.',
         addRule: 'Kural ekle',
@@ -169,10 +172,6 @@ export const tr: Strings =
         delete: 'Sil',
         moveUp: 'Yukarı taşı',
         moveDown: 'Aşağı taşı',
-        presetRulesName: 'Akıllı',
-        presetRulesDesc: 'Reklamları engelle, yerel ve İran sitelerini doğrudan bırak, kalanı vekilden geçir.',
-        presetBypassName: 'İran’ı atla',
-        presetBypassDesc: 'İran siteleri doğrudan, geri kalan her şey vekilden.',
         presetGlobalName: 'Küresel',
         presetGlobalDesc: 'Tüm trafiği vekilden geçir.',
         presetDirectLanName: 'Yerel ağ doğrudan',
@@ -216,7 +215,8 @@ export const tr: Strings =
         checking: 'Denetleniyor…',
         upToDate: 'En son sürümdesiniz.',
         updateAvailable: (version: string) => `${ version } sürümü mevcut.`,
-        download: 'İndir',
+        installUpdate: 'Güncellemeyi yükle',
+        installingUpdate: 'Güncelleme yükleniyor…',
         geoFiles: 'Geo dosyaları',
         geoFilesDesc: 'Ülke ve site kategorisi yönlendirme kuralları için veritabanları. Atlama ve engelleme kurallarının doğru kalması için güncelleyin.',
         geoInstalled: 'Yüklü',
@@ -249,8 +249,7 @@ export const tr: Strings =
         pinging: 'Ping atılıyor…',
         notSupported: 'Bu protokol mevcut çekirdek tarafından desteklenmiyor.',
         emptyTitle: 'Sunucu seçilmedi',
-        emptyHint: 'Ayrıntılarını görmek için listeden bir sunucu seçin.',
-        close: 'Ayrıntıları kapat'
+        emptyHint: 'Ayrıntılarını görmek için listeden bir sunucu seçin.'
     },
 
     common:

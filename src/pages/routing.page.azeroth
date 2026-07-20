@@ -1,11 +1,11 @@
 import { For, Show } from 'azerothjs';
 
-import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide';
+import { Check, ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide';
 
 import type { Strings } from '../lib/i18n/types';
 import { describeRule } from '../lib/routing/describe';
 import { BYPASS_COUNTRIES, PRESET_IDS } from '../lib/routing/presets';
-import type { ProfileId, Rule, RuleAction } from '../lib/routing/types';
+import type { CountryMode, ProfileId, Rule, RuleAction } from '../lib/routing/types';
 
 import { useLocale } from '../stores/locale';
 import { useRouting } from '../stores/routing';
@@ -13,6 +13,8 @@ import { useRouting } from '../stores/routing';
 import { flagIcon } from '../components/flag';
 import { icon } from '../components/icon';
 import Screen from '../components/screen.component.azeroth';
+import Segmented from '../components/segmented.component.azeroth';
+import type { SegmentedOption } from '../components/segmented.component.azeroth';
 
 const COUNTRIES: string[] = [...BYPASS_COUNTRIES];
 
@@ -27,11 +29,11 @@ const ACTION_TONE: Record<RuleAction, string> =
 
 const ICON_BTN = 'flex size-8 items-center justify-center rounded-md text-faint hover:bg-elevated hover:text-text';
 
-const presetName = (id: Exclude<ProfileId, 'custom' | 'bypass-country'>, s: Strings): string =>
-    ({ rules: s.routing.presetRulesName, 'bypass-iran': s.routing.presetBypassName, global: s.routing.presetGlobalName, 'direct-lan': s.routing.presetDirectLanName })[id];
+const presetName = (id: Exclude<ProfileId, 'custom' | 'country'>, s: Strings): string =>
+    ({ global: s.routing.presetGlobalName, 'direct-lan': s.routing.presetDirectLanName })[id];
 
-const presetDesc = (id: Exclude<ProfileId, 'custom' | 'bypass-country'>, s: Strings): string =>
-    ({ rules: s.routing.presetRulesDesc, 'bypass-iran': s.routing.presetBypassDesc, global: s.routing.presetGlobalDesc, 'direct-lan': s.routing.presetDirectLanDesc })[id];
+const presetDesc = (id: Exclude<ProfileId, 'custom' | 'country'>, s: Strings): string =>
+    ({ global: s.routing.presetGlobalDesc, 'direct-lan': s.routing.presetDirectLanDesc })[id];
 
 /**
  * Routing made legible. A row of mode cards for the common intents, then the
@@ -49,10 +51,20 @@ export default component RoutingPage()
         new Intl.DisplayNames([locale()], { type: 'region' }).of(code.toUpperCase()) ?? code.toUpperCase();
 
     const countryActive = (code: string): boolean =>
-        routing.profileId() === 'bypass-country' && routing.bypassCountry() === code;
+        routing.profileId() === 'country' && routing.country() === code;
 
     state editorOpen = false;
     state editing = null as Rule | null;
+    // Which recipe the country grid builds on the next tap. Local, not persisted -
+    // reopening the page always offers a fresh choice rather than reconstructing
+    // whatever produced the last-applied profile.
+    state countryModeChoice = 'bypass' as CountryMode;
+
+    const countryModeOptions: SegmentedOption[] =
+    [
+        { value: 'smart', label: () => t().routing.countryModeSmart },
+        { value: 'bypass', label: () => t().routing.countryModeBypass }
+    ];
 
     const actionLabel = (action: RuleAction): string =>
         ({ proxy: t().routing.actionProxy, direct: t().routing.actionDirect, block: t().routing.actionBlock })[action];
@@ -96,16 +108,23 @@ export default component RoutingPage()
                         { (id) =>
                             <button
                                 type="button"
+                                aria-pressed={ routing.profileId() === id }
                                 class={ () => 'flex flex-col gap-1 rounded-2xl border p-3 text-start transition-colors '
                                     + (routing.profileId() === id
-                                        ? 'border-accent bg-accent-soft'
-                                        : 'border-border bg-surface hover:bg-elevated') }
+                                        ? 'border-accent bg-accent hover:bg-accent-hover'
+                                        : 'border-border bg-surface hover:border-border-strong hover:bg-elevated') }
                                 onClick={ () => routing.usePreset(id) }
                             >
-                                <span class={ () => (routing.profileId() === id ? 'text-sm font-semibold text-accent' : 'text-sm font-semibold text-text') }>
+                                <span class={ () => 'flex items-center gap-1.5 text-sm font-semibold '
+                                    + (routing.profileId() === id ? 'text-accent-ink' : 'text-text') }>
                                     { presetName(id, t()) }
+                                    <Show when={ routing.profileId() === id }>
+                                        { icon(Check, 'size-3.5 shrink-0') }
+                                    </Show>
                                 </span>
-                                <span class="text-[11px] leading-snug text-muted">{ presetDesc(id, t()) }</span>
+                                <span class={ () => 'text-[11px] leading-snug ' + (routing.profileId() === id ? 'text-accent-ink/80' : 'text-muted') }>
+                                    { presetDesc(id, t()) }
+                                </span>
                             </button>
                         }
                     </For>
@@ -113,25 +132,42 @@ export default component RoutingPage()
             </section>
 
             <section class="flex flex-col gap-3">
-                <h2 class="text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]">{ t().routing.bypassCountry }</h2>
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]">{ t().routing.bypassCountry }</h2>
 
-                <p class="text-[11px] text-faint">{ t().routing.bypassCountryHint }</p>
+                    <div class="w-36 shrink-0">
+                        <Segmented
+                            label={ t().routing.countryModeLabel }
+                            options={ countryModeOptions }
+                            value={ countryModeChoice }
+                            onSelect={ (value) => countryModeChoice = value as CountryMode }
+                        />
+                    </div>
+                </div>
+
+                <p class="text-[11px] text-faint">
+                    { countryModeChoice === 'smart' ? t().routing.countryModeSmartHint : t().routing.bypassCountryHint }
+                </p>
 
                 <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
                     <For each={ COUNTRIES } key={ (code) => code }>
                         { (code) =>
                             <button
                                 type="button"
+                                aria-pressed={ countryActive(code) }
                                 class={ () => 'flex items-center gap-2 rounded-xl border px-3 py-2.5 text-start transition-colors '
                                     + (countryActive(code)
-                                        ? 'border-accent bg-accent-soft'
-                                        : 'border-border bg-surface hover:bg-elevated') }
-                                onClick={ () => routing.useCountryBypass(code) }
+                                        ? 'border-accent bg-accent hover:bg-accent-hover'
+                                        : 'border-border bg-surface hover:border-border-strong hover:bg-elevated') }
+                                onClick={ () => routing.useCountry(code, countryModeChoice) }
                             >
                                 <span class={ `${ flagIcon(code) } flag-row shrink-0` }></span>
-                                <span class={ () => 'truncate text-sm font-medium ' + (countryActive(code) ? 'text-accent' : 'text-text') }>
+                                <span class={ () => 'truncate text-sm font-semibold ' + (countryActive(code) ? 'text-accent-ink' : 'text-text') }>
                                     { regionName(code) }
                                 </span>
+                                <Show when={ countryActive(code) }>
+                                    <span class="ms-auto shrink-0 text-accent-ink">{ icon(Check, 'size-4') }</span>
+                                </Show>
                             </button>
                         }
                     </For>

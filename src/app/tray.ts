@@ -39,7 +39,7 @@ const buildMenu = async (labels: TrayLabels): Promise<Menu> =>
 let installed = false;
 
 /**
- * Puts Guardian in the system tray: left-click restores the window, the menu
+ * Puts The Disruptor Proxy in the system tray: left-click restores the window, the menu
  * offers Show/Quit. A no-op in a plain browser and on a second call. Call it
  * from a component scope - the locale is tracked with an effect, so the menu
  * re-labels live when the language changes.

@@ -230,7 +230,7 @@ fn reap_if_exited(process: &mut Option<RunningXray>) {
 /// elevated wrapper to kill its child (the same stop-file path `end_xray_windows`
 /// uses), then waiting for the wrapper to exit. Best-effort and a no-op when
 /// nothing is running - called on app shutdown so app-xray.exe never outlives
-/// Guardian and leaves the TUN adapter and system routes in place.
+/// The Disruptor Proxy and leaves the TUN adapter and system routes in place.
 fn stop_xray(state: &XrayProcess) {
     let Ok(mut process) = state.0.lock() else {
         return;
@@ -646,16 +646,32 @@ async fn download_file(
     let total = response.content_length().unwrap_or(0);
     let mut bytes: Vec<u8> = Vec::with_capacity(total as usize);
 
+    // Throttled: emitting on EVERY chunk (a network read is often only a few KB,
+    // so a multi-MB file means hundreds-to-thousands of events) can flood the
+    // WebView IPC bridge faster than it drains - the frontend's listener then
+    // either lags far behind or never sees a delivered event before the download
+    // finishes and tears the listener down, so the percentage never renders. One
+    // emit per ~80ms is imperceptibly coarse for a progress bar and keeps the
+    // bridge comfortably ahead. The first and final chunk always emit regardless
+    // of timing, so short downloads still show at least a start and an end.
+    let mut last_emit = Instant::now() - Duration::from_secs(1);
+
     while let Some(chunk) = response
         .chunk()
         .await
         .map_err(|e| format!("Failed to read the download: {e}"))?
     {
         bytes.extend_from_slice(&chunk);
-        let _ = app.emit(
-            "geo-progress",
-            GeoProgress { file: name.into(), received: bytes.len() as u64, total },
-        );
+
+        let now = Instant::now();
+        let is_final = total > 0 && bytes.len() as u64 >= total;
+        if is_final || now.duration_since(last_emit) >= Duration::from_millis(80) {
+            last_emit = now;
+            let _ = app.emit(
+                "geo-progress",
+                GeoProgress { file: name.into(), received: bytes.len() as u64, total },
+            );
+        }
     }
 
     std::fs::write(dest, &bytes).map_err(|e| format!("Failed to write {}: {e}", dest.display()))?;
@@ -686,6 +702,8 @@ async fn update_geo_files(app: tauri::AppHandle) -> Result<GeoStatus, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(XrayProcess(Mutex::new(None)))
         .setup(|_app| {
             // Reap any orphan xray from a previous crashed session before we start.
@@ -706,7 +724,7 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app_handle, event| {
-            // When Guardian exits - the titlebar/tray both close the only window,
+            // When The Disruptor Proxy exits - the titlebar/tray both close the only window,
             // which ends the app - tear down xray with it. Nothing else stops the
             // elevated child on close, so without this a session left connected
             // would leak an orphan app-xray.exe holding the TUN adapter and routes.

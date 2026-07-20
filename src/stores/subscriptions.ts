@@ -254,7 +254,7 @@ export const useSubscriptions = createStore(() =>
     }, { name: 'subscription-scheduler' });
 
     // Load, then immediately catch up anything that went stale while the app was
-    // closed - the moment a user reopens Guardian, overdue sources refresh.
+    // closed - the moment a user reopens The Disruptor Proxy, overdue sources refresh.
     void refresh().then(() => runDue());
 
     return {

@@ -22,17 +22,24 @@ export interface Rule
 }
 
 /**
- * A preset id, `bypass-country` (parameterized by {@link RoutingProfile.country}),
- * or `custom` once the user has edited the rules.
+ * A preset id, `country` (parameterized by {@link RoutingProfile.country} and
+ * {@link RoutingProfile.countryMode}), or `custom` once the user has edited the rules.
+ * Country-specific presets (once dedicated `rules`/`bypass-iran` ids) are now just
+ * `country` with `country: 'ir'` and the matching mode - one mechanism, not two.
  */
-export type ProfileId = 'global' | 'rules' | 'bypass-iran' | 'direct-lan' | 'bypass-country' | 'custom';
+export type ProfileId = 'global' | 'direct-lan' | 'country' | 'custom';
+
+/** `smart` blocks ads too (the 'rules' preset's recipe); `bypass` is sites/IPs direct only. */
+export type CountryMode = 'smart' | 'bypass';
 
 export interface RoutingProfile
 {
     id: ProfileId;
     rules: Rule[];
-    /** The ISO-3166 alpha-2 code a `bypass-country` profile keeps direct. */
+    /** The ISO-3166 alpha-2 code a `country` profile keeps direct. */
     country?: string;
+    /** Which recipe built a `country` profile's rules. */
+    countryMode?: CountryMode;
 }
 
 /** A stable rule id without a uuid dependency. */

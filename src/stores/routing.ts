@@ -1,9 +1,9 @@
 import { createSignal, createStore } from 'azerothjs';
 
 import { getSetting, putSetting } from '../lib/db/repo';
-import { PRESET_RULES, countryBypassRules } from '../lib/routing/presets';
+import { PRESET_RULES, countryRules } from '../lib/routing/presets';
 import { newRuleId } from '../lib/routing/types';
-import type { ProfileId, Rule, RoutingProfile } from '../lib/routing/types';
+import type { CountryMode, ProfileId, Rule, RoutingProfile } from '../lib/routing/types';
 
 const STORAGE_KEY = 'routing.profile';
 
@@ -19,13 +19,18 @@ const clone = (rules: Rule[]): Rule[] => rules.map((rule) => ({ ...rule }));
  */
 export const useRouting = createStore(() =>
 {
-    const [profileId, setProfileId] = createSignal<ProfileId>('rules');
-    const [rules, setRules] = createSignal<Rule[]>(clone(PRESET_RULES.rules));
-    const [bypassCountry, setBypassCountry] = createSignal<string | null>(null);
+    // 'global' - proxy everything - is the safest default under heavy filtering,
+    // and the only country-agnostic choice that assumes nothing about where the
+    // user actually is. Country-specific defaults (the old Iran-only presets)
+    // are now the user's own pick from the country grid.
+    const [profileId, setProfileId] = createSignal<ProfileId>('global');
+    const [rules, setRules] = createSignal<Rule[]>(clone(PRESET_RULES.global));
+    const [country, setCountry] = createSignal<string | null>(null);
+    const [countryMode, setCountryMode] = createSignal<CountryMode>('bypass');
 
-    const persist = (id: ProfileId, next: Rule[], country?: string): void =>
+    const persist = (id: ProfileId, next: Rule[], countryId?: string, mode?: CountryMode): void =>
     {
-        void putSetting<RoutingProfile>(STORAGE_KEY, { id, rules: next, country });
+        void putSetting<RoutingProfile>(STORAGE_KEY, { id, rules: next, country: countryId, countryMode: mode });
     };
 
     const load = async (): Promise<void> =>
@@ -36,37 +41,39 @@ export const useRouting = createStore(() =>
         {
             setProfileId(stored.id);
             setRules(stored.rules);
-            setBypassCountry(stored.country ?? null);
+            setCountry(stored.country ?? null);
+            setCountryMode(stored.countryMode ?? 'bypass');
         }
     };
 
     /** Loads a preset's rules wholesale. */
-    const usePreset = (id: Exclude<ProfileId, 'custom' | 'bypass-country'>): void =>
+    const usePreset = (id: Exclude<ProfileId, 'custom' | 'country'>): void =>
     {
         const next = clone(PRESET_RULES[id]);
 
         setProfileId(id);
-        setBypassCountry(null);
+        setCountry(null);
         setRules(next);
         persist(id, next);
     };
 
-    /** Bypass one country: its sites/IPs/ccTLD direct, everything else proxied. */
-    const useCountryBypass = (country: string): void =>
+    /** Builds one country's rules under the given mode (smart adds ad-block + LAN-direct). */
+    const useCountry = (countryId: string, mode: CountryMode): void =>
     {
-        const next = countryBypassRules(country);
+        const next = countryRules(countryId, mode);
 
-        setProfileId('bypass-country');
-        setBypassCountry(country);
+        setProfileId('country');
+        setCountry(countryId);
+        setCountryMode(mode);
         setRules(next);
-        persist('bypass-country', next, country);
+        persist('country', next, countryId, mode);
     };
 
     // Any edit diverges from the preset, so the active profile becomes `custom`.
     const commit = (next: Rule[]): void =>
     {
         setProfileId('custom');
-        setBypassCountry(null);
+        setCountry(null);
         setRules(next);
         persist('custom', next);
     };
@@ -121,9 +128,10 @@ export const useRouting = createStore(() =>
     return {
         profileId,
         rules,
-        bypassCountry,
+        country,
+        countryMode,
         usePreset,
-        useCountryBypass,
+        useCountry,
         addRule,
         updateRule,
         removeRule,

@@ -37,8 +37,7 @@ export const hi: Strings =
         failed: 'कनेक्शन विफल',
         disconnect: 'डिस्कनेक्ट',
         connectFastest: 'सबसे तेज़ से जुड़ें',
-        tapConnect: 'कनेक्ट करने के लिए टैप करें',
-        tapDisconnect: 'डिस्कनेक्ट करने के लिए टैप करें'
+        switchServer: 'सर्वर बदलें'
     },
 
     status:
@@ -153,6 +152,10 @@ export const hi: Strings =
         presets: 'मोड',
         bypassCountry: 'देश के हिसाब से बायपास',
         bypassCountryHint: 'अपना देश चुनें: उस देश की साइटें और IP सीधे रहेंगे, बाक़ी सब प्रॉक्सी से जाएगा।',
+        countryModeLabel: 'रूटिंग मोड',
+        countryModeSmart: 'स्मार्ट',
+        countryModeBypass: 'बायपास',
+        countryModeSmartHint: 'विज्ञापन ब्लॉक करें, स्थानीय नेटवर्क और उस देश की साइटें सीधी रखें, बाक़ी प्रॉक्सी से।',
         rulesHeader: 'नियम',
         rulesHint: 'ऊपर से नीचे जाँचे जाते हैं — जो नियम पहले मेल खाए वही लागू होता है।',
         addRule: 'नियम जोड़ें',
@@ -169,10 +172,6 @@ export const hi: Strings =
         delete: 'हटाएँ',
         moveUp: 'ऊपर',
         moveDown: 'नीचे',
-        presetRulesName: 'स्मार्ट',
-        presetRulesDesc: 'विज्ञापन ब्लॉक, स्थानीय और ईरानी साइटें सीधी, बाक़ी प्रॉक्सी से।',
-        presetBypassName: 'ईरान बायपास',
-        presetBypassDesc: 'ईरानी साइटें सीधी, बाक़ी सब प्रॉक्सी से।',
         presetGlobalName: 'ग्लोबल',
         presetGlobalDesc: 'सारा ट्रैफ़िक प्रॉक्सी से भेजें।',
         presetDirectLanName: 'LAN सीधा',
@@ -216,7 +215,8 @@ export const hi: Strings =
         checking: 'जाँच हो रही है…',
         upToDate: 'आप नवीनतम संस्करण पर हैं।',
         updateAvailable: (version: string) => `संस्करण ${ version } उपलब्ध है।`,
-        download: 'डाउनलोड',
+        installUpdate: 'अपडेट इंस्टॉल करें',
+        installingUpdate: 'अपडेट इंस्टॉल हो रहा है…',
         geoFiles: 'Geo फ़ाइलें',
         geoFilesDesc: 'देश और साइट-श्रेणी रूटिंग नियमों के लिए डेटाबेस। बायपास और ब्लॉकिंग नियम सटीक रखने के लिए इन्हें अपडेट करें।',
         geoInstalled: 'इंस्टॉल है',
@@ -249,8 +249,7 @@ export const hi: Strings =
         pinging: 'पिंग हो रहा है…',
         notSupported: 'वर्तमान कोर इस प्रोटोकॉल का समर्थन नहीं करता।',
         emptyTitle: 'कोई सर्वर चुना नहीं गया',
-        emptyHint: 'विवरण देखने के लिए सूची से एक सर्वर चुनें।',
-        close: 'विवरण बंद करें'
+        emptyHint: 'विवरण देखने के लिए सूची से एक सर्वर चुनें।'
     },
 
     common:

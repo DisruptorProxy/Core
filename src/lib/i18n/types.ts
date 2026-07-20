@@ -40,8 +40,7 @@ export interface Strings
         failed: string;
         disconnect: string;
         connectFastest: string;
-        tapConnect: string;
-        tapDisconnect: string;
+        switchServer: string;
     };
 
     /** The live-connection readout, shared by the Connect screen and the servers side panel. */
@@ -159,6 +158,10 @@ export interface Strings
         presets: string;
         bypassCountry: string;
         bypassCountryHint: string;
+        countryModeLabel: string;
+        countryModeSmart: string;
+        countryModeBypass: string;
+        countryModeSmartHint: string;
         rulesHeader: string;
         rulesHint: string;
         addRule: string;
@@ -176,10 +179,6 @@ export interface Strings
         moveUp: string;
         moveDown: string;
         // Preset names + one-line descriptions.
-        presetRulesName: string;
-        presetRulesDesc: string;
-        presetBypassName: string;
-        presetBypassDesc: string;
         presetGlobalName: string;
         presetGlobalDesc: string;
         presetDirectLanName: string;
@@ -225,7 +224,8 @@ export interface Strings
         checking: string;
         upToDate: string;
         updateAvailable: (version: string) => string;
-        download: string;
+        installUpdate: string;
+        installingUpdate: string;
         // Geo databases (geoip.dat / geosite.dat) used by country/site routing rules.
         geoFiles: string;
         geoFilesDesc: string;
@@ -262,7 +262,6 @@ export interface Strings
         /** Wide-layout side panel with nothing selected. */
         emptyTitle: string;
         emptyHint: string;
-        close: string;
     };
 
     common:

@@ -37,8 +37,7 @@ export const ar: Strings =
         failed: 'فشل الاتصال',
         disconnect: 'قطع الاتصال',
         connectFastest: 'الاتصال بالأسرع',
-        tapConnect: 'انقر للاتصال',
-        tapDisconnect: 'انقر لقطع الاتصال'
+        switchServer: 'تبديل الخادم'
     },
 
     status:
@@ -153,6 +152,10 @@ export const ar: Strings =
         presets: 'الأوضاع',
         bypassCountry: 'تجاوز حسب الدولة',
         bypassCountryHint: 'اختر مكانك: مواقع تلك الدولة وعناوينها تبقى مباشرة، وكل ما عداها يمر عبر الوكيل.',
+        countryModeLabel: 'وضع التوجيه',
+        countryModeSmart: 'ذكي',
+        countryModeBypass: 'تجاوز',
+        countryModeSmartHint: 'حظر الإعلانات، وإبقاء الشبكة المحلية ومواقع تلك الدولة مباشرة، والباقي عبر الوكيل.',
         rulesHeader: 'القواعد',
         rulesHint: 'تُفحص من الأعلى إلى الأسفل — أول قاعدة مطابقة تُطبَّق.',
         addRule: 'إضافة قاعدة',
@@ -169,10 +172,6 @@ export const ar: Strings =
         delete: 'حذف',
         moveUp: 'أعلى',
         moveDown: 'أسفل',
-        presetRulesName: 'ذكي',
-        presetRulesDesc: 'حظر الإعلانات، المواقع المحلية والإيرانية مباشرة، والباقي عبر الوكيل.',
-        presetBypassName: 'تجاوز إيران',
-        presetBypassDesc: 'المواقع الإيرانية مباشرة، وكل ما عداها عبر الوكيل.',
         presetGlobalName: 'شامل',
         presetGlobalDesc: 'كل الحركة عبر الوكيل.',
         presetDirectLanName: 'الشبكة المحلية مباشرة',
@@ -216,7 +215,8 @@ export const ar: Strings =
         checking: 'جارٍ التحقق…',
         upToDate: 'أنت على أحدث إصدار.',
         updateAvailable: (version: string) => `الإصدار ${ version } متاح.`,
-        download: 'تنزيل',
+        installUpdate: 'تثبيت التحديث',
+        installingUpdate: 'جارٍ تثبيت التحديث…',
         geoFiles: 'ملفات Geo',
         geoFilesDesc: 'قواعد بيانات لقواعد التوجيه حسب الدولة وفئة المواقع. حدِّثها لتبقى قواعد التجاوز والحظر دقيقة.',
         geoInstalled: 'مثبت',
@@ -249,8 +249,7 @@ export const ar: Strings =
         pinging: 'جارٍ الفحص…',
         notSupported: 'هذا البروتوكول غير مدعوم في النواة الحالية.',
         emptyTitle: 'لم يُحدد خادم',
-        emptyHint: 'اختر خادمًا من القائمة لعرض تفاصيله.',
-        close: 'إغلاق التفاصيل'
+        emptyHint: 'اختر خادمًا من القائمة لعرض تفاصيله.'
     },
 
     common:

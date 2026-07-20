@@ -7,7 +7,7 @@ interface DecodedSubscription
     format: SubscriptionFormat;
     /** A newline-separated list of config URIs, whatever the source format was. */
     body: string;
-    /** Set when the format is recognized but Guardian cannot read it yet. */
+    /** Set when the format is recognized but The Disruptor Proxy cannot read it yet. */
     unsupported?: string;
 }
 
@@ -35,7 +35,7 @@ export const decodeSubscription = (raw: string): DecodedSubscription =>
         return decodeJson(text);
     }
 
-    // Clash ships YAML. Parsing it needs a YAML reader, which Guardian does not
+    // Clash ships YAML. Parsing it needs a YAML reader, which The Disruptor Proxy does not
     // carry yet - so it is named and refused, not half-read.
     if (/^\s*(proxies|proxy-groups|mixed-port|port)\s*:/m.test(text))
     {
@@ -69,7 +69,7 @@ export const decodeSubscription = (raw: string): DecodedSubscription =>
 
 /**
  * sing-box profiles carry their servers as structured outbounds rather than URIs.
- * Only the fields Guardian models are read back out; an outbound it cannot express
+ * Only the fields The Disruptor Proxy models are read back out; an outbound it cannot express
  * as a URI is skipped rather than mangled.
  */
 const decodeJson = (text: string): DecodedSubscription =>

@@ -1,49 +1,34 @@
 import { createSignal, createStore } from 'azerothjs';
 
 import { getVersion } from '@tauri-apps/api/app';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { check as checkUpdate, type Update } from '@tauri-apps/plugin-updater';
 
 /** Fallback shown in browser dev; the desktop app reads the real version from Tauri. */
 const FALLBACK_VERSION = '1.0.0';
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
-/** Numeric-dotted semver compare: true when `a` is strictly newer than `b`. */
-const isNewer = (a: string, b: string): boolean =>
-{
-    const pa = a.replace(/^v/, '').split('.').map((n) => Number.parseInt(n, 10) || 0);
-    const pb = b.replace(/^v/, '').split('.').map((n) => Number.parseInt(n, 10) || 0);
-
-    for (let i = 0; i < Math.max(pa.length, pb.length); i++)
-    {
-        const da = pa[i] ?? 0;
-        const db = pb[i] ?? 0;
-
-        if (da !== db)
-        {
-            return da > db;
-        }
-    }
-
-    return false;
-};
-
-type CheckState = 'idle' | 'checking' | 'current' | 'available' | 'error';
+type CheckState = 'idle' | 'checking' | 'current' | 'available' | 'downloading' | 'error';
 
 /**
- * The app's version and update status.
- *
- * The current version comes from Tauri in the desktop app; the check fetches an
- * update manifest (`VITE_UPDATE_URL`, a JSON `{ version, url }`) and compares it.
- * Downloading the new build is a link for now - fully automatic install needs the
- * Tauri updater plugin plus code-signing, which is a separate, keyed step.
+ * The app's version and update status, on the real Tauri updater plugin: `check()`
+ * asks the endpoint in tauri.conf.json (a `latest.json` published alongside each
+ * GitHub release) for a newer, SIGNED build; `install()` downloads and verifies it
+ * against the bundled public key, then relaunches into the new version. There is
+ * no manual link to click - a browser-dev session (no Tauri) always reports
+ * current, since there is nothing to install into.
  */
 export const useVersion = createStore(() =>
 {
     const [current, setCurrent] = createSignal(FALLBACK_VERSION);
     const [latest, setLatest] = createSignal<string | null>(null);
-    const [downloadUrl, setDownloadUrl] = createSignal<string | null>(null);
     const [state, setState] = createSignal<CheckState>('idle');
+    const [progress, setProgress] = createSignal<number | null>(null);
     const [error, setError] = createSignal<string | null>(null);
+
+    // The live Update handle from the last successful check - install() acts on it.
+    let pending: Update | null = null;
 
     const loadCurrent = async (): Promise<void> =>
     {
@@ -64,14 +49,12 @@ export const useVersion = createStore(() =>
 
     const check = async (): Promise<void> =>
     {
-        const url = import.meta.env.VITE_UPDATE_URL;
-
         setError(null);
         setState('checking');
 
-        if (url === undefined || url === '')
+        if (!isTauri())
         {
-            // No update channel configured; report the current build as up to date.
+            // Nothing to install into outside the desktop app.
             setState('current');
 
             return;
@@ -79,23 +62,63 @@ export const useVersion = createStore(() =>
 
         try
         {
-            const response = await fetch(url, { cache: 'no-store' });
+            const update = await checkUpdate();
 
-            if (!response.ok)
+            pending = update;
+
+            if (update === null)
             {
-                throw new Error(`The update server returned ${ response.status }`);
+                setState('current');
+
+                return;
             }
 
-            const data = await response.json() as { version?: string; url?: string };
-            const remote = (data.version ?? '').trim();
-
-            setLatest(remote);
-            setDownloadUrl(data.url ?? null);
-            setState(remote !== '' && isNewer(remote, current()) ? 'available' : 'current');
+            setLatest(update.version);
+            setState('available');
         }
-        catch (fetchError)
+        catch (checkError)
         {
-            setError(fetchError instanceof Error ? fetchError.message : 'Could not check for updates');
+            setError(checkError instanceof Error ? checkError.message : 'Could not check for updates');
+            setState('error');
+        }
+    };
+
+    const install = async (): Promise<void> =>
+    {
+        if (pending === null)
+        {
+            return;
+        }
+
+        setError(null);
+        setProgress(null);
+        setState('downloading');
+
+        let total = 0;
+        let received = 0;
+
+        try
+        {
+            await pending.downloadAndInstall((event) =>
+            {
+                if (event.event === 'Started')
+                {
+                    total = event.data.contentLength ?? 0;
+                }
+                else if (event.event === 'Progress')
+                {
+                    received += event.data.chunkLength;
+                    setProgress(total > 0 ? Math.round(Math.min(received / total, 1) * 100) : null);
+                }
+            });
+
+            // The new binary is on disk and verified; relaunch runs it in place of
+            // this process, so the user never has to close and reopen by hand.
+            await relaunch();
+        }
+        catch (installError)
+        {
+            setError(installError instanceof Error ? installError.message : 'Could not install the update');
             setState('error');
         }
     };
@@ -105,9 +128,10 @@ export const useVersion = createStore(() =>
     return {
         current,
         latest,
-        downloadUrl,
         state,
+        progress,
         error,
-        check
+        check,
+        install
     };
 });

@@ -37,8 +37,7 @@ export const id: Strings =
         failed: 'Sambungan gagal',
         disconnect: 'Putuskan',
         connectFastest: 'Sambung ke tercepat',
-        tapConnect: 'Ketuk untuk menyambung',
-        tapDisconnect: 'Ketuk untuk memutus'
+        switchServer: 'Ganti server'
     },
 
     status:
@@ -153,6 +152,10 @@ export const id: Strings =
         presets: 'Mode',
         bypassCountry: 'Lewati per negara',
         bypassCountryHint: 'Pilih lokasi Anda: situs dan IP negara itu tetap langsung, sisanya lewat proxy.',
+        countryModeLabel: 'Mode perutean',
+        countryModeSmart: 'Cerdas',
+        countryModeBypass: 'Lewati',
+        countryModeSmartHint: 'Blokir iklan, jaringan lokal dan situs negara itu langsung, sisanya lewat proxy.',
         rulesHeader: 'Aturan',
         rulesHint: 'Diperiksa dari atas ke bawah — aturan pertama yang cocok menang.',
         addRule: 'Tambah aturan',
@@ -169,10 +172,6 @@ export const id: Strings =
         delete: 'Hapus',
         moveUp: 'Naik',
         moveDown: 'Turun',
-        presetRulesName: 'Cerdas',
-        presetRulesDesc: 'Blokir iklan, situs lokal dan Iran langsung, sisanya lewat proxy.',
-        presetBypassName: 'Lewati Iran',
-        presetBypassDesc: 'Situs Iran langsung, sisanya lewat proxy.',
         presetGlobalName: 'Global',
         presetGlobalDesc: 'Semua lalu lintas lewat proxy.',
         presetDirectLanName: 'LAN langsung',
@@ -216,7 +215,8 @@ export const id: Strings =
         checking: 'Memeriksa…',
         upToDate: 'Anda memakai versi terbaru.',
         updateAvailable: (version: string) => `Versi ${ version } tersedia.`,
-        download: 'Unduh',
+        installUpdate: 'Pasang pembaruan',
+        installingUpdate: 'Memasang pembaruan…',
         geoFiles: 'Berkas geo',
         geoFilesDesc: 'Basis data untuk aturan perutean negara dan kategori situs. Perbarui agar aturan lewati dan blokir tetap akurat.',
         geoInstalled: 'Terpasang',
@@ -249,8 +249,7 @@ export const id: Strings =
         pinging: 'Melakukan ping…',
         notSupported: 'Protokol ini tidak didukung inti saat ini.',
         emptyTitle: 'Belum ada server dipilih',
-        emptyHint: 'Pilih server dari daftar untuk melihat detailnya.',
-        close: 'Tutup detail'
+        emptyHint: 'Pilih server dari daftar untuk melihat detailnya.'
     },
 
     common:

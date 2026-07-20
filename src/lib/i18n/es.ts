@@ -37,8 +37,7 @@ export const es: Strings =
         failed: 'Falló la conexión',
         disconnect: 'Desconectar',
         connectFastest: 'Conectar al más rápido',
-        tapConnect: 'Toca para conectar',
-        tapDisconnect: 'Toca para desconectar'
+        switchServer: 'Cambiar de servidor'
     },
 
     status:
@@ -153,6 +152,10 @@ export const es: Strings =
         presets: 'Modos',
         bypassCountry: 'Omitir un país',
         bypassCountryHint: 'Elige dónde estás: los sitios e IP de ese país van directos, todo lo demás pasa por el proxy.',
+        countryModeLabel: 'Modo de enrutamiento',
+        countryModeSmart: 'Inteligente',
+        countryModeBypass: 'Omitir',
+        countryModeSmartHint: 'Bloquea anuncios, mantén la red local y los sitios de ese país directos, el resto por el proxy.',
         rulesHeader: 'Reglas',
         rulesHint: 'Se evalúan de arriba abajo — gana la primera que coincida.',
         addRule: 'Añadir regla',
@@ -169,10 +172,6 @@ export const es: Strings =
         delete: 'Eliminar',
         moveUp: 'Subir',
         moveDown: 'Bajar',
-        presetRulesName: 'Inteligente',
-        presetRulesDesc: 'Bloquear anuncios, sitios locales e iraníes directos, el resto por proxy.',
-        presetBypassName: 'Omitir Irán',
-        presetBypassDesc: 'Sitios iraníes directos, todo lo demás por el proxy.',
         presetGlobalName: 'Global',
         presetGlobalDesc: 'Todo el tráfico por el proxy.',
         presetDirectLanName: 'LAN directa',
@@ -216,7 +215,8 @@ export const es: Strings =
         checking: 'Comprobando…',
         upToDate: 'Tienes la última versión.',
         updateAvailable: (version: string) => `La versión ${ version } está disponible.`,
-        download: 'Descargar',
+        installUpdate: 'Instalar actualización',
+        installingUpdate: 'Instalando actualización…',
         geoFiles: 'Archivos geo',
         geoFilesDesc: 'Bases de datos para reglas de rutas por país y categoría de sitios. Actualízalas para que las reglas de omisión y bloqueo sigan siendo precisas.',
         geoInstalled: 'Instalado',
@@ -249,8 +249,7 @@ export const es: Strings =
         pinging: 'Haciendo ping…',
         notSupported: 'El núcleo actual no admite este protocolo.',
         emptyTitle: 'Ningún servidor seleccionado',
-        emptyHint: 'Elige un servidor de la lista para ver sus detalles.',
-        close: 'Cerrar detalles'
+        emptyHint: 'Elige un servidor de la lista para ver sus detalles.'
     },
 
     common:
