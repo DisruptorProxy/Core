@@ -1,0 +1,50 @@
+# git-cliff configuration - turns Conventional Commits into release notes.
+#
+# CI (.github/workflows/release.yml) runs `git-cliff --current` on a tag build and
+# splices the result into THREE places: the Core release body, the Xray-Client release
+# body, and the updater's latest.json "notes". There is no committed CHANGELOG.md - the
+# notes are regenerated from git history on every release. Docs: https://git-cliff.org
+#
+# No [changelog] header/footer on purpose: `--current` then emits only the current tag's
+# section, which is exactly what goes into a release body. `\` at end of a template line
+# is git-cliff's line-continuation - it trims the following newline/indentation.
+
+[changelog]
+header = ""
+body = """
+{% if version %}\
+## {{ version | trim_start_matches(pat="v") }} - {{ timestamp | date(format="%Y-%m-%d") }}
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first }}
+{% for commit in commits %}\
+- {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}
+{% endfor %}
+{% endfor %}
+"""
+trailer = ""
+footer = ""
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9]*"
+topo_order = false
+sort_commits = "newest"
+commit_parsers = [
+    { message = "^feat", group = "Features" },
+    { message = "^fix", group = "Bug Fixes" },
+    { message = "^perf", group = "Performance" },
+    { message = "^refactor", group = "Refactor" },
+    { message = "^docs?", group = "Documentation" },
+    { message = "^style", group = "Styling" },
+    { message = "^test", group = "Testing" },
+    { message = "^build", group = "Build" },
+    { message = "^ci", skip = true },
+    { message = "^chore\\(release\\)", skip = true },
+    { message = "^chore\\(deps\\)", skip = true },
+    { message = "^chore", group = "Miscellaneous" },
+]

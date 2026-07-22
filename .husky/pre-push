@@ -1,0 +1,26 @@
+set -e
+
+# Runs the same checks as .github/workflows/ci.yml, so a push that would fail CI
+# fails here first. Bypass in a pinch with:  git push --no-verify
+echo "pre-push: CI-equivalent checks (bypass with --no-verify)"
+
+echo "-> typecheck"
+npm run typecheck
+
+echo "-> lint"
+npm run lint
+
+echo "-> build"
+npm run build
+
+if command -v cargo >/dev/null 2>&1; then
+    echo "-> rustfmt"
+    ( cd src-tauri && cargo fmt --all --check )
+
+    echo "-> clippy"
+    ( cd src-tauri && cargo clippy --all-targets --all-features -- -D warnings )
+else
+    echo "-> cargo not found; skipping rust checks"
+fi
+
+echo "pre-push: OK"

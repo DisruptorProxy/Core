@@ -6,9 +6,10 @@ fn main() {
     // time, not the app.
     #[cfg(windows)]
     {
-        attributes = attributes
-        .windows_attributes(tauri_build::WindowsAttributes::new()
-        .app_manifest(include_str!("windows/manifest.xml")));
+        attributes = attributes.windows_attributes(
+            tauri_build::WindowsAttributes::new()
+                .app_manifest(include_str!("windows/manifest.xml")),
+        );
     }
 
     tauri_build::try_build(attributes).expect("failed to run tauri-build");

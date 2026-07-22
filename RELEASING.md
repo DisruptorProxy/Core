@@ -42,6 +42,22 @@ Then, on GitHub:
    Core draft too if you want the internal record public; it's optional.)
 3. Verify (below).
 
+## Release notes
+
+Notes are generated automatically from your **Conventional Commits** by git-cliff
+(`cliff.toml`) during the CI run — there is no hand-maintained `CHANGELOG.md`. The same
+generated notes are spliced into all three surfaces: the Core release body, the
+Xray-Client release body, and the updater's in-app `notes`.
+
+What this means day to day:
+
+- Write commits as `feat: …`, `fix: …`, `perf: …`, etc. Those become the "Features",
+  "Bug Fixes", "Performance" sections. `ci:`, `chore(release):`, and `chore(deps):` are
+  skipped; other `chore:` land under "Miscellaneous".
+- Nothing extra to do at release time — `npm run release` tags, CI runs git-cliff over
+  the commits since the previous tag, and fills the notes in.
+- To change grouping or wording, edit `cliff.toml`'s `commit_parsers` / `body` template.
+
 ## Verifying a published release
 
 After publishing the Xray-Client draft:
