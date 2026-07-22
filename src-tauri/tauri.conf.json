@@ -81,7 +81,7 @@
     {
         "updater":
         {
-            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMwRDNFQkUwNTI5RkFDOUIKUldTYnJKOVM0T3ZUd0d0cExMMkhGNE93clljUHptN0xVSmdXa21WWkx3YjZ0SmZtZFBjOS84MngK",
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZBODNCOEZGMUQ0RkNERkUKUldUK3pVOGQvN2lEYW9vV1lFN1N0aFM2N2tQZ1ZCM1FJYmdnVW5USmgxY2dkREwzenJZSml0OXkK",
             "endpoints":
             [
                 "https://github.com/DisruptorProxy/Xray-Client/releases/latest/download/latest.json"
