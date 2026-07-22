@@ -3,22 +3,18 @@
 //
 // Bumps the version everywhere it is pinned (package.json, src-tauri/Cargo.toml, and
 // src-tauri/Cargo.lock's own entry), commits that as one release commit, tags it, and
-// pushes both. This script never builds, signs, or publishes anything itself, and never
-// touches GitHub Releases - it just prepares the tag.
-//
-// The build is triggered by PUBLISHING a GitHub Release, not by the tag push: after this
-// runs, go to GitHub > Releases > Draft a new release, pick the tag it just pushed, and
-// publish. That starts .github/workflows/release.yml, which builds + signs with the
-// updater keypair, attaches the .msi / setup .exe / portable .zip to that release, and
-// mirrors the installers to DisruptorProxy/Xray-Client (public) as a DRAFT for the updater.
+// pushes both. Pushing the tag is the whole handoff - .github/workflows/release.yml picks
+// it up from there: builds, signs with the updater keypair, and publishes DRAFT releases
+// to both this repo (Core, private) and DisruptorProxy/Xray-Client (public). This script
+// never builds, signs, or publishes anything itself, and never touches GitHub Releases.
 //
 // Usage:
 //   npm run release -- 1.2.0
 //   npm run release -- patch | minor | major
 //   npm run release -- 1.2.0 --dry-run
 //
-// After the build finishes: review the Xray-Client draft on GitHub and publish it
-// manually. A draft is invisible to the auto-updater and to anonymous downloads until you do.
+// After it finishes: review both draft releases on GitHub and publish them manually. A
+// draft is invisible to the auto-updater and to anonymous downloads until you do that.
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -137,9 +133,9 @@ Usage:  npm run release -- <version | patch | minor | major> [options]
         node scripts/release.mjs <version | patch | minor | major> [options]
 
 Bumps package.json + src-tauri/Cargo.toml (+ syncs Cargo.lock's own entry),
-commits, tags, and pushes. Then publish a GitHub Release from that tag to
-start the build: .github/workflows/release.yml builds, signs, attaches the
-.msi / setup .exe / portable .zip, and mirrors to DisruptorProxy/Xray-Client.
+commits, tags, and pushes. Pushing the tag is the whole handoff -
+.github/workflows/release.yml takes it from there: builds, signs, and
+publishes DRAFT releases to both Core and DisruptorProxy/Xray-Client.
 
 Examples:
   npm run release -- 1.2.0
@@ -213,7 +209,6 @@ act('git', ['push', 'origin', 'HEAD']);
 act('git', ['push', 'origin', tag]);
 
 log(`\nDone: ${ next }`);
-log(`Tag ${ tag } is pushed. Now publish a GitHub Release from it to start the build:`);
-log('  GitHub > Releases > Draft a new release > pick the tag > Publish.');
-log('CI then attaches the .msi / setup .exe / portable .zip and mirrors a draft to');
-log('Xray-Client; publish that draft manually once you have reviewed it.');
+log('CI is now building, signing, and publishing draft releases to Core + Xray-Client.');
+log('Review both drafts on GitHub, then publish each one manually when ready - a draft is');
+log('invisible to the updater and to anonymous downloads until you do.');

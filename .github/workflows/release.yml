@@ -1,38 +1,40 @@
 name: Release
 
-# Publishing a GitHub Release (Releases > Draft a new release > Publish) is the whole
-# trigger. From there this workflow builds + signs the Windows app ONCE and attaches
-# three downloadable artifacts to that same release:
-#   * .msi          - WiX installer          (Tauri `msi` target)
-#   * setup .exe     - NSIS installer          (Tauri `nsis` target)
-#   * portable .zip  - the app exe + its resources, no install  (assembled here; Tauri
-#                      does not produce a portable bundle on its own)
-# It then mirrors the installers (+ .sig + latest.json) to DisruptorProxy/Xray-Client
-# (public) as a DRAFT - that repo's releases/latest/download/latest.json is what
-# tauri.conf.json's updater endpoint points at, so the mirror is what makes auto-update
-# work. Review and publish the Xray-Client draft manually; a draft is invisible to the
-# updater and to anonymous downloads until you do.
+# Pushing a `v*` tag builds and signs the Windows installer once, then publishes it
+# to TWO places:
+#   1. A draft release on THIS repo (DisruptorProxy/Core, private) - an
+#      internal record, using the default GITHUB_TOKEN (which can only ever touch
+#      the repo the workflow runs in).
+#   2. A draft release on DisruptorProxy/Xray-Client (public) - what real users and the
+#      updater plugin actually see. tauri.conf.json's updater endpoint points at
+#      Client's releases/latest/download/latest.json, so THIS is the publish that
+#      makes auto-update work; Core's release does not.
 #
-# Flow: `npm run release -- <version>` bumps + tags + pushes the tag, then you create a
-# GitHub Release from that tag and publish it. Publishing is what starts this run.
+# Both releases are created as DRAFTS on purpose (matches the previous single-repo
+# setup) - review each one on GitHub and publish it manually. A draft is invisible
+# to the updater and to anonymous downloads, so a bad build never reaches anyone
+# until you say so.
 #
 # Required secrets (Settings > Secrets and variables > Actions, on Core):
-#   TAURI_SIGNING_PRIVATE_KEY           the updater signing key
-#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password
+#   TAURI_SIGNING_PRIVATE_KEY           the updater signing key (already in use)
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password (already in use)
 #   CLIENT_REPO_TOKEN                   a fine-grained PAT scoped to ONLY
-#                                        DisruptorProxy/Xray-Client, Contents: Read and
-#                                        write. The default GITHUB_TOKEN cannot publish
-#                                        to a different repo than the one it runs in, so
-#                                        this is the only way the mirror step can reach
-#                                        Xray-Client.
+#                                        DisruptorProxy/Xray-Client, with Contents:
+#                                        Read and write - nothing else. The
+#                                        default GITHUB_TOKEN cannot publish to a
+#                                        different repo than the one running the
+#                                        workflow, so this is the only way step 2
+#                                        can reach Xray-Client at all.
 #
-# NOTE: the bundle globs below are Tauri v2's documented output convention - check the
-# first real run's logs to confirm every expected file (installers + .sig + latest.json
-# + portable .zip) actually got matched and uploaded.
+# NOTE: the artifact glob below is Tauri v2's documented bundle-output convention,
+# not something verified against a real build in this environment - check the
+# first real run's logs confirm every expected file (installer + .sig +
+# latest.json) actually got matched and uploaded to both releases.
 
 on:
-    release:
-        types: [ published ]
+    push:
+        tags:
+            - 'v*'
 
 permissions:
     contents: write
@@ -52,65 +54,31 @@ jobs:
 
             -   run: npm ci
 
-            # Builds + signs once and uploads the .msi / setup .exe / .sig / latest.json
-            # straight onto the release you just published (releaseId, not a new release).
+            # Builds + signs once, and publishes the private Core release.
             -   uses: tauri-apps/tauri-action@v0
                 env:
                     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                     TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
                     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
                 with:
-                    releaseId: ${{ github.event.release.id }}
+                    tagName: ${{ github.ref_name }}
+                    releaseName: 'The Disruptor Proxy ${{ github.ref_name }}'
+                    releaseDraft: true
+                    prerelease: false
 
-            # Tauri has no portable target, so assemble one: the compiled app exe with its
-            # resources laid out next to it exactly like an install, so the app still
-            # resolves assets/app-xray.exe & wintun.dll (BaseDirectory::Resource) at runtime.
-            -   name: Assemble portable zip
-                shell: pwsh
-                run: |
-                    $ErrorActionPreference = 'Stop'
-                    $version = '${{ github.event.release.tag_name }}' -replace '^v', ''
-
-                    # The app binary is the largest top-level .exe under target/release
-                    # (app-xray.exe lives in assets; build-script exes live in subdirs).
-                    $exe = Get-ChildItem 'src-tauri/target/release' -Filter *.exe -File |
-                        Sort-Object Length -Descending | Select-Object -First 1
-                    if (-not $exe) { throw 'no app .exe found in src-tauri/target/release' }
-
-                    $stage = Join-Path $env:RUNNER_TEMP 'The Disruptor Proxy'
-                    New-Item -ItemType Directory -Force $stage | Out-Null
-                    Copy-Item $exe.FullName (Join-Path $stage 'The Disruptor Proxy.exe')
-                    Copy-Item 'src-tauri/assets' (Join-Path $stage 'assets') -Recurse
-
-                    # Include any runtime DLLs Cargo emitted next to the exe, if present.
-                    Get-ChildItem 'src-tauri/target/release' -Filter *.dll -File |
-                        ForEach-Object { Copy-Item $_.FullName $stage }
-
-                    New-Item -ItemType Directory -Force 'dist-portable' | Out-Null
-                    $zip = "dist-portable/The-Disruptor-Proxy-$version-portable-x64.zip"
-                    Compress-Archive -Path $stage -DestinationPath $zip -Force
-                    Write-Host "Built $zip"
-
-            # Attach the portable zip to the release you just published.
-            -   uses: softprops/action-gh-release@v2
-                with:
-                    tag_name: ${{ github.event.release.tag_name }}
-                    files: dist-portable/*.zip
-
-            # Mirror the installers (+ .sig + latest.json) and the portable zip to the
-            # public Xray-Client repo - the release the updater and real users fetch from.
+            # Re-publishes the SAME signed artifacts to the public Xray-Client repo - the
+            # release the updater plugin and real users actually fetch from.
             -   uses: softprops/action-gh-release@v2
                 with:
                     repository: DisruptorProxy/Xray-Client
                     token: ${{ secrets.CLIENT_REPO_TOKEN }}
-                    tag_name: ${{ github.event.release.tag_name }}
-                    name: 'The Disruptor Proxy ${{ github.event.release.tag_name }}'
+                    tag_name: ${{ github.ref_name }}
+                    name: 'The Disruptor Proxy ${{ github.ref_name }}'
                     draft: true
-                    prerelease: ${{ github.event.release.prerelease }}
+                    prerelease: false
                     files: |
                         src-tauri/target/release/bundle/**/*.msi
                         src-tauri/target/release/bundle/**/*.msi.sig
                         src-tauri/target/release/bundle/**/*.exe
                         src-tauri/target/release/bundle/**/*.exe.sig
                         src-tauri/target/release/bundle/**/*.json
-                        dist-portable/*.zip
