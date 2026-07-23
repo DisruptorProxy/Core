@@ -35,11 +35,6 @@ const GEOSITE_URL: &str =
 /// GetExitCodeProcess's value for "this process has not exited yet".
 const STILL_ACTIVE: u32 = 259;
 
-/// The shared loopback SOCKS port every probe goes through, matching the frontend's
-/// `PROBE_SOCKS_PORT`. One inbound carries one authenticated user per server, and the
-/// core's `user` routing sends each user's traffic out that server's outbound. While
-/// connected this port belongs to the live core; while idle the prober opens it.
-const PROBE_SOCKS_PORT: u16 = 1082;
 /// The fixed probe-account password (the frontend's `PROBE_PASS`). The probe inbound
 /// is loopback-only, so the value is irrelevant beyond enabling SOCKS user auth.
 const PROBE_PASS: &str = "probe";
@@ -347,8 +342,14 @@ fn create_xray_config(app: tauri::AppHandle, config: serde_json::Value) -> Resul
 fn run_xray_windows(
     app: tauri::AppHandle,
     state: State<XrayProcess>,
+    probe_state: State<ProbeXray>,
     config_path: &str,
 ) -> Result<String, String> {
+    // A prober left over from a test is pure waste once a tunnel is up (probing reuses
+    // the live core), and keeping a second core alive next to the live one only invites
+    // the port and process conflicts this app has already been bitten by. Best-effort.
+    stop_probe_inner(&probe_state);
+
     let resource_dir = app
         .path()
         .resolve("assets", BaseDirectory::Resource)
@@ -650,15 +651,18 @@ fn start_probe(
     Ok(())
 }
 
-/// One real latency sample for a single server: fetches google's `generate_204`
-/// through the shared probe SOCKS port authenticated as this server's `user`, which
-/// the core's `user` routing sends out that server's outbound. The core is already
-/// running - the live tunnel while connected, or the prober while idle (see
-/// `start_probe`) - so this spawns nothing; it is just an HTTP round-trip, and returns
-/// the elapsed milliseconds.
+/// One real latency sample for a single server: fetches google's `generate_204` through
+/// a probe SOCKS port authenticated as this server's `user`, which the core's `user`
+/// routing sends out that server's outbound. The core is already running - the live
+/// tunnel while connected, or the prober while idle (see `start_probe`) - so this spawns
+/// nothing; it is just an HTTP round-trip, and returns the elapsed milliseconds.
+///
+/// `port` says WHICH core to ask: the live core and the prober listen on different
+/// ports (the frontend's `PROBE_SOCKS_PORT` / `PROBER_SOCKS_PORT`), so a probe is never
+/// answered by the wrong core - and neither can block the other from binding.
 #[tauri::command]
-async fn probe_ping(user: String) -> Result<u64, String> {
-    let addr = format!("127.0.0.1:{PROBE_SOCKS_PORT}");
+async fn probe_ping(user: String, port: u16) -> Result<u64, String> {
+    let addr = format!("127.0.0.1:{port}");
 
     wait_for_port(&addr, Duration::from_secs(5)).await?;
 

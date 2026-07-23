@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 
 import type { ProxyConfig } from '../../../lib/proxy/types';
-import { buildProbeConfig, canConnect, probeUser } from '../../../lib/xray/config';
+import { PROBER_SOCKS_PORT, PROBE_SOCKS_PORT, buildProbeConfig, canConnect, probeUser } from '../../../lib/xray/config';
 
 import type { PingMode, PingResult } from './port';
 import { service } from './service';
@@ -102,7 +102,12 @@ export const startProbeSession = async (configs: ProxyConfig[], mode: PingMode):
     const unsupported = (config: ProxyConfig): PingResult =>
         ({ ok: false, error: `${ config.protocol } is not supported by the current core.` });
 
-    const probe: Probe = async (config, signal): Promise<PingResult> =>
+    /**
+     * A probe bound to ONE core's SOCKS port. The live core and the idle prober listen
+     * on different ports, so the caller picks the one whose core it is actually using -
+     * a probe can never be answered by the wrong core.
+     */
+    const probeVia = (port: number): Probe => async (config, signal): Promise<PingResult> =>
     {
         if (signal.aborted)
         {
@@ -116,7 +121,7 @@ export const startProbeSession = async (configs: ProxyConfig[], mode: PingMode):
 
         try
         {
-            const latencyMs = await invoke<number>('probe_ping', { user: probeUser(config) });
+            const latencyMs = await invoke<number>('probe_ping', { user: probeUser(config), port });
 
             return { ok: true, latencyMs };
         }
@@ -127,10 +132,10 @@ export const startProbeSession = async (configs: ProxyConfig[], mode: PingMode):
     };
 
     // Connected: reuse the running tunnel core, which already holds every server's
-    // probe user. Nothing to start, nothing to stop.
+    // probe user on its own port. Nothing to start, nothing to stop.
     if (service.status()().phase === 'connected')
     {
-        return { probe, stop: async (): Promise<void> =>
+        return { probe: probeVia(PROBE_SOCKS_PORT), stop: async (): Promise<void> =>
         {} };
     }
 
@@ -166,5 +171,5 @@ export const startProbeSession = async (configs: ProxyConfig[], mode: PingMode):
         }
     };
 
-    return { probe, stop };
+    return { probe: probeVia(PROBER_SOCKS_PORT), stop };
 };

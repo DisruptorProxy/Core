@@ -32,7 +32,30 @@ const statsFor = (record: HealthRecord | undefined): LatencyStats | undefined =>
         return undefined;
     }
 
-    return (record.lastMode !== undefined ? record[record.lastMode] : undefined) ?? record.proxy ?? record.tcp;
+    const recent = record.lastMode !== undefined ? record[record.lastMode] : undefined;
+
+    // Prefer the freshest mode, but only where it actually measured something. A failed
+    // sweep leaves stats with no `ewmaMs` at all, and those must not blank out the other
+    // mode's good figure - which would also silently drop the row out of the latency
+    // sort. So fall through to whichever mode does have a number.
+    if (recent?.ewmaMs !== undefined)
+    {
+        return recent;
+    }
+
+    if (record.proxy?.ewmaMs !== undefined)
+    {
+        return record.proxy;
+    }
+
+    if (record.tcp?.ewmaMs !== undefined)
+    {
+        return record.tcp;
+    }
+
+    // Nothing measured yet: hand back the freshest stats so the row still reads as
+    // attempted (success rate, last error) rather than never-tested.
+    return recent ?? record.proxy ?? record.tcp;
 };
 
 /**

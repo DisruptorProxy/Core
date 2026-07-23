@@ -26,15 +26,23 @@ const CONNECT_SOCKS_PORT = 1080;
 /** Distinct port for the throwaway ping xray, so it never clashes with a live one. */
 const PING_PORT = 1081;
 /**
- * The one loopback SOCKS port every probe goes through. A single inbound carries one
- * authenticated user per server (the username IS the server's id), and a `user`
- * routing rule sends each user's traffic out that server's own outbound. So a whole
- * "test all" needs just this one port on one core: while connected it is part of the
- * live config, so probing reuses the running tunnel core rather than spawning a
- * second app-xray.exe; while idle the sole prober opens it. Distinct from the live
- * (1080) and single-ping (1081) ports so the three never collide.
+ * The loopback SOCKS port the LIVE core exposes for probing. A single inbound carries
+ * one authenticated user per server (the username IS the server's id), and a `user`
+ * routing rule sends each user's traffic out that server's own outbound - so a whole
+ * "test all" while connected reuses the running tunnel core instead of spawning a
+ * second app-xray.exe.
  */
-const PROBE_SOCKS_PORT = 1082;
+export const PROBE_SOCKS_PORT = 1082;
+/**
+ * The IDLE prober's own port - deliberately NOT the live core's.
+ *
+ * These two cores were once assumed never to overlap, so they shared one port. They DO
+ * overlap in practice (a prober left by a cancelled test, or a test starting as a
+ * connection comes up), and the second one to bind died with "Only one usage of each
+ * socket address" - taking the whole connection, or the whole test, down with it.
+ * Separate ports let them coexist harmlessly.
+ */
+export const PROBER_SOCKS_PORT = 1083;
 /** Inbound tag for that shared probe SOCKS listener. */
 const PROBE_IN_TAG = 'probe-in';
 /**
@@ -408,7 +416,7 @@ interface ProbeLayer
  * account, no outbound, no rule), so the caller reports them unsupported without ever
  * probing.
  */
-const buildProbeLayer = (configs: ProxyConfig[]): ProbeLayer =>
+const buildProbeLayer = (configs: ProxyConfig[], port: number): ProbeLayer =>
 {
     const accounts: { user: string; pass: string }[] = [];
     const outbounds: XrayOutbound[] = [];
@@ -427,7 +435,7 @@ const buildProbeLayer = (configs: ProxyConfig[]): ProbeLayer =>
     });
 
     return {
-        inbound: { tag: PROBE_IN_TAG, protocol: 'socks', listen: '127.0.0.1', port: PROBE_SOCKS_PORT, settings: { auth: 'password', udp: false, accounts } },
+        inbound: { tag: PROBE_IN_TAG, protocol: 'socks', listen: '127.0.0.1', port, settings: { auth: 'password', udp: false, accounts } },
         outbounds,
         rules,
         users
@@ -462,7 +470,7 @@ const buildProbeLayer = (configs: ProxyConfig[]): ProbeLayer =>
  */
 export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], allConfigs: ProxyConfig[], geo: GeoAssets = GEO_PRESENT): XrayConfig =>
 {
-    const probe = buildProbeLayer(allConfigs);
+    const probe = buildProbeLayer(allConfigs, PROBE_SOCKS_PORT);
 
     return {
         // 'warning' keeps the core quiet in production; bump to 'debug' when
@@ -538,7 +546,7 @@ export interface ProbePlan
 
 export const buildProbeConfig = (configs: ProxyConfig[]): ProbePlan =>
 {
-    const probe = buildProbeLayer(configs);
+    const probe = buildProbeLayer(configs, PROBER_SOCKS_PORT);
 
     return {
         config:
