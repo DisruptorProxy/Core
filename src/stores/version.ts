@@ -4,8 +4,13 @@ import { getVersion } from '@tauri-apps/api/app';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { check as checkUpdate, type Update } from '@tauri-apps/plugin-updater';
 
-/** Fallback shown in browser dev; the desktop app reads the real version from Tauri. */
-const FALLBACK_VERSION = '1.0.0';
+/**
+ * The version this bundle was built from (package.json, bumped by scripts/release.mjs).
+ * The desktop app replaces it with Tauri's own answer below; this is what browser dev
+ * shows, and what stands if that call ever fails - so the About screen can never sit on
+ * a stale hardcoded number.
+ */
+const FALLBACK_VERSION = __APP_VERSION__;
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 

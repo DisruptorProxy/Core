@@ -39,6 +39,7 @@
                     "permissions":
                     [
                         "core:app:allow-default-window-icon",
+                        "core:app:allow-version",
 
                         "core:window:allow-start-dragging",
                         "core:window:allow-minimize",

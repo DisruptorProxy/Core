@@ -17,3 +17,6 @@ interface ImportMetaEnv
     /** `'true'` installs the AzerothJS devtools panel in dev. Never in prod. */
     readonly VITE_DEVTOOLS: string;
 }
+
+/** package.json's version, injected at build time by vite.config.ts. */
+declare const __APP_VERSION__: string;
