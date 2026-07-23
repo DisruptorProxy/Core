@@ -55,6 +55,7 @@
                         "core:window:allow-set-focus",
                         "core:tray:default",
                         "core:menu:default",
+                        "core:event:default",
                         "updater:default",
                         "process:allow-restart"
                     ]

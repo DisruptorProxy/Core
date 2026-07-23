@@ -26,7 +26,7 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// Geo database sources. Xray resolves `geoip:`/`geosite:` routing rules against
 /// these `.dat` files; they ship out-of-band (too large and too fast-moving to
-/// bundle) and are downloaded next to app-xray.exe on demand.
+/// bundle) and are downloaded into app data on demand (see `geo_data_dir`).
 const GEOIP_URL: &str =
     "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat";
 const GEOSITE_URL: &str =
@@ -197,10 +197,18 @@ fn build_runner_script(
     xray_path: &Path,
     xray_args: &str,
     working_dir: &Path,
+    asset_dir: &Path,
     artifacts: &RunArtifacts,
 ) -> String {
     [
         "$ErrorActionPreference = 'Stop'".to_string(),
+        // xray resolves geoip.dat/geosite.dat from XRAY_LOCATION_ASSET; Start-Process
+        // inherits this session's environment, so the elevated core reads geo files
+        // from app data - they cannot live in the read-only bundle. See `geo_data_dir`.
+        format!(
+            "$env:XRAY_LOCATION_ASSET = {}",
+            ps_literal(&asset_dir.to_string_lossy())
+        ),
         format!(
             "$proc = Start-Process -FilePath {} -ArgumentList {} -WorkingDirectory {} -RedirectStandardOutput {} -RedirectStandardError {} -WindowStyle Hidden -PassThru",
             ps_literal(&xray_path.to_string_lossy()),
@@ -371,7 +379,13 @@ fn run_xray_windows(
     artifacts.reset();
 
     let xray_args = build_command_line(&["run", "-c", config_path]);
-    let script = build_runner_script(&xray_path, &xray_args, &resource_dir, &artifacts);
+    let script = build_runner_script(
+        &xray_path,
+        &xray_args,
+        &resource_dir,
+        &app_data_dir,
+        &artifacts,
+    );
 
     std::fs::write(&artifacts.script, script)
         .map_err(|e| format!("Failed to write xray runner script: {e}"))?;
@@ -819,13 +833,32 @@ struct GeoStatus {
     geosite: bool,
 }
 
-/// The bundled-assets directory that sits next to app-xray.exe. The core's working
-/// directory is set here when it runs, so a `.dat` written here is exactly where
-/// xray looks for `geoip.dat`/`geosite.dat`.
+/// The bundled-assets directory that sits next to app-xray.exe (the exe, wintun.dll).
+/// It lives inside the app bundle, which is READ-ONLY in an installed build - so the
+/// geo `.dat` files the user updates at runtime do NOT go here; see `geo_data_dir`.
 fn resource_assets_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     app.path()
         .resolve("assets", BaseDirectory::Resource)
         .map_err(|e| format!("Failed to resolve resource dir: {e}"))
+}
+
+/// The writable per-user directory that holds geoip.dat / geosite.dat.
+///
+/// By default xray looks for its geo `.dat` files next to app-xray.exe, but that dir
+/// is inside the (read-only in an installed build) app bundle - writing there fails
+/// with Access Denied, which is why the old "update geo files" silently never worked.
+/// So the files are downloaded here, in app data, and the core is pointed at them with
+/// the XRAY_LOCATION_ASSET env var whenever it runs a config that carries geo routing
+/// rules (the live connection). Created if absent.
+fn geo_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to resolve app data dir: {e}"))?;
+
+    std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create app data dir: {e}"))?;
+
+    Ok(dir)
 }
 
 fn geo_status_of(dir: &Path) -> GeoStatus {
@@ -835,11 +868,12 @@ fn geo_status_of(dir: &Path) -> GeoStatus {
     }
 }
 
-/// Whether geoip.dat / geosite.dat are present next to app-xray.exe. Read at
-/// connect time so the config builder can drop geo rules the core could not resolve.
+/// Whether geoip.dat / geosite.dat are present in app data (where the user's downloads
+/// land). Read at connect time so the config builder can drop geo rules the core could
+/// not resolve.
 #[tauri::command]
 fn geo_files_status(app: tauri::AppHandle) -> Result<GeoStatus, String> {
-    Ok(geo_status_of(&resource_assets_dir(&app)?))
+    Ok(geo_status_of(&geo_data_dir(&app)?))
 }
 
 /// One chunk's worth of download progress, emitted to the webview as `geo-progress`
@@ -918,14 +952,12 @@ async fn download_file(
     Ok(())
 }
 
-/// Downloads the latest geoip.dat and geosite.dat and drops them next to
-/// app-xray.exe, so `geoip:`/`geosite:` routing rules resolve on the next connect.
-/// Returns the resulting presence of both files.
+/// Downloads the latest geoip.dat and geosite.dat into app data (a writable location,
+/// unlike the read-only bundle), where XRAY_LOCATION_ASSET points the core - so
+/// `geoip:`/`geosite:` routing rules resolve on the next connect. Returns their presence.
 #[tauri::command]
 async fn update_geo_files(app: tauri::AppHandle) -> Result<GeoStatus, String> {
-    let dir = resource_assets_dir(&app)?;
-
-    std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create assets dir: {e}"))?;
+    let dir = geo_data_dir(&app)?;
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(60))
