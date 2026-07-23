@@ -14,8 +14,6 @@ interface ViteTypeOptions
 // server/build-side. Declared here, defaults live in `.env`.
 interface ImportMetaEnv
 {
-    readonly VITE_APP_NAME: string;
-
     /** `'true'` installs the AzerothJS devtools panel in dev. Never in prod. */
     readonly VITE_DEVTOOLS: string;
 }
