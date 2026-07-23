@@ -16,4 +16,6 @@ interface ImportMetaEnv
 {
     /** `'true'` installs the AzerothJS devtools panel in dev. Never in prod. */
     readonly VITE_DEVTOOLS: string;
+    /** `'development'` or `'production'` */
+    readonly VITE_NODE_ENV: string;
 }

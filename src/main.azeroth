@@ -4,25 +4,28 @@ import { render } from 'azerothjs';
 
 import Shell from './app/shell.component.azeroth';
 
-document.addEventListener('keydown', (event) =>
+if (import.meta.env.VITE_NODE_ENV === 'production')
 {
-    if (event.key === 'F3' ||
-        event.key === 'F5' ||
-        event.key === 'F7' ||
+    document.addEventListener('keydown', (event) =>
+    {
+        if (event.key === 'F3' ||
+            event.key === 'F5' ||
+            event.key === 'F7' ||
         (event.ctrlKey && (event.key === 'p' || event.key === 'P')) ||
         (event.ctrlKey && (event.key === 'j' || event.key === 'J')) ||
         (event.ctrlKey && (event.key === 'r' || event.key === 'R')) ||
         (event.ctrlKey && (event.key === 'f' || event.key === 'F')) ||
         (event.ctrlKey && event.shiftKey && (event.key === 'p' || event.key === 'P')) ||
         (event.ctrlKey && event.shiftKey && (event.key === 'i' || event.key === 'I')))
+        {
+            event.preventDefault();
+        }
+    });
+
+    document.addEventListener('contextmenu', (event) =>
     {
         event.preventDefault();
-    }
-});
-
-document.addEventListener('contextmenu', (event) =>
-{
-    event.preventDefault();
-});
+    });
+}
 
 render(() => Shell(), document.getElementById('root')!);
