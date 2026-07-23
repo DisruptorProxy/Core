@@ -1,6 +1,6 @@
 import { For, Show } from 'azerothjs';
 
-import { Check, Star } from 'lucide';
+import { Activity, Check, Star } from 'lucide';
 
 import type { ConfigRow } from '../../lib/db/repo';
 import { bucketFor } from '../../lib/health/score';
@@ -21,6 +21,8 @@ interface ConfigRowProps
     isOpen: () => boolean;
     /** Reactive EWMA latency in ms, or undefined when untested. */
     latency: () => number | undefined;
+    /** Reactive: true while a probe for this row is in flight - shown in place of the value. */
+    isPinging: () => boolean;
     /** Tap: toggles selection in select mode, otherwise opens the row. */
     onTap: () => void;
     /** Long-press / right-click: enter select mode with this row ticked. */
@@ -168,7 +170,13 @@ export default component ConfigRow(props: ConfigRowProps)
         </div>
 
         <div class="flex shrink-0 items-center gap-1.5">
-            <Show when={ props.latency() !== undefined }>
+            <Show when={ props.isPinging() }>
+                <span class="flex w-12 items-center justify-end text-muted" aria-label="Pinging">
+                    { icon(Activity, 'size-3.5 animate-pulse') }
+                </span>
+            </Show>
+
+            <Show when={ !props.isPinging() && props.latency() !== undefined }>
                 <span class={ `readout w-12 text-end text-xs font-medium ${ LATENCY_TONE[bucketFor(props.latency())] ?? '' }` }>
                     { props.latency() }ms
                 </span>

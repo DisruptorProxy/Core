@@ -26,6 +26,18 @@ const CONNECT_SOCKS_PORT = 1080;
 /** Distinct port for the throwaway ping xray, so it never clashes with a live one. */
 const PING_PORT = 1081;
 /**
+ * The one loopback SOCKS port every probe goes through. A single inbound carries one
+ * authenticated user per server (the username IS the server's id), and a `user`
+ * routing rule sends each user's traffic out that server's own outbound. So a whole
+ * "test all" needs just this one port on one core: while connected it is part of the
+ * live config, so probing reuses the running tunnel core rather than spawning a
+ * second app-xray.exe; while idle the sole prober opens it. Distinct from the live
+ * (1080) and single-ping (1081) ports so the three never collide.
+ */
+const PROBE_SOCKS_PORT = 1082;
+/** Inbound tag for that shared probe SOCKS listener. */
+const PROBE_IN_TAG = 'probe-in';
+/**
  * Loopback gRPC port Xray's StatsService listens on during a live connection, so the
  * app can poll cumulative uplink/downlink counters. Must match the port the Rust
  * `xray_traffic` command queries.
@@ -83,6 +95,8 @@ interface XrayRoutingRule
     port?: number | string;
     /** Match by originating inbound tag - used to route the API inbound to the `api` handler. */
     inboundTag?: string[];
+    /** Match by authenticated inbound user - routes each probe user to its server's outbound. */
+    user?: string[];
 }
 
 interface XrayConfig
@@ -198,15 +212,19 @@ const parseExtra = (extra: string | undefined): { extra?: unknown } =>
     }
 };
 
-/** The proxy outbound for the server, protocol-specific settings + shared stream. */
-const proxyOutbound = (config: ProxyConfig): XrayOutbound =>
+/**
+ * The proxy outbound for the server, protocol-specific settings + shared stream.
+ * The `tag` defaults to `proxy` for a live connection; the prober passes a distinct
+ * tag per server so a single config can hold every server's outbound at once.
+ */
+const proxyOutbound = (config: ProxyConfig, tag = 'proxy'): XrayOutbound =>
 {
     const stream = streamSettings(config);
 
     if (config.protocol === 'vmess')
     {
         return {
-            tag: 'proxy',
+            tag,
             protocol: 'vmess',
             settings: { vnext: [{ address: config.host, port: config.port, users: [{ id: config.credential, security: config.method ?? 'auto', alterId: 0 }] }] },
             streamSettings: stream
@@ -216,7 +234,7 @@ const proxyOutbound = (config: ProxyConfig): XrayOutbound =>
     if (config.protocol === 'vless')
     {
         return {
-            tag: 'proxy',
+            tag,
             protocol: 'vless',
             // `encryption` is `none` for classic vless but a real post-quantum value
             // for modern servers; pass through what the URI carried.
@@ -228,7 +246,7 @@ const proxyOutbound = (config: ProxyConfig): XrayOutbound =>
     if (config.protocol === 'trojan')
     {
         return {
-            tag: 'proxy',
+            tag,
             protocol: 'trojan',
             settings: { servers: [{ address: config.host, port: config.port, password: config.credential }] },
             streamSettings: stream
@@ -237,7 +255,7 @@ const proxyOutbound = (config: ProxyConfig): XrayOutbound =>
 
     // shadowsocks
     return {
-        tag: 'proxy',
+        tag,
         protocol: 'shadowsocks',
         settings: { servers: [{ address: config.host, port: config.port, method: config.method ?? 'aes-256-gcm', password: config.credential }] },
         streamSettings: stream
@@ -354,6 +372,69 @@ const API_INBOUND: XrayInbound = { tag: 'api-in', protocol: 'dokodemo-door', lis
 const API_RULE: XrayRoutingRule = { type: 'field', inboundTag: ['api-in'], outboundTag: 'api' };
 
 /**
+ * The SOCKS username whose traffic routes to a given server's probe outbound. It is
+ * simply the server's content id, so a probe authenticates as the right user knowing
+ * only the server - identical whether the outbound lives in the live connect core or
+ * the idle prober, so no test depends on the order servers happened to be loaded in.
+ */
+export const probeUser = (config: ProxyConfig): string => config.id;
+
+/**
+ * A fixed password shared by every probe account. The probe inbound is loopback-only,
+ * so the value is irrelevant to security; it exists only because SOCKS `user` routing
+ * needs password auth turned on so an authenticated user is attached to match against.
+ */
+const PROBE_PASS = 'probe';
+
+interface ProbeLayer
+{
+    /** The single shared SOCKS inbound, one account per connectable server. */
+    inbound: XrayInbound;
+    /** One tagged proxy outbound per connectable server. */
+    outbounds: XrayOutbound[];
+    /** `user -> outbound` routing rules, one per connectable server. */
+    rules: XrayRoutingRule[];
+    /** Server id -> the SOCKS username that reaches it. Only connectable servers appear. */
+    users: Map<string, string>;
+}
+
+/**
+ * The shared probe plumbing used by both the live connect config and the idle
+ * prober: ONE SOCKS inbound whose accounts and `user` routing rules fan every server
+ * out to its own tagged outbound. A probe of server X is then just an HTTP request
+ * through this port authenticated as X's user - the core routes it out X's outbound,
+ * so hundreds of servers share one inbound on one core with no per-server port and no
+ * restart. Servers whose protocol the core cannot connect to are omitted entirely (no
+ * account, no outbound, no rule), so the caller reports them unsupported without ever
+ * probing.
+ */
+const buildProbeLayer = (configs: ProxyConfig[]): ProbeLayer =>
+{
+    const accounts: { user: string; pass: string }[] = [];
+    const outbounds: XrayOutbound[] = [];
+    const rules: XrayRoutingRule[] = [];
+    const users = new Map<string, string>();
+
+    configs.filter((config) => canConnect(config.protocol)).forEach((config) =>
+    {
+        const user = probeUser(config);
+        const tag = `probe-out-${ user }`;
+
+        accounts.push({ user, pass: PROBE_PASS });
+        outbounds.push(proxyOutbound(config, tag));
+        rules.push({ type: 'field', inboundTag: [PROBE_IN_TAG], user: [user], outboundTag: tag });
+        users.set(config.id, user);
+    });
+
+    return {
+        inbound: { tag: PROBE_IN_TAG, protocol: 'socks', listen: '127.0.0.1', port: PROBE_SOCKS_PORT, settings: { auth: 'password', udp: false, accounts } },
+        outbounds,
+        rules,
+        users
+    };
+};
+
+/**
  * The full connect config: a SOCKS inbound (for apps that honour it) plus the TUN
  * inbound that routes the whole device, the proxy/direct/block/dns outbounds, and
  * the routing table.
@@ -369,36 +450,50 @@ const API_RULE: XrayRoutingRule = { type: 'field', inboundTag: ['api-in'], outbo
  * DNS is forced through Xray to stop leaks: `DNS_RULE` hijacks all port-53 traffic
  * into `DNS_OUT`, which resolves via the `dns` servers (DoH first, IPv4-only), and
  * `domainStrategy: 'IPIfNonMatch'` resolves in-core rather than via the OS resolver.
+ *
+ * The config also carries the shared probe layer (`buildProbeLayer`) for EVERY known
+ * server in `allConfigs`: a single loopback SOCKS inbound with one user per server
+ * and a `user` route sending each out its own outbound. This is what lets a test run
+ * while connected reuse this one running core - a probe is just a request on the
+ * probe port authenticated as that server's user - instead of spawning a second
+ * app-xray.exe. The probe users/routes sit ahead of the user routing rules so a
+ * probe's authenticated traffic is matched before the `final` catch-all, while
+ * ordinary TUN/SOCKS traffic (which carries no probe user) skips them untouched.
  */
-export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], geo: GeoAssets = GEO_PRESENT): XrayConfig =>
-    ({
+export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], allConfigs: ProxyConfig[], geo: GeoAssets = GEO_PRESENT): XrayConfig =>
+{
+    const probe = buildProbeLayer(allConfigs);
+
+    return {
         log: { loglevel: 'debug' },
         dns: { servers: ['1.1.1.1', '8.8.8.8'], queryStrategy: 'UseIPv4' },
         stats: STATS,
         api: API,
         policy: POLICY,
         inbounds:
-    [
-        { tag: 'socks-in', protocol: 'socks', listen: '127.0.0.1', port: CONNECT_SOCKS_PORT, settings: { udp: true }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } },
-        {
-            tag: 'tun-in',
-            protocol: 'tun',
-            settings:
+        [
+            { tag: 'socks-in', protocol: 'socks', listen: '127.0.0.1', port: CONNECT_SOCKS_PORT, settings: { udp: true }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } },
             {
-                name: 'app-tun',
-                mtu: 1500,
-                gateway: ['172.19.19.1/30'],
-                dns: ['1.1.1.1'],
-                autoSystemRoutingTable: ['0.0.0.0/0'],
-                autoOutboundsInterface: 'auto'
+                tag: 'tun-in',
+                protocol: 'tun',
+                settings:
+                {
+                    name: 'app-tun',
+                    mtu: 1500,
+                    gateway: ['172.19.19.1/30'],
+                    dns: ['1.1.1.1'],
+                    autoSystemRoutingTable: ['0.0.0.0/0'],
+                    autoOutboundsInterface: 'auto'
+                },
+                sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] }
             },
-            sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] }
-        },
-        API_INBOUND
-    ],
-        outbounds: [proxyOutbound(config), DIRECT, BLOCK, DNS_OUT],
-        routing: { domainStrategy: 'IPIfNonMatch', rules: [API_RULE, DNS_RULE, ...routingRulesFrom(rules, geo)] }
-    });
+            API_INBOUND,
+            probe.inbound
+        ],
+        outbounds: [proxyOutbound(config), DIRECT, BLOCK, DNS_OUT, ...probe.outbounds],
+        routing: { domainStrategy: 'IPIfNonMatch', rules: [API_RULE, DNS_RULE, ...probe.rules, ...routingRulesFrom(rules, geo)] }
+    };
+};
 
 /**
  * A minimal config for a latency probe. `ping_xray_windows` reads `inbounds[0]`'s
@@ -413,3 +508,44 @@ export const buildPingConfig = (config: ProxyConfig): XrayConfig =>
         outbounds: [proxyOutbound(config), DIRECT],
         routing: { domainStrategy: 'AsIs', rules: [] }
     });
+
+/**
+ * A bulk-test plan: one xray config that carries every tested server's outbound at
+ * once, plus the map telling the caller which SOCKS user reaches which server.
+ *
+ * This is the IDLE prober - used only when no live connection exists. It is the same
+ * shared probe layer the connect config embeds (`buildProbeLayer`): one SOCKS inbound
+ * on `PROBE_SOCKS_PORT`, one authenticated user per server, each routed to that
+ * server's outbound by the `user` field. So a probe of server X is just an HTTP
+ * request on that one port authenticated as X's user; the core dials X's outbound
+ * lazily, and no server needs its own port, its own xray, or a restart.
+ *
+ * Unlike the live config there is no TUN and no elevation - only loopback inbounds -
+ * so this runs as a plain child process. While a connection IS active, this is not
+ * used at all: the live core already carries the same layer, so probing reuses it.
+ *
+ * Servers whose protocol the core cannot connect to are left out entirely (no
+ * account, no outbound); the caller reports them as unsupported without ever probing.
+ */
+export interface ProbePlan
+{
+    config: XrayConfig;
+    /** Server id -> the SOCKS username whose traffic routes through that server. */
+    users: Map<string, string>;
+}
+
+export const buildProbeConfig = (configs: ProxyConfig[]): ProbePlan =>
+{
+    const probe = buildProbeLayer(configs);
+
+    return {
+        config:
+        {
+            log: { loglevel: 'none' },
+            inbounds: [probe.inbound],
+            outbounds: [...probe.outbounds, DIRECT, BLOCK],
+            routing: { domainStrategy: 'AsIs', rules: probe.rules }
+        },
+        users: probe.users
+    };
+};

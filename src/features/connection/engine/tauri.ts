@@ -3,6 +3,7 @@ import type { Getter } from 'azerothjs';
 
 import { invoke } from '@tauri-apps/api/core';
 
+import { getAllConfigs } from '../../../lib/db/repo';
 import type { ProxyConfig } from '../../../lib/proxy/types';
 import { buildConnectConfig, buildPingConfig, canConnect } from '../../../lib/xray/config';
 import type { GeoAssets } from '../../../lib/xray/config';
@@ -65,7 +66,10 @@ export class TauriConnectionService implements ConnectionService
         try
         {
             const geo = await readGeoStatus();
-            const xrayConfig = buildConnectConfig(config, useRouting().rules(), geo);
+            // Embed every known server as a tagged probe outbound, so a test run while
+            // connected reuses this one running core instead of spawning a second one.
+            const allConfigs = await getAllConfigs();
+            const xrayConfig = buildConnectConfig(config, useRouting().rules(), allConfigs, geo);
             const configPath = await invoke<string>('create_xray_config', { config: xrayConfig });
 
             await invoke<string>('run_xray_windows', { configPath });

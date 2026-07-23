@@ -61,6 +61,7 @@ export default component ConfigList()
                     isActive: () => connection.isActive(id),
                     isOpen: () => detail.openId() === id,
                     latency: () => health.latencyOf(id),
+                    isPinging: () => health.isPinging(id),
                     onTap: () => tap(id),
                     onHold: () => selection.begin(id)
                 });

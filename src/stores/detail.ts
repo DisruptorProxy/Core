@@ -112,10 +112,12 @@ export const useDetail = createStore(() =>
         }
 
         setPinging(true);
+        health.markPinging(current.id);
 
         const result = await service.ping(current, new AbortController().signal);
 
         await health.recordOne(current.id, result);
+        health.clearPinging(current.id);
         setPinging(false);
     };
 

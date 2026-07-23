@@ -6,7 +6,7 @@ import { runPool } from '../lib/health/pool';
 import { fold, score } from '../lib/health/score';
 
 import type { PingResult } from '../features/connection/engine/port';
-import { tcpProbe } from '../features/connection/engine/tcp-ping';
+import { startProbeSession } from '../features/connection/engine/probe';
 
 interface TestState
 {
@@ -33,6 +33,11 @@ export const useHealth = createStore(() =>
     const [records, setRecords] = createSignal<ReadonlyMap<string, HealthRecord>>(new Map());
     const [testState, setTestState] = createSignal<TestState>(IDLE);
 
+    // The ids with a probe currently in flight. The list reads this reactively so a
+    // row shows a "pinging" state while its latency is being (re)measured, then swaps
+    // to the fresh value when the probe lands.
+    const [pinging, setPinging] = createSignal<ReadonlySet<string>>(new Set());
+
     let controller: AbortController | null = null;
 
     const load = async (): Promise<void> =>
@@ -51,6 +56,33 @@ export const useHealth = createStore(() =>
     const recordOf = (id: string): HealthRecord | undefined => records().get(id);
     const latencyOf = (id: string): number | undefined => records().get(id)?.ewmaMs;
     const scoreOf = (id: string): number => score(records().get(id));
+
+    /** Whether a probe is currently in flight for this server. */
+    const isPinging = (id: string): boolean => pinging().has(id);
+
+    /** Marks a single server as pinging - used by the detail sheet's one-off Ping so
+     *  its row shows the same in-flight state a bulk test does. */
+    const markPinging = (id: string): void =>
+    {
+        const next = new Set(pinging());
+
+        next.add(id);
+        setPinging(next);
+    };
+
+    /** Clears a single server's pinging mark once its one-off probe resolves. */
+    const clearPinging = (id: string): void =>
+    {
+        if (!pinging().has(id))
+        {
+            return;
+        }
+
+        const next = new Set(pinging());
+
+        next.delete(id);
+        setPinging(next);
+    };
 
     /** Folds a single probe into a config's health - the per-config Ping action. */
     const recordOne = async (id: string, result: PingResult): Promise<void> =>
@@ -84,9 +116,13 @@ export const useHealth = createStore(() =>
         setTestState({ running: true, done: 0, total: configs.length });
 
         // A working copy folded into as results arrive; flushed to the signal on a
-        // timer so the UI updates smoothly rather than on every single probe.
+        // timer so the UI updates smoothly rather than on every single probe. The
+        // in-flight set rides the same flush, so a row's "pinging" state and its new
+        // latency appear together on the same tick rather than flickering apart.
         const working = new Map(records());
+        const workingPing = new Set<string>();
         let dirty = false;
+        let pingDirty = false;
 
         const flush = (): void =>
         {
@@ -95,27 +131,56 @@ export const useHealth = createStore(() =>
                 setRecords(new Map(working));
                 dirty = false;
             }
+
+            if (pingDirty)
+            {
+                setPinging(new Set(workingPing));
+                pingDirty = false;
+            }
         };
 
         const timer = window.setInterval(flush, 200);
+
+        const onStart = (id: string): void =>
+        {
+            workingPing.add(id);
+            pingDirty = true;
+        };
 
         const onResult = (id: string, result: PingResult): void =>
         {
             const folded = fold(working.get(id), result);
 
             working.set(id, { ...folded, configId: id });
+            workingPing.delete(id);
             dirty = true;
+            pingDirty = true;
         };
 
-        // Bulk testing uses the light TCP probe - a real handshake to the server's
-        // port, without spawning an xray per probe (that is the detail sheet's job).
-        await runPool(configs, tcpProbe, CONCURRENCY, {
-            onResult,
-            onProgress: (done, total) => setTestState({ running: true, done, total })
-        }, controller.signal);
+        // Each probe is a real request to google THROUGH the server, not a bare TCP
+        // touch. It reuses one core for the whole set: the live tunnel when connected,
+        // or a single throwaway prober when idle - never a core per server.
+        const session = await startProbeSession(configs);
+
+        try
+        {
+            await runPool(configs, session.probe, CONCURRENCY, {
+                onStart,
+                onResult,
+                onProgress: (done, total) => setTestState({ running: true, done, total })
+            }, controller.signal);
+        }
+        finally
+        {
+            await session.stop();
+        }
 
         window.clearInterval(timer);
         flush();
+
+        // Drop any lingering in-flight marks: a cancelled test leaves ids that started
+        // but never resulted, and nothing should read as "pinging" once a test ends.
+        setPinging(new Set());
 
         // Persist only the records we touched, in one write.
         await putHealth(configs.map((config) => working.get(config.id)!).filter(Boolean));
@@ -126,6 +191,7 @@ export const useHealth = createStore(() =>
     const cancel = (): void =>
     {
         controller?.abort();
+        setPinging(new Set());
         setTestState(IDLE);
     };
 
@@ -137,6 +203,9 @@ export const useHealth = createStore(() =>
         recordOf,
         latencyOf,
         scoreOf,
+        isPinging,
+        markPinging,
+        clearPinging,
         recordOne,
         test,
         cancel,

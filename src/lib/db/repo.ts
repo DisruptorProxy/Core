@@ -179,6 +179,24 @@ export const getConfigsByIds = async (ids: string[]): Promise<ProxyConfig[]> =>
     return configs.filter((config): config is ProxyConfig => config !== undefined);
 };
 
+/**
+ * Every full config, in one transaction. The engine needs this on connect: the live
+ * config embeds all servers as tagged probe outbounds so any of them can be tested
+ * through the single running core. This reads full objects (credentials, keys) for
+ * the whole store, so it is a connect-time action only - never the per-keystroke list
+ * path, which reads light rows via `loadRows`.
+ */
+export const getAllConfigs = async (): Promise<ProxyConfig[]> =>
+{
+    const db = await openDatabase();
+    const tx = db.transaction(STORE_CONFIGS, 'readonly');
+    const configs = await done(tx.objectStore(STORE_CONFIGS).getAll() as IDBRequest<ProxyConfig[]>);
+
+    db.close();
+
+    return configs;
+};
+
 export const deleteConfigs = async (ids: string[]): Promise<void> =>
 {
     if (ids.length === 0)

@@ -28,6 +28,19 @@ const GEOSITE_URL: &str = "https://github.com/Loyalsoldier/v2ray-rules-dat/relea
 /// GetExitCodeProcess's value for "this process has not exited yet".
 const STILL_ACTIVE: u32 = 259;
 
+/// The shared loopback SOCKS port every probe goes through, matching the frontend's
+/// `PROBE_SOCKS_PORT`. One inbound carries one authenticated user per server, and the
+/// core's `user` routing sends each user's traffic out that server's outbound. While
+/// connected this port belongs to the live core; while idle the prober opens it.
+const PROBE_SOCKS_PORT: u16 = 1082;
+/// The fixed probe-account password (the frontend's `PROBE_PASS`). The probe inbound
+/// is loopback-only, so the value is irrelevant beyond enabling SOCKS user auth.
+const PROBE_PASS: &str = "probe";
+/// How long a single probe waits for its request through the server before giving up.
+/// A slow-but-usable server abroad can take several seconds on a first request, so
+/// this is generous - a probe that exceeds it is a failure, not a latency sample.
+const PROBE_TIMEOUT: Duration = Duration::from_secs(15);
+
 /// A process started elevated via `ShellExecuteExW`'s "runas" verb.
 ///
 /// `std::process::Command` has no way to request UAC elevation for a single child
@@ -189,6 +202,26 @@ struct RunningXray {
 }
 
 struct XrayProcess(Mutex<Option<RunningXray>>);
+
+/// The single, persistent prober xray used for bulk latency testing.
+///
+/// Unlike the live connection, the prober needs no elevation: it opens only loopback
+/// SOCKS inbounds and never touches the TUN adapter or the route table, so it is a
+/// plain child process this app can spawn and kill directly. One prober holds every
+/// server's outbound at once (see `buildProbeConfig`), so a whole "test all" reuses
+/// it without a restart per server.
+struct ProbeXray(Mutex<Option<std::process::Child>>);
+
+/// Kills the running prober, if any. Best-effort and idempotent - the desired end
+/// state is "no prober", whether it was running, already dead, or never started.
+fn stop_probe_inner(state: &ProbeXray) {
+    if let Ok(mut guard) = state.0.lock() {
+        if let Some(mut child) = guard.take() {
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+}
 
 /// Whether an app-xray.exe process is currently running, checked without needing
 /// elevation - enumerating processes by name doesn't require admin rights, only
@@ -457,20 +490,112 @@ async fn ping_xray_windows(app: tauri::AppHandle, config_path: String) -> Result
     ping_result
 }
 
-/// Light TCP-connect latency to `host:port`, in milliseconds. Used for bulk server
-/// testing - it measures reachability without spawning an xray per probe, so
-/// testing hundreds of servers stays cheap. A real through-proxy figure comes from
-/// `ping_xray_windows` for a single server.
+/// Starts the idle prober from a config that carries one shared loopback SOCKS
+/// inbound with a user per server plus each server's outbound (built by
+/// `buildProbeConfig`). Any prober from a previous test is torn down first, so only
+/// one is ever alive. This runs only when no live connection exists; while connected,
+/// the frontend probes through the running tunnel core instead and never calls this.
+///
+/// The prober touches no TUN adapter or route table, so - unlike the live
+/// connection - it runs unelevated with no UAC prompt. It exits immediately if xray
+/// rejects the config, which is surfaced here (with the core's stderr) rather than
+/// left to fail one opaque probe at a time.
 #[tauri::command]
-async fn tcp_ping(host: String, port: u16) -> Result<u64, String> {
-    let addr = format!("{host}:{port}");
+fn start_probe(app: tauri::AppHandle, state: State<ProbeXray>, config: serde_json::Value) -> Result<(), String> {
+    let resource_dir = resource_assets_dir(&app)?;
+
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to resolve app data dir: {e}"))?;
+
+    std::fs::create_dir_all(&app_data_dir).map_err(|e| format!("Failed to create app data dir: {e}"))?;
+
+    let xray_path = resource_dir.join("app-xray.exe");
+    let config_path = app_data_dir.join("probe.json");
+    let stderr_path = app_data_dir.join("probe-stderr.log");
+
+    let contents = serde_json::to_string_pretty(&config).map_err(|e| format!("Failed to serialize probe config: {e}"))?;
+    std::fs::write(&config_path, contents).map_err(|e| format!("Failed to write probe config: {e}"))?;
+
+    // Replace any prober left from an earlier test run before starting a new one.
+    stop_probe_inner(&state);
+
+    let stderr = std::fs::File::create(&stderr_path).map_err(|e| format!("Failed to create probe log: {e}"))?;
+
+    let mut child = Command::new(&xray_path)
+        .arg("run")
+        .arg("-c")
+        .arg(&config_path)
+        .current_dir(&resource_dir)
+        .stderr(std::process::Stdio::from(stderr))
+        .creation_flags(CREATE_NO_WINDOW)
+        .spawn()
+        .map_err(|e| format!("Failed to start prober xray at {xray_path:?}: {e}"))?;
+
+    // Give xray a moment to reject a bad config before we report success and let the
+    // frontend start probing ports that would never open.
+    std::thread::sleep(Duration::from_millis(400));
+
+    if let Ok(Some(status)) = child.try_wait() {
+        let log = std::fs::read_to_string(&stderr_path).unwrap_or_default();
+        let log = log.trim();
+
+        return Err(if log.is_empty() {
+            format!("prober xray exited immediately ({status}). The config was likely rejected.")
+        } else {
+            format!("prober xray exited immediately ({status}):\n{log}")
+        });
+    }
+
+    let mut guard = state.0.lock().map_err(|e| format!("Failed to lock prober state: {e}"))?;
+    *guard = Some(child);
+
+    Ok(())
+}
+
+/// One real latency sample for a single server: fetches google's `generate_204`
+/// through the shared probe SOCKS port authenticated as this server's `user`, which
+/// the core's `user` routing sends out that server's outbound. The core is already
+/// running - the live tunnel while connected, or the prober while idle (see
+/// `start_probe`) - so this spawns nothing; it is just an HTTP round-trip, and returns
+/// the elapsed milliseconds.
+#[tauri::command]
+async fn probe_ping(user: String) -> Result<u64, String> {
+    let addr = format!("127.0.0.1:{PROBE_SOCKS_PORT}");
+
+    wait_for_port(&addr, Duration::from_secs(5)).await?;
+
+    // Authenticate as this server's probe user (its content id): the core's `user`
+    // routing rule then dispatches the request out that server's own outbound. The id
+    // is 16 hex chars, so it needs no URL-encoding in the userinfo.
+    let proxy = reqwest::Proxy::all(format!("socks5://{user}:{PROBE_PASS}@{addr}"))
+        .map_err(|e| format!("Invalid proxy url: {e}"))?;
+
+    let client = reqwest::Client::builder()
+        .proxy(proxy)
+        .timeout(PROBE_TIMEOUT)
+        .build()
+        .map_err(|e| format!("Failed to build http client: {e}"))?;
+
     let start = Instant::now();
 
-    match tokio::time::timeout(Duration::from_secs(3), tokio::net::TcpStream::connect(&addr)).await {
-        Ok(Ok(_stream)) => Ok(start.elapsed().as_millis() as u64),
-        Ok(Err(e)) => Err(format!("connection refused: {e}")),
-        Err(_) => Err("i/o timeout".to_string()),
-    }
+    client
+        .get("https://www.google.com/generate_204")
+        .send()
+        .await
+        .map_err(|e| format!("Ping request failed: {e}"))?;
+
+    Ok(start.elapsed().as_millis() as u64)
+}
+
+/// Tears the prober down when a test finishes or is cancelled. Best-effort and safe
+/// to call when nothing is running.
+#[tauri::command]
+fn stop_probe(state: State<ProbeXray>) -> Result<(), String> {
+    stop_probe_inner(&state);
+
+    Ok(())
 }
 
 /// A subscription fetch: the body plus the provider's `Subscription-Userinfo`
@@ -705,6 +830,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .manage(XrayProcess(Mutex::new(None)))
+        .manage(ProbeXray(Mutex::new(None)))
         .setup(|_app| {
             // Reap any orphan xray from a previous crashed session before we start.
             kill_stray_xray();
@@ -715,7 +841,9 @@ pub fn run() {
             run_xray_windows,
             end_xray_windows,
             ping_xray_windows,
-            tcp_ping,
+            start_probe,
+            probe_ping,
+            stop_probe,
             fetch_subscription,
             xray_traffic,
             geo_files_status,
@@ -730,6 +858,7 @@ pub fn run() {
             // would leak an orphan app-xray.exe holding the TUN adapter and routes.
             if let tauri::RunEvent::Exit = event {
                 stop_xray(&app_handle.state::<XrayProcess>());
+                stop_probe_inner(&app_handle.state::<ProbeXray>());
             }
         });
 }

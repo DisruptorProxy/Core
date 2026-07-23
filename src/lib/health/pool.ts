@@ -7,6 +7,9 @@ type Probe = (config: ProxyConfig, signal: AbortSignal) => Promise<PingResult>;
 
 interface PoolCallbacks
 {
+    /** A probe is about to start for this id. Fires once per id, in dispatch order -
+     *  lets the UI mark the row "pinging" the moment its probe leaves the queue. */
+    onStart?: (id: string) => void;
     /** A probe finished (success or failure). Fires once per id, in completion order. */
     onResult: (id: string, result: PingResult) => void;
     /** Progress after each completion, for the progress bar. */
@@ -47,6 +50,8 @@ export const runPool = async (
 
             const index = next++;
             const config = configs[index];
+
+            callbacks.onStart?.(config.id);
 
             let result: PingResult;
 
