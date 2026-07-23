@@ -2,34 +2,42 @@ name: Release
 
 # Pushing a `v*` tag builds and signs the Windows installer once, then publishes it
 # to TWO places:
-#   1. A draft release on THIS repo (DisruptorProxy/Core, private) - an
-#      internal record, using the default GITHUB_TOKEN (which can only ever touch
-#      the repo the workflow runs in).
-#   2. A draft release on DisruptorProxy/Xray-Client (public) - what real users and the
-#      updater plugin actually see. tauri.conf.json's updater endpoint points at
-#      Client's releases/latest/download/latest.json, so THIS is the publish that
+#   1. A draft release on THIS repo (DisruptorProxy/Core, private) - an internal
+#      record, created by tauri-action using the default GITHUB_TOKEN (which can
+#      only ever touch the repo the workflow runs in).
+#   2. A draft release on DisruptorProxy/Xray-Client (public) - what real users and
+#      the updater plugin actually see. tauri.conf.json's updater endpoint points at
+#      Xray-Client/releases/latest/download/latest.json, so THIS is the publish that
 #      makes auto-update work; Core's release does not.
 #
-# Both releases are created as DRAFTS on purpose (matches the previous single-repo
-# setup) - review each one on GitHub and publish it manually. A draft is invisible
-# to the updater and to anonymous downloads, so a bad build never reaches anyone
-# until you say so.
+# Release notes are generated from Conventional Commits by git-cliff (cliff.toml) and
+# spliced into BOTH release bodies AND the updater's latest.json "notes". Checkout uses
+# fetch-depth: 0 so git-cliff can see full history + tags.
+#
+# The updater manifest (latest.json) is BUILT HERE, not copied from Core: tauri-action
+# only attaches its own latest.json to the Core release, and the download URL inside it
+# points at Core (private) - useless to end users. The "Stage public artifacts" step
+# below writes a fresh latest.json whose URL points at the Xray-Client asset and whose
+# signature is read from the installer's .sig file. Artifacts are renamed to space-free
+# names first, because GitHub mangles spaces in asset names and that would break the URL
+# the updater fetches.
+#
+# Both releases are created as DRAFTS on purpose - review each one on GitHub and publish
+# it manually. A draft is invisible to the updater and to anonymous downloads
+# (`releases/latest` only resolves to a PUBLISHED release), so a bad build never reaches
+# anyone until you say so.
 #
 # Required secrets (Settings > Secrets and variables > Actions, on Core):
-#   TAURI_SIGNING_PRIVATE_KEY           the updater signing key (already in use)
-#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password (already in use)
-#   CLIENT_REPO_TOKEN                   a fine-grained PAT scoped to ONLY
-#                                        DisruptorProxy/Xray-Client, with Contents:
-#                                        Read and write - nothing else. The
-#                                        default GITHUB_TOKEN cannot publish to a
-#                                        different repo than the one running the
-#                                        workflow, so this is the only way step 2
-#                                        can reach Xray-Client at all.
-#
-# NOTE: the artifact glob below is Tauri v2's documented bundle-output convention,
-# not something verified against a real build in this environment - check the
-# first real run's logs confirm every expected file (installer + .sig +
-# latest.json) actually got matched and uploaded to both releases.
+#   TAURI_SIGNING_PRIVATE_KEY           the updater signing key (base64 of the .key
+#                                        file, exactly as `tauri signer generate` wrote
+#                                        it - do not reformat).
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password.
+#   CLIENT_REPO_TOKEN                   a token that can write to Xray-Client (a
+#                                        fine-grained PAT scoped to only Xray-Client
+#                                        with Contents: Read and write, or a classic PAT
+#                                        with the `repo` scope). The default GITHUB_TOKEN
+#                                        cannot publish to a different repo than the one
+#                                        running the workflow.
 
 on:
     push:
@@ -44,6 +52,8 @@ jobs:
         runs-on: windows-latest
         steps:
             -   uses: actions/checkout@v7
+                with:
+                    fetch-depth: 0
 
             -   uses: actions/setup-node@v6
                 with:
@@ -54,7 +64,31 @@ jobs:
 
             -   run: npm ci
 
-            # Builds + signs once, and publishes the private Core release.
+            # Turn Conventional Commits for this tag into release notes, reused by both
+            # release bodies (below) and the updater's latest.json "notes".
+            -   name: Generate release notes
+                id: notes
+                shell: pwsh
+                run: |
+                    $ErrorActionPreference = 'Stop'
+                    npx --yes git-cliff@2 --config cliff.toml --current --output release-notes.md
+                    $body = ''
+                    if (Test-Path release-notes.md) { $body = (Get-Content -Raw release-notes.md).Trim() }
+                    if (-not $body)
+                    {
+                        # No conventional commits in this range - don't ship an empty body.
+                        $body = "Release ${{ github.ref_name }}"
+                        Set-Content -Path release-notes.md -Value $body -Encoding utf8
+                    }
+                    # Multiline step output for tauri-action's releaseBody (string input).
+                    $delim = "NOTES_" + [guid]::NewGuid().ToString('N')
+                    "body<<$delim" | Add-Content -Path $env:GITHUB_OUTPUT
+                    $body          | Add-Content -Path $env:GITHUB_OUTPUT
+                    $delim         | Add-Content -Path $env:GITHUB_OUTPUT
+                    Write-Host "--- release notes ---"
+                    Write-Host $body
+
+            # Builds + signs once, and publishes the private Core draft release.
             -   uses: tauri-apps/tauri-action@v0
                 env:
                     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,22 +97,70 @@ jobs:
                 with:
                     tagName: ${{ github.ref_name }}
                     releaseName: 'The Disruptor Proxy ${{ github.ref_name }}'
+                    releaseBody: ${{ steps.notes.outputs.body }}
                     releaseDraft: true
                     prerelease: false
 
-            # Re-publishes the SAME signed artifacts to the public Xray-Client repo - the
-            # release the updater plugin and real users actually fetch from.
+            # Copies the installer + its .sig under predictable, space-free names into
+            # ./release-assets, and writes a latest.json whose download URL points at
+            # the Xray-Client (public) asset - the manifest the updater actually reads.
+            -   name: Stage public artifacts and build latest.json
+                shell: pwsh
+                run: |
+                    $ErrorActionPreference = 'Stop'
+                    $tag     = '${{ github.ref_name }}'
+                    $version = $tag.TrimStart('v')
+                    $repo    = 'DisruptorProxy/Xray-Client'
+                    $bundle  = 'src-tauri/target/release/bundle'
+
+                    # NSIS installer is the Windows updater target.
+                    $setup = Get-ChildItem "$bundle/nsis" | Where-Object { $_.Name -like '*-setup.exe' } | Select-Object -First 1
+                    $sig   = Get-ChildItem "$bundle/nsis" | Where-Object { $_.Name -like '*-setup.exe.sig' } | Select-Object -First 1
+                    if (-not $setup) { throw "NSIS installer not found under $bundle/nsis" }
+                    if (-not $sig)   { throw "Updater signature (.sig) not found - is createUpdaterArtifacts enabled and signing configured?" }
+
+                    $out = 'release-assets'
+                    New-Item -ItemType Directory -Force -Path $out | Out-Null
+
+                    # Space-free names so the latest.json URL is predictable (GitHub
+                    # mangles spaces in asset names, which would break the updater URL).
+                    $exeName = "Disruptor-Proxy_${version}_x64-setup.exe"
+                    Copy-Item $setup.FullName (Join-Path $out $exeName)
+                    Copy-Item $sig.FullName   (Join-Path $out "$exeName.sig")
+
+                    # Carry the MSI too, for direct downloads (not referenced by the updater).
+                    $msi = Get-ChildItem "$bundle/msi" | Where-Object { $_.Name -like '*.msi' } | Select-Object -First 1
+                    if ($msi) { Copy-Item $msi.FullName (Join-Path $out "Disruptor-Proxy_${version}_x64.msi") }
+
+                    $notes = if (Test-Path 'release-notes.md') { (Get-Content -Raw 'release-notes.md').Trim() } else { "The Disruptor Proxy $version" }
+                    $signature = (Get-Content -Raw $sig.FullName).Trim()
+                    $manifest = [ordered]@{
+                        version   = $version
+                        notes     = $notes
+                        pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+                        platforms = [ordered]@{
+                            'windows-x86_64' = [ordered]@{
+                                signature = $signature
+                                url       = "https://github.com/$repo/releases/download/$tag/$exeName"
+                            }
+                        }
+                    }
+                    $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path (Join-Path $out 'latest.json') -Encoding utf8
+
+                    Write-Host "Staged for $repo @ ${tag}:"
+                    Get-ChildItem $out | ForEach-Object { Write-Host "  $($_.Name)" }
+
+            # Publishes the public Xray-Client draft release - installer(s), the .sig,
+            # the latest.json the updater reads, and the generated release notes.
             -   uses: softprops/action-gh-release@v2
                 with:
                     repository: DisruptorProxy/Xray-Client
                     token: ${{ secrets.CLIENT_REPO_TOKEN }}
                     tag_name: ${{ github.ref_name }}
                     name: 'The Disruptor Proxy ${{ github.ref_name }}'
+                    body_path: release-notes.md
                     draft: true
                     prerelease: false
+                    fail_on_unmatched_files: true
                     files: |
-                        src-tauri/target/release/bundle/**/*.msi
-                        src-tauri/target/release/bundle/**/*.msi.sig
-                        src-tauri/target/release/bundle/**/*.exe
-                        src-tauri/target/release/bundle/**/*.exe.sig
-                        src-tauri/target/release/bundle/**/*.json
+                        release-assets/*

@@ -15,7 +15,8 @@
         "android": "npm run tauri android dev",
         "android-aab": "npm run tauri android build -- --aab",
         "android-apk": "npm run tauri android build -- --apk",
-        "release": "node scripts/release.mjs"
+        "release": "node scripts/release.mjs",
+        "prepare": "husky"
     },
     "dependencies": {
         "@fontsource-variable/vazirmatn": "^5.2.8",
@@ -40,6 +41,7 @@
         "@tauri-apps/cli": "^2.11.4",
         "eslint": "^10.7.0",
         "globals": "^17.7.0",
+        "husky": "^9.1.7",
         "jiti": "^2.7.0",
         "typescript": "^5.6.2",
         "typescript-eslint": "^8.63.0",

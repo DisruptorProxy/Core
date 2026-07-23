@@ -4,16 +4,21 @@ use std::process::Command;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+use tauri::path::BaseDirectory;
 use tauri::Emitter;
 use tauri::Manager;
 use tauri::State;
-use tauri::path::BaseDirectory;
 
-use windows::Win32::Foundation::{CloseHandle, HANDLE};
-use windows::Win32::System::Threading::{GetExitCodeProcess, GetProcessId, WaitForSingleObject, INFINITE};
-use windows::Win32::UI::Shell::{SEE_MASK_FLAG_NO_UI, SEE_MASK_NOCLOSEPROCESS, SEE_MASK_NO_CONSOLE, SHELLEXECUTEINFOW, ShellExecuteExW};
-use windows::Win32::UI::WindowsAndMessaging::SW_HIDE;
 use windows::core::PCWSTR;
+use windows::Win32::Foundation::{CloseHandle, HANDLE};
+use windows::Win32::System::Threading::{
+    GetExitCodeProcess, GetProcessId, WaitForSingleObject, INFINITE,
+};
+use windows::Win32::UI::Shell::{
+    ShellExecuteExW, SEE_MASK_FLAG_NO_UI, SEE_MASK_NOCLOSEPROCESS, SEE_MASK_NO_CONSOLE,
+    SHELLEXECUTEINFOW,
+};
+use windows::Win32::UI::WindowsAndMessaging::SW_HIDE;
 
 /// Runs a child without flashing a console window - app-xray.exe is a console app, and
 /// the UI should not blink a black window on every connect, ping, or test.
@@ -22,8 +27,10 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 /// Geo database sources. Xray resolves `geoip:`/`geosite:` routing rules against
 /// these `.dat` files; they ship out-of-band (too large and too fast-moving to
 /// bundle) and are downloaded next to app-xray.exe on demand.
-const GEOIP_URL: &str = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat";
-const GEOSITE_URL: &str = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat";
+const GEOIP_URL: &str =
+    "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat";
+const GEOSITE_URL: &str =
+    "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat";
 
 /// GetExitCodeProcess's value for "this process has not exited yet".
 const STILL_ACTIVE: u32 = 259;
@@ -102,7 +109,10 @@ fn quote_arg(value: &str) -> String {
 }
 
 fn build_command_line(args: &[&str]) -> String {
-    args.iter().map(|arg| quote_arg(arg)).collect::<Vec<_>>().join(" ")
+    args.iter()
+        .map(|arg| quote_arg(arg))
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Quotes a value as a PowerShell single-quoted string literal.
@@ -112,7 +122,11 @@ fn ps_literal(value: &str) -> String {
 
 /// Launches `exe` elevated (UAC "runas" prompt) via `ShellExecuteExW`, without
 /// spawning a visible console window.
-fn spawn_elevated(exe: &Path, args: &[&str], working_dir: &Path) -> windows::core::Result<ElevatedProcess> {
+fn spawn_elevated(
+    exe: &Path,
+    args: &[&str],
+    working_dir: &Path,
+) -> windows::core::Result<ElevatedProcess> {
     let verb = to_wide("runas");
     let file = to_wide(&exe.to_string_lossy());
     let params = to_wide(&build_command_line(args));
@@ -131,7 +145,9 @@ fn spawn_elevated(exe: &Path, args: &[&str], working_dir: &Path) -> windows::cor
 
     unsafe { ShellExecuteExW(&mut info) }?;
 
-    Ok(ElevatedProcess { handle: info.hProcess })
+    Ok(ElevatedProcess {
+        handle: info.hProcess,
+    })
 }
 
 /// Files a single xray run uses in place of real stdio pipes and to coordinate a
@@ -157,7 +173,12 @@ impl RunArtifacts {
     }
 
     fn reset(&self) {
-        for path in [&self.stdout_log, &self.stderr_log, &self.pid_file, &self.stop_file] {
+        for path in [
+            &self.stdout_log,
+            &self.stderr_log,
+            &self.pid_file,
+            &self.stop_file,
+        ] {
             let _ = std::fs::remove_file(path);
         }
     }
@@ -168,7 +189,12 @@ impl RunArtifacts {
 /// `artifacts.stop_file` so this app can stop xray later without a second UAC
 /// prompt: the script is already elevated, so it can kill its own child directly.
 /// When xray exits on its own, the script re-exits with xray's own exit code.
-fn build_runner_script(xray_path: &Path, xray_args: &str, working_dir: &Path, artifacts: &RunArtifacts) -> String {
+fn build_runner_script(
+    xray_path: &Path,
+    xray_args: &str,
+    working_dir: &Path,
+    artifacts: &RunArtifacts,
+) -> String {
     [
         "$ErrorActionPreference = 'Stop'".to_string(),
         format!(
@@ -231,7 +257,11 @@ fn is_xray_running() -> bool {
         .args(["/FI", "IMAGENAME eq app-xray.exe", "/NH"])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map(|out| String::from_utf8_lossy(&out.stdout).to_lowercase().contains("app-xray.exe"))
+        .map(|out| {
+            String::from_utf8_lossy(&out.stdout)
+                .to_lowercase()
+                .contains("app-xray.exe")
+        })
         .unwrap_or(false)
 }
 
@@ -245,8 +275,11 @@ fn kill_stray_xray() {
         return;
     }
 
-    if let Ok(taskkill) = spawn_elevated(Path::new("taskkill.exe"), &["/F", "/IM", "app-xray.exe"], Path::new("."))
-    {
+    if let Ok(taskkill) = spawn_elevated(
+        Path::new("taskkill.exe"),
+        &["/F", "/IM", "app-xray.exe"],
+        Path::new("."),
+    ) {
         taskkill.wait();
     }
 }
@@ -284,19 +317,26 @@ fn create_xray_config(app: tauri::AppHandle, config: serde_json::Value) -> Resul
         .app_data_dir()
         .map_err(|e| format!("Failed to resolve app data dir: {e}"))?;
 
-    std::fs::create_dir_all(&app_data_dir).map_err(|e| format!("Failed to create app data dir: {e}"))?;
+    std::fs::create_dir_all(&app_data_dir)
+        .map_err(|e| format!("Failed to create app data dir: {e}"))?;
 
     let config_path = app_data_dir.join("config.json");
 
-    let contents = serde_json::to_string_pretty(&config).map_err(|e| format!("Failed to serialize config: {e}"))?;
+    let contents = serde_json::to_string_pretty(&config)
+        .map_err(|e| format!("Failed to serialize config: {e}"))?;
 
-    std::fs::write(&config_path, contents).map_err(|e| format!("Failed to write config file: {e}"))?;
+    std::fs::write(&config_path, contents)
+        .map_err(|e| format!("Failed to write config file: {e}"))?;
 
     Ok(config_path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
-fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_path: &str) -> Result<String, String> {
+fn run_xray_windows(
+    app: tauri::AppHandle,
+    state: State<XrayProcess>,
+    config_path: &str,
+) -> Result<String, String> {
     let resource_dir = app
         .path()
         .resolve("assets", BaseDirectory::Resource)
@@ -307,11 +347,15 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
         .app_data_dir()
         .map_err(|e| format!("Failed to resolve app data dir: {e}"))?;
 
-    std::fs::create_dir_all(&app_data_dir).map_err(|e| format!("Failed to create app data dir: {e}"))?;
+    std::fs::create_dir_all(&app_data_dir)
+        .map_err(|e| format!("Failed to create app data dir: {e}"))?;
 
     let xray_path = resource_dir.join("app-xray.exe");
 
-    let mut process = state.0.lock().map_err(|e| format!("Failed to lock xray process state: {e}"))?;
+    let mut process = state
+        .0
+        .lock()
+        .map_err(|e| format!("Failed to lock xray process state: {e}"))?;
 
     reap_if_exited(&mut process);
 
@@ -325,7 +369,8 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
     let xray_args = build_command_line(&["run", "-c", config_path]);
     let script = build_runner_script(&xray_path, &xray_args, &resource_dir, &artifacts);
 
-    std::fs::write(&artifacts.script, script).map_err(|e| format!("Failed to write xray runner script: {e}"))?;
+    std::fs::write(&artifacts.script, script)
+        .map_err(|e| format!("Failed to write xray runner script: {e}"))?;
 
     let script_path = artifacts.script.to_string_lossy().into_owned();
 
@@ -337,7 +382,16 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
     // the wrapper captures xray's real stdout/stderr to files itself.
     let runner = spawn_elevated(
         Path::new("powershell.exe"),
-        &["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", &script_path],
+        &[
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-WindowStyle",
+            "Hidden",
+            "-File",
+            &script_path,
+        ],
         &resource_dir,
     )
     .map_err(|e| format!("Failed to start xray elevated: {e}"))?;
@@ -347,7 +401,10 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
     let mut pid = runner.id();
 
     for _ in 0..20 {
-        if let Some(real_pid) = std::fs::read_to_string(&artifacts.pid_file).ok().and_then(|s| s.trim().parse().ok()) {
+        if let Some(real_pid) = std::fs::read_to_string(&artifacts.pid_file)
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+        {
             pid = real_pid;
             break;
         }
@@ -365,15 +422,18 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
         if let Some(exit_code) = running.runner.try_wait() {
             let artifacts = process.take().unwrap().artifacts;
 
-            let output = [("stdout", &artifacts.stdout_log), ("stderr", &artifacts.stderr_log)]
-                .into_iter()
-                .filter_map(|(label, path)| {
-                    let text = std::fs::read_to_string(path).ok()?;
-                    let text = text.trim();
-                    (!text.is_empty()).then(|| format!("{label}:\n{text}"))
-                })
-                .collect::<Vec<_>>()
-                .join("\n\n");
+            let output = [
+                ("stdout", &artifacts.stdout_log),
+                ("stderr", &artifacts.stderr_log),
+            ]
+            .into_iter()
+            .filter_map(|(label, path)| {
+                let text = std::fs::read_to_string(path).ok()?;
+                let text = text.trim();
+                (!text.is_empty()).then(|| format!("{label}:\n{text}"))
+            })
+            .collect::<Vec<_>>()
+            .join("\n\n");
 
             return Err(if output.is_empty() {
                 format!("xray exited immediately (exit code {exit_code}). The config was likely rejected.")
@@ -388,7 +448,10 @@ fn run_xray_windows(app: tauri::AppHandle, state: State<XrayProcess>, config_pat
 
 #[tauri::command]
 fn end_xray_windows(state: State<XrayProcess>) -> Result<String, String> {
-    let mut process = state.0.lock().map_err(|e| format!("Failed to lock xray process state: {e}"))?;
+    let mut process = state
+        .0
+        .lock()
+        .map_err(|e| format!("Failed to lock xray process state: {e}"))?;
 
     reap_if_exited(&mut process);
 
@@ -398,7 +461,8 @@ fn end_xray_windows(state: State<XrayProcess>) -> Result<String, String> {
             // (see `run_xray_windows`), so xray can't be killed directly from here
             // without a second UAC prompt. Instead, signal the wrapper - already
             // elevated - to stop its own child, then wait for it to do so.
-            std::fs::write(&running.artifacts.stop_file, b"stop").map_err(|e| format!("Failed to signal xray to stop: {e}"))?;
+            std::fs::write(&running.artifacts.stop_file, b"stop")
+                .map_err(|e| format!("Failed to signal xray to stop: {e}"))?;
             running.runner.wait();
             Ok("Stopped xray".to_string())
         }
@@ -431,17 +495,19 @@ async fn ping_xray_windows(app: tauri::AppHandle, config_path: String) -> Result
 
     let xray_path = resource_dir.join("app-xray.exe");
 
-    let config_contents =
-        std::fs::read_to_string(&config_path).map_err(|e| format!("Failed to read config at {config_path}: {e}"))?;
+    let config_contents = std::fs::read_to_string(&config_path)
+        .map_err(|e| format!("Failed to read config at {config_path}: {e}"))?;
 
-    let config: serde_json::Value =
-        serde_json::from_str(&config_contents).map_err(|e| format!("Failed to parse config: {e}"))?;
+    let config: serde_json::Value = serde_json::from_str(&config_contents)
+        .map_err(|e| format!("Failed to parse config: {e}"))?;
 
     let inbound = config["inbounds"]
         .get(0)
         .ok_or_else(|| "Config has no inbounds".to_string())?;
 
-    let port = inbound["port"].as_u64().ok_or_else(|| "Inbound has no port".to_string())?;
+    let port = inbound["port"]
+        .as_u64()
+        .ok_or_else(|| "Inbound has no port".to_string())?;
 
     let scheme = match inbound["protocol"].as_str().unwrap_or("socks") {
         "http" => "http",
@@ -464,7 +530,8 @@ async fn ping_xray_windows(app: tauri::AppHandle, config_path: String) -> Result
     let ping_result: Result<u64, String> = async {
         wait_for_port(&addr, Duration::from_secs(5)).await?;
 
-        let proxy = reqwest::Proxy::all(format!("{scheme}://{addr}")).map_err(|e| format!("Invalid proxy url: {e}"))?;
+        let proxy = reqwest::Proxy::all(format!("{scheme}://{addr}"))
+            .map_err(|e| format!("Invalid proxy url: {e}"))?;
 
         let client = reqwest::Client::builder()
             .proxy(proxy)
@@ -679,10 +746,13 @@ async fn xray_traffic(app: tauri::AppHandle) -> Result<Traffic, String> {
         return Err("xray stats API is not reachable".to_string());
     }
 
-    let parsed: serde_json::Value =
-        serde_json::from_slice(&output.stdout).map_err(|e| format!("Failed to parse stats: {e}"))?;
+    let parsed: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .map_err(|e| format!("Failed to parse stats: {e}"))?;
 
-    let mut traffic = Traffic { uplink: 0, downlink: 0 };
+    let mut traffic = Traffic {
+        uplink: 0,
+        downlink: 0,
+    };
 
     if let Some(stats) = parsed["stat"].as_array() {
         for entry in stats {
@@ -765,7 +835,10 @@ async fn download_file(
         .map_err(|_| format!("Could not reach {url}"))?;
 
     if !response.status().is_success() {
-        return Err(format!("Download failed: the server returned {}", response.status()));
+        return Err(format!(
+            "Download failed: the server returned {}",
+            response.status()
+        ));
     }
 
     let total = response.content_length().unwrap_or(0);
@@ -794,7 +867,11 @@ async fn download_file(
             last_emit = now;
             let _ = app.emit(
                 "geo-progress",
-                GeoProgress { file: name.into(), received: bytes.len() as u64, total },
+                GeoProgress {
+                    file: name.into(),
+                    received: bytes.len() as u64,
+                    total,
+                },
             );
         }
     }
@@ -818,8 +895,22 @@ async fn update_geo_files(app: tauri::AppHandle) -> Result<GeoStatus, String> {
         .build()
         .map_err(|e| format!("Failed to build http client: {e}"))?;
 
-    download_file(&app, &client, GEOIP_URL, &dir.join("geoip.dat"), "geoip.dat").await?;
-    download_file(&app, &client, GEOSITE_URL, &dir.join("geosite.dat"), "geosite.dat").await?;
+    download_file(
+        &app,
+        &client,
+        GEOIP_URL,
+        &dir.join("geoip.dat"),
+        "geoip.dat",
+    )
+    .await?;
+    download_file(
+        &app,
+        &client,
+        GEOSITE_URL,
+        &dir.join("geosite.dat"),
+        "geosite.dat",
+    )
+    .await?;
 
     Ok(geo_status_of(&dir))
 }
