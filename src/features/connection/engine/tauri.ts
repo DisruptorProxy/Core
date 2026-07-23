@@ -92,9 +92,14 @@ export class TauriConnectionService implements ConnectionService
         {
             await invoke('end_xray_windows');
         }
-        catch
+        catch (error)
         {
-            // Already stopped, or never started - the desired end state is the same.
+            // The engine treats "already stopped" as success, so a rejection means the
+            // core is verifiably STILL running and traffic is still tunnelled. Showing
+            // a clean "Not connected" here would be a lie the user would act on.
+            this.setStatus({ phase: 'error', config: current.config, since: 0, error: messageOf(error) });
+
+            return;
         }
 
         this.setStatus({ phase: 'idle', config: null, since: 0 });

@@ -11,9 +11,7 @@ use tauri::State;
 
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{CloseHandle, HANDLE};
-use windows::Win32::System::Threading::{
-    GetExitCodeProcess, GetProcessId, WaitForSingleObject, INFINITE,
-};
+use windows::Win32::System::Threading::{GetExitCodeProcess, GetProcessId, WaitForSingleObject};
 use windows::Win32::UI::Shell::{
     ShellExecuteExW, SEE_MASK_FLAG_NO_UI, SEE_MASK_NOCLOSEPROCESS, SEE_MASK_NO_CONSOLE,
     SHELLEXECUTEINFOW,
@@ -34,6 +32,11 @@ const GEOSITE_URL: &str =
 
 /// GetExitCodeProcess's value for "this process has not exited yet".
 const STILL_ACTIVE: u32 = 259;
+
+/// How long a graceful stop is given before the core is force-terminated. Generous
+/// enough for the wrapper's 150ms poll to notice the stop file and kill its child,
+/// short enough that a wedged wrapper never leaves the user staring at "Disconnecting".
+const STOP_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// The fixed probe-account password (the frontend's `PROBE_PASS`). The probe inbound
 /// is loopback-only, so the value is irrelevant beyond enabling SOCKS user auth.
@@ -76,13 +79,17 @@ impl ElevatedProcess {
         (exit_code != STILL_ACTIVE).then_some(exit_code)
     }
 
-    /// Blocks until the process exits and returns its exit code.
-    fn wait(&self) -> Option<u32> {
+    /// Waits up to `timeout` for the process to exit; true if it did.
+    ///
+    /// Every stop path is bounded by this. An unbounded wait on a wrapper that never
+    /// exits would hang disconnect forever - and, on shutdown, the whole app - with no
+    /// way out for the user. A bounded wait always yields to the force-kill fallback.
+    fn wait_timeout(&self, timeout: Duration) -> bool {
         unsafe {
-            let _ = WaitForSingleObject(self.handle, INFINITE);
+            let _ = WaitForSingleObject(self.handle, timeout.as_millis() as u32);
         }
 
-        self.try_wait()
+        self.try_wait().is_some()
     }
 }
 
@@ -272,14 +279,16 @@ fn is_xray_running() -> bool {
         .unwrap_or(false)
 }
 
-/// Kills any app-xray.exe left over from a previous session that crashed before
-/// `end_xray_windows` ran. Best-effort: the app owns the only xray it should ever
-/// spawn, so a lingering one is always an orphan. The app itself no longer runs
-/// elevated, so a stray elevated (TUN) instance needs its own "runas" elevation to
-/// reap; checking with `tasklist` first keeps a normal startup free of UAC prompts.
-fn kill_stray_xray() {
+/// Force-terminates every app-xray.exe and reports whether none remain.
+///
+/// The app owns the only core it should ever spawn, so any survivor is an orphan - from
+/// a crashed session, or a wrapper that died without taking its child. This app runs
+/// unelevated while the core runs elevated (for the TUN adapter), so killing it needs
+/// its own "runas", hence a UAC prompt. `is_xray_running` guards every call, so the
+/// normal path - where the graceful stop worked - never prompts.
+fn force_kill_xray() -> bool {
     if !is_xray_running() {
-        return;
+        return true;
     }
 
     if let Ok(taskkill) = spawn_elevated(
@@ -287,8 +296,10 @@ fn kill_stray_xray() {
         &["/F", "/IM", "app-xray.exe"],
         Path::new("."),
     ) {
-        taskkill.wait();
+        taskkill.wait_timeout(STOP_TIMEOUT);
     }
+
+    !is_xray_running()
 }
 
 fn reap_if_exited(process: &mut Option<RunningXray>) {
@@ -299,22 +310,31 @@ fn reap_if_exited(process: &mut Option<RunningXray>) {
     }
 }
 
-/// Stops the running xray without a fresh UAC prompt by signalling its already
-/// elevated wrapper to kill its child (the same stop-file path `end_xray_windows`
-/// uses), then waiting for the wrapper to exit. Best-effort and a no-op when
-/// nothing is running - called on app shutdown so app-xray.exe never outlives
-/// The Disruptor Proxy and leaves the TUN adapter and system routes in place.
+/// Stops the running xray on app shutdown: signal the already-elevated wrapper (no new
+/// UAC prompt), wait briefly, and force-kill anything that survives. The core must never
+/// outlive The Disruptor Proxy holding the TUN adapter and the system route table - that
+/// would leave the machine tunnelling through a proxy no running app owns any more.
 fn stop_xray(state: &XrayProcess) {
-    let Ok(mut process) = state.0.lock() else {
-        return;
+    // The lock is released before any waiting: holding it across a multi-second stop
+    // would block every other command that touches this state.
+    let running = {
+        let Ok(mut process) = state.0.lock() else {
+            return;
+        };
+
+        reap_if_exited(&mut process);
+        process.take()
     };
 
-    reap_if_exited(&mut process);
-
-    if let Some(running) = process.take() {
+    if let Some(running) = running {
         let _ = std::fs::write(&running.artifacts.stop_file, b"stop");
-        running.runner.wait();
+
+        if running.runner.wait_timeout(STOP_TIMEOUT) {
+            return;
+        }
     }
+
+    force_kill_xray();
 }
 
 #[tauri::command]
@@ -374,6 +394,14 @@ fn run_xray_windows(
 
     if process.is_some() {
         return Err("xray is already running".to_string());
+    }
+
+    // We track no core, but one can still be alive: a session that crashed, or a stop
+    // whose wrapper died without taking its child. It holds the ports and the TUN
+    // adapter, so the new core would fail to bind - reap it first. Guarded by
+    // `is_xray_running`, so an ordinary connect never raises a second UAC prompt.
+    if is_xray_running() {
+        force_kill_xray();
     }
 
     let artifacts = RunArtifacts::new(&app_data_dir);
@@ -465,28 +493,46 @@ fn run_xray_windows(
     Ok(format!("Started xray, PID: {pid}"))
 }
 
+/// Disconnects, and guarantees the end state the user actually asked for: no
+/// app-xray.exe left running.
+///
+/// The graceful path signals the already-elevated wrapper to kill its child (the runner
+/// handle is the wrapper, not xray, so this app cannot terminate the core directly
+/// without its own elevation) and waits briefly. Anything that survives is force-killed.
+///
+/// Two deliberate choices here:
+///  - It is IDEMPOTENT. "Nothing was running" is success, not an error - disconnecting
+///    an already-stopped tunnel is the desired state, and reporting failure only made
+///    the UI show a scary error for a no-op.
+///  - It verifies rather than assumes. A core can outlive the wrapper that owned it, or
+///    survive a session this app never tracked; reporting "disconnected" while the
+///    tunnel is still up would leave the user's traffic proxied without them knowing.
 #[tauri::command]
 fn end_xray_windows(state: State<XrayProcess>) -> Result<String, String> {
-    let mut process = state
-        .0
-        .lock()
-        .map_err(|e| format!("Failed to lock xray process state: {e}"))?;
+    let running = {
+        let mut process = state
+            .0
+            .lock()
+            .map_err(|e| format!("Failed to lock xray process state: {e}"))?;
 
-    reap_if_exited(&mut process);
+        reap_if_exited(&mut process);
+        process.take()
+    };
 
-    match process.take() {
-        Some(running) => {
-            // The runner handle is the elevated PowerShell wrapper, not xray itself
-            // (see `run_xray_windows`), so xray can't be killed directly from here
-            // without a second UAC prompt. Instead, signal the wrapper - already
-            // elevated - to stop its own child, then wait for it to do so.
-            std::fs::write(&running.artifacts.stop_file, b"stop")
-                .map_err(|e| format!("Failed to signal xray to stop: {e}"))?;
-            running.runner.wait();
-            Ok("Stopped xray".to_string())
-        }
-        None => Err("xray is not running".to_string()),
+    let mut stopped = true;
+
+    if let Some(running) = running {
+        let _ = std::fs::write(&running.artifacts.stop_file, b"stop");
+        stopped = running.runner.wait_timeout(STOP_TIMEOUT);
     }
+
+    // Whether the wrapper obliged or there was nothing tracked at all, the core must be
+    // gone before this reports success.
+    if (!stopped || is_xray_running()) && !force_kill_xray() {
+        return Err("Could not stop the proxy core - it may still be running.".to_string());
+    }
+
+    Ok("Stopped xray".to_string())
 }
 
 async fn wait_for_port(addr: &str, timeout: Duration) -> Result<(), String> {
@@ -997,7 +1043,7 @@ pub fn run() {
         .manage(ProbeXray(Mutex::new(None)))
         .setup(|_app| {
             // Reap any orphan xray from a previous crashed session before we start.
-            kill_stray_xray();
+            force_kill_xray();
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
