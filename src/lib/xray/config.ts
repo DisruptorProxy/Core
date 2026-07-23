@@ -465,7 +465,9 @@ export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], allConfig
     const probe = buildProbeLayer(allConfigs);
 
     return {
-        log: { loglevel: 'debug' },
+        // 'warning' keeps the core quiet in production; bump to 'debug' when
+        // diagnosing a connection the config builder isn't obviously at fault for.
+        log: { loglevel: 'warning' },
         dns: { servers: ['1.1.1.1', '8.8.8.8'], queryStrategy: 'UseIPv4' },
         stats: STATS,
         api: API,

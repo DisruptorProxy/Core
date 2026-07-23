@@ -4,7 +4,10 @@ import { render } from 'azerothjs';
 
 import Shell from './app/shell.component.azeroth';
 
-if (import.meta.env.VITE_NODE_ENV === 'production')
+// `import.meta.env.PROD` is Vite's built-in, true only in a production build
+// (`vite build`) and false under `npm run dev` - unlike a custom env var it can't be
+// left mis-set, so the input-blocking below reliably fires in release, never in dev.
+if (import.meta.env.PROD)
 {
     document.addEventListener('keydown', (event) =>
     {

@@ -26,7 +26,8 @@
         ],
         "security":
         {
-            "csp": null,
+            "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+            "devCsp": null,
             "capabilities":
             [
                 {
@@ -42,7 +43,6 @@
                         "core:window:allow-start-dragging",
                         "core:window:allow-minimize",
                         "core:window:allow-close",
-                        "core:window:allow-hide",
                         "core:window:allow-show",
 
                         "core:window:allow-set-size",
