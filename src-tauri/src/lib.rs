@@ -47,6 +47,10 @@ const PROBE_PASS: &str = "probe";
 /// A slow-but-usable server abroad can take several seconds on a first request, so
 /// this is generous - a probe that exceeds it is a failure, not a latency sample.
 const PROBE_TIMEOUT: Duration = Duration::from_secs(15);
+/// How long a raw TCP reachability probe waits for the handshake before giving up.
+/// Shorter than `PROBE_TIMEOUT`: a bare connect either answers quickly or the host is
+/// unreachable - there is no slow-but-usable middle the way a full proxied request has.
+const TCP_PING_TIMEOUT: Duration = Duration::from_secs(6);
 
 /// A process started elevated via `ShellExecuteExW`'s "runas" verb.
 ///
@@ -568,7 +572,11 @@ async fn ping_xray_windows(app: tauri::AppHandle, config_path: String) -> Result
 /// rejects the config, which is surfaced here (with the core's stderr) rather than
 /// left to fail one opaque probe at a time.
 #[tauri::command]
-fn start_probe(app: tauri::AppHandle, state: State<ProbeXray>, config: serde_json::Value) -> Result<(), String> {
+fn start_probe(
+    app: tauri::AppHandle,
+    state: State<ProbeXray>,
+    config: serde_json::Value,
+) -> Result<(), String> {
     let resource_dir = resource_assets_dir(&app)?;
 
     let app_data_dir = app
@@ -576,19 +584,23 @@ fn start_probe(app: tauri::AppHandle, state: State<ProbeXray>, config: serde_jso
         .app_data_dir()
         .map_err(|e| format!("Failed to resolve app data dir: {e}"))?;
 
-    std::fs::create_dir_all(&app_data_dir).map_err(|e| format!("Failed to create app data dir: {e}"))?;
+    std::fs::create_dir_all(&app_data_dir)
+        .map_err(|e| format!("Failed to create app data dir: {e}"))?;
 
     let xray_path = resource_dir.join("app-xray.exe");
     let config_path = app_data_dir.join("probe.json");
     let stderr_path = app_data_dir.join("probe-stderr.log");
 
-    let contents = serde_json::to_string_pretty(&config).map_err(|e| format!("Failed to serialize probe config: {e}"))?;
-    std::fs::write(&config_path, contents).map_err(|e| format!("Failed to write probe config: {e}"))?;
+    let contents = serde_json::to_string_pretty(&config)
+        .map_err(|e| format!("Failed to serialize probe config: {e}"))?;
+    std::fs::write(&config_path, contents)
+        .map_err(|e| format!("Failed to write probe config: {e}"))?;
 
     // Replace any prober left from an earlier test run before starting a new one.
     stop_probe_inner(&state);
 
-    let stderr = std::fs::File::create(&stderr_path).map_err(|e| format!("Failed to create probe log: {e}"))?;
+    let stderr = std::fs::File::create(&stderr_path)
+        .map_err(|e| format!("Failed to create probe log: {e}"))?;
 
     let mut child = Command::new(&xray_path)
         .arg("run")
@@ -615,7 +627,10 @@ fn start_probe(app: tauri::AppHandle, state: State<ProbeXray>, config: serde_jso
         });
     }
 
-    let mut guard = state.0.lock().map_err(|e| format!("Failed to lock prober state: {e}"))?;
+    let mut guard = state
+        .0
+        .lock()
+        .map_err(|e| format!("Failed to lock prober state: {e}"))?;
     *guard = Some(child);
 
     Ok(())
@@ -654,6 +669,28 @@ async fn probe_ping(user: String) -> Result<u64, String> {
         .map_err(|e| format!("Ping request failed: {e}"))?;
 
     Ok(start.elapsed().as_millis() as u64)
+}
+
+/// One raw TCP reachability sample for a server: the time to complete a TCP handshake
+/// to its own `host:port`, with no proxy core involved. Unlike `probe_ping` (which
+/// proves the server actually PROXIES by fetching google through it), this only proves
+/// the endpoint answers and how far away it is - so it is fast, needs no xray, and
+/// works for every protocol, including ones the core cannot connect (tuic/hysteria).
+/// DNS resolution is part of the measured time, matching what other clients call a
+/// "TCP ping". Returns the elapsed milliseconds, or an error on refusal or timeout.
+#[tauri::command]
+async fn tcp_ping(host: String, port: u16) -> Result<u64, String> {
+    let addr = format!("{host}:{port}");
+    let start = Instant::now();
+
+    match tokio::time::timeout(TCP_PING_TIMEOUT, tokio::net::TcpStream::connect(&addr)).await {
+        Ok(Ok(_stream)) => Ok(start.elapsed().as_millis() as u64),
+        Ok(Err(e)) => Err(format!("TCP connect to {addr} failed: {e}")),
+        Err(_) => Err(format!(
+            "TCP connect to {addr} timed out after {}s",
+            TCP_PING_TIMEOUT.as_secs()
+        )),
+    }
 }
 
 /// Tears the prober down when a test finishes or is cancelled. Best-effort and safe
@@ -934,6 +971,7 @@ pub fn run() {
             ping_xray_windows,
             start_probe,
             probe_ping,
+            tcp_ping,
             stop_probe,
             fetch_subscription,
             xray_traffic,

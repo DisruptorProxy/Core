@@ -254,6 +254,14 @@ export const vi: Strings =
         emptyHint: 'Chọn một máy chủ trong danh sách để xem chi tiết.'
     },
 
+    ping:
+    {
+        tcp: 'Ping TCP',
+        proxy: 'Ping proxy',
+        tcpLabel: 'TCP',
+        proxyLabel: 'Proxy'
+    },
+
     common:
     {
         close: 'Xong',

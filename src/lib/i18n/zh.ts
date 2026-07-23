@@ -254,6 +254,14 @@ export const zh: Strings =
         emptyHint: '从列表中选择一个服务器查看详情。'
     },
 
+    ping:
+    {
+        tcp: 'TCP 测速',
+        proxy: '代理测速',
+        tcpLabel: 'TCP',
+        proxyLabel: '代理'
+    },
+
     common:
     {
         close: '完成',

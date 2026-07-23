@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { ProxyConfig } from '../../../lib/proxy/types';
 import { buildProbeConfig, canConnect, probeUser } from '../../../lib/xray/config';
 
-import type { PingResult } from './port';
+import type { PingMode, PingResult } from './port';
 import { service } from './service';
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -63,11 +63,40 @@ const deadSession = (reason: string): ProbeSession =>
  * knowing only the server. Off-Tauri, or if the core fails to start, every probe
  * degrades to a clear failure instead of throwing.
  */
-export const startProbeSession = async (configs: ProxyConfig[]): Promise<ProbeSession> =>
+export const startProbeSession = async (configs: ProxyConfig[], mode: PingMode): Promise<ProbeSession> =>
 {
     if (!isTauri())
     {
         return deadSession(NOT_DESKTOP);
+    }
+
+    // A TCP sweep touches no core at all: every probe is a raw handshake to the
+    // server's own endpoint, so there is nothing to start or stop, and - unlike the
+    // proxy path below - every protocol is testable, including ones the core cannot
+    // connect. No shared prober, no ports, no restart.
+    if (mode === 'tcp')
+    {
+        const probe: Probe = async (config, signal): Promise<PingResult> =>
+        {
+            if (signal.aborted)
+            {
+                return { ok: false, error: 'cancelled' };
+            }
+
+            try
+            {
+                const latencyMs = await invoke<number>('tcp_ping', { host: config.host, port: config.port });
+
+                return { ok: true, latencyMs };
+            }
+            catch (error)
+            {
+                return { ok: false, error: messageOf(error) };
+            }
+        };
+
+        return { probe, stop: async (): Promise<void> =>
+        {} };
     }
 
     const unsupported = (config: ProxyConfig): PingResult =>

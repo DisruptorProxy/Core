@@ -55,7 +55,9 @@ export default defineConfig([
                 }
             ],
             'no-trailing-spaces': 'error',
-            'linebreak-style': ['error', 'unix'],
+            // Line endings are enforced by .gitattributes (every text file is LF in
+            // the repo and on checkout), so ESLint need not police them - and doing
+            // so only produced false failures on a Windows autocrlf working tree.
             'no-unused-vars': 'off',
 
             '@typescript-eslint/explicit-member-accessibility':

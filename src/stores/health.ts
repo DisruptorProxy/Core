@@ -1,11 +1,11 @@
 import { createSignal, createStore } from 'azerothjs';
 
 import { getConfigsByIds, loadHealth, putHealth } from '../lib/db/repo';
-import type { HealthRecord } from '../lib/db/schema';
+import type { HealthRecord, LatencyStats } from '../lib/db/schema';
 import { runPool } from '../lib/health/pool';
-import { fold, score } from '../lib/health/score';
+import { foldStats, score } from '../lib/health/score';
 
-import type { PingResult } from '../features/connection/engine/port';
+import type { PingMode, PingResult } from '../features/connection/engine/port';
 import { startProbeSession } from '../features/connection/engine/probe';
 
 interface TestState
@@ -19,6 +19,36 @@ const IDLE: TestState = { running: false, done: 0, total: 0 };
 
 /** Probes at a time. Fast but civil - never opens thousands of sockets at once. */
 const CONCURRENCY = 8;
+
+/**
+ * The stats a list row and the latency sort read for a server: the mode measured
+ * most recently, falling back to whichever mode has any data. Undefined until the
+ * server has been tested at all - which the row renders as "untested".
+ */
+const statsFor = (record: HealthRecord | undefined): LatencyStats | undefined =>
+{
+    if (record === undefined)
+    {
+        return undefined;
+    }
+
+    return (record.lastMode !== undefined ? record[record.lastMode] : undefined) ?? record.proxy ?? record.tcp;
+};
+
+/**
+ * Folds a probe result into the record's stats for THAT mode, and marks the mode most
+ * recent so the row and sort follow the freshest measurement. The other mode's stats
+ * are carried through untouched, so a TCP ping never disturbs the proxy figure.
+ */
+const applyResult = (record: HealthRecord | undefined, id: string, mode: PingMode, result: PingResult): HealthRecord =>
+{
+    const base = record ?? { configId: id };
+    const stats = foldStats(mode === 'tcp' ? base.tcp : base.proxy, result);
+
+    return mode === 'tcp'
+        ? { ...base, configId: id, tcp: stats, lastMode: 'tcp' }
+        : { ...base, configId: id, proxy: stats, lastMode: 'proxy' };
+};
 
 /**
  * Per-server health: latency and reliability, and the machinery that measures it.
@@ -54,8 +84,8 @@ export const useHealth = createStore(() =>
     };
 
     const recordOf = (id: string): HealthRecord | undefined => records().get(id);
-    const latencyOf = (id: string): number | undefined => records().get(id)?.ewmaMs;
-    const scoreOf = (id: string): number => score(records().get(id));
+    const latencyOf = (id: string): number | undefined => statsFor(records().get(id))?.ewmaMs;
+    const scoreOf = (id: string): number => score(statsFor(records().get(id)));
 
     /** Whether a probe is currently in flight for this server. */
     const isPinging = (id: string): boolean => pinging().has(id);
@@ -84,10 +114,10 @@ export const useHealth = createStore(() =>
         setPinging(next);
     };
 
-    /** Folds a single probe into a config's health - the per-config Ping action. */
-    const recordOne = async (id: string, result: PingResult): Promise<void> =>
+    /** Folds a single probe into a config's health for one mode - the per-config Ping action. */
+    const recordOne = async (id: string, mode: PingMode, result: PingResult): Promise<void> =>
     {
-        const folded: HealthRecord = { ...fold(records().get(id), result), configId: id };
+        const folded = applyResult(records().get(id), id, mode, result);
         const next = new Map(records());
 
         next.set(id, folded);
@@ -101,7 +131,7 @@ export const useHealth = createStore(() =>
      * the signal in batches, so a 500-server test does a handful of re-renders, not
      * 500. A prior test is cancelled before a new one starts.
      */
-    const test = async (ids: string[]): Promise<void> =>
+    const test = async (ids: string[], mode: PingMode): Promise<void> =>
     {
         controller?.abort();
         controller = new AbortController();
@@ -149,18 +179,16 @@ export const useHealth = createStore(() =>
 
         const onResult = (id: string, result: PingResult): void =>
         {
-            const folded = fold(working.get(id), result);
-
-            working.set(id, { ...folded, configId: id });
+            working.set(id, applyResult(working.get(id), id, mode, result));
             workingPing.delete(id);
             dirty = true;
             pingDirty = true;
         };
 
-        // Each probe is a real request to google THROUGH the server, not a bare TCP
-        // touch. It reuses one core for the whole set: the live tunnel when connected,
-        // or a single throwaway prober when idle - never a core per server.
-        const session = await startProbeSession(configs);
+        // A proxy test reuses ONE core for the whole set (the live tunnel when
+        // connected, or a single throwaway prober when idle - never a core per
+        // server); a TCP test needs no core at all, just a handshake per server.
+        const session = await startProbeSession(configs, mode);
 
         try
         {

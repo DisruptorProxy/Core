@@ -1,0 +1,72 @@
+import { Show } from 'azerothjs';
+
+import type { LatencyStats } from '../../lib/db/schema';
+import { humanizeError } from '../../lib/health/humanize-error';
+import { bucketFor } from '../../lib/health/score';
+
+import Sparkline from '../../components/sparkline.component.azeroth';
+
+const LATENCY_TONE: Record<string, string> =
+{
+    good: 'text-good',
+    fair: 'text-fair',
+    poor: 'text-poor',
+    unknown: 'text-faint'
+};
+
+interface LatencyCellProps
+{
+    /** The mode's short name, e.g. "TCP" or "Proxy". */
+    label: string;
+    /** Reactive stats for this one mode; undefined until it has been tested. */
+    stats: () => LatencyStats | undefined;
+    /** Copy shown when this mode has no measurement yet. */
+    untested: string;
+    /** Tooltip on the percentage, naming what it is (the success rate). */
+    successLabel: string;
+}
+
+/**
+ * One ping mode's latency, as a self-contained cell: the number in its health colour,
+ * the success rate, and the sparkline that tells a flaky server from a dead one. The
+ * detail sheet shows two of these side by side so TCP and proxy latency read at once -
+ * a low TCP next to a high proxy figure is exactly the "reachable but throttled" story
+ * a single number would hide.
+ */
+export default component LatencyCell(props: LatencyCellProps)
+{
+    const tone = (): string => LATENCY_TONE[bucketFor(props.stats()?.ewmaMs)] ?? '';
+
+    <div class="flex flex-col gap-1.5 rounded-xl border border-border p-2.5">
+        <span class="text-xs font-medium text-muted">{ props.label }</span>
+
+        <Show
+            when={ props.stats()?.ewmaMs !== undefined }
+            fallback={ () => untestedNode(props.untested) }
+        >
+            <div class="flex items-baseline justify-between gap-2">
+                <span class={ `readout text-xl font-semibold ${ tone() }` }>{ props.stats()?.ewmaMs }ms</span>
+                <span class="readout text-xs text-muted" data-tip={ props.successLabel }>{ Math.round((props.stats()?.successRate ?? 0) * 100) }%</span>
+            </div>
+
+            <div class={ tone() }>
+                <Sparkline samples={ props.stats()?.samples ?? [] } tone="" />
+            </div>
+        </Show>
+
+        <Show when={ props.stats()?.lastError }>
+            <p class="text-xs text-poor">{ humanizeError(props.stats()?.lastError).title }</p>
+        </Show>
+    </div>
+}
+
+/** The untested placeholder, built imperatively for the Show fallback. */
+const untestedNode = (message: string): HTMLElement =>
+{
+    const element = document.createElement('p');
+
+    element.className = 'text-sm text-faint';
+    element.textContent = message;
+
+    return element;
+};

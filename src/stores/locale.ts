@@ -15,7 +15,7 @@ import type { Strings } from '../lib/i18n/types';
 export type Locale = 'en' | 'fa' | 'ar' | 'zh' | 'ru' | 'tr' | 'hi' | 'es' | 'vi' | 'id';
 type Direction = 'ltr' | 'rtl';
 
-const STORAGE_KEY = 'guardian.locale';
+const STORAGE_KEY = 'disruptor-proxy.locale';
 
 const DICTIONARIES: Record<Locale, Strings> =
 {

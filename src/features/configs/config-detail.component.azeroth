@@ -1,9 +1,7 @@
 import { Show } from 'azerothjs';
 
-import { Activity, Copy, Power, Server, Star, Trash2 } from 'lucide';
+import { Copy, Power, Server, Star, Trash2 } from 'lucide';
 
-import { humanizeError } from '../../lib/health/humanize-error';
-import { bucketFor } from '../../lib/health/score';
 import { canConnect } from '../../lib/xray/config';
 
 import { useConnection } from '../../stores/connection';
@@ -14,15 +12,9 @@ import Button from '../../components/button.component.azeroth';
 import Card from '../../components/card.component.azeroth';
 import { flagIcon } from '../../components/flag';
 import { icon } from '../../components/icon';
-import Sparkline from '../../components/sparkline.component.azeroth';
+import PingMenu from '../../components/ping-menu.component.azeroth';
 
-const LATENCY_TONE: Record<string, string> =
-{
-    good: 'text-good',
-    fair: 'text-fair',
-    poor: 'text-poor',
-    unknown: 'text-faint'
-};
+import LatencyCell from './latency-cell.component.azeroth';
 
 const FIELD = 'flex items-center justify-between gap-3 border-b border-border py-2 last:border-0';
 const KEY = 'text-xs text-muted';
@@ -83,42 +75,27 @@ export default component ConfigDetail()
                 </div>
             </Card>
 
-            <Card class="flex flex-col gap-2 p-3">
+            <Card class="flex flex-col gap-3 p-3">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-medium text-muted">{ t().detail.health }</span>
 
-                    <button
-                        type="button"
-                        class="flex min-h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium text-muted hover:bg-elevated disabled:opacity-40"
-                        disabled={ detail.pinging() || !canConnect(config().protocol) }
-                        onClick={ () => void detail.pingNow() }
-                    >
-                        { icon(Activity, detail.pinging() ? 'size-3.5 animate-pulse' : 'size-3.5') }
-                        { detail.pinging() ? t().detail.pinging : t().detail.ping }
-                    </button>
+                    <PingMenu
+                        variant="button"
+                        label={ t().detail.ping }
+                        text={ () => detail.pinging() ? t().detail.pinging : t().detail.ping }
+                        busy={ () => detail.pinging() }
+                        disabled={ () => detail.pinging() }
+                        proxyDisabled={ () => !canConnect(config().protocol) }
+                        tcpLabel={ t().ping.tcp }
+                        proxyLabel={ t().ping.proxy }
+                        onPick={ (mode) => void detail.pingNow(mode) }
+                    />
                 </div>
 
-                <Show
-                    when={ detail.record()?.ewmaMs !== undefined }
-                    fallback={ () => untested(t().detail.untested) }
-                >
-                    <div class="flex items-center justify-between gap-3">
-                        <span class={ `readout text-2xl font-semibold ${ LATENCY_TONE[bucketFor(detail.record()?.ewmaMs)] ?? '' }` }>
-                            { detail.record()?.ewmaMs }ms
-                        </span>
-                        <span class="readout text-sm text-muted">
-                            { Math.round((detail.record()?.successRate ?? 0) * 100) }% { t().detail.successRate }
-                        </span>
-                    </div>
-
-                    <div class={ LATENCY_TONE[bucketFor(detail.record()?.ewmaMs)] }>
-                        <Sparkline samples={ detail.record()?.samples ?? [] } tone="" />
-                    </div>
-                </Show>
-
-                <Show when={ detail.record()?.lastError }>
-                    <p class="text-xs text-poor">{ humanizeError(detail.record()?.lastError).title }</p>
-                </Show>
+                <div class="grid grid-cols-2 gap-2">
+                    <LatencyCell label={ t().ping.tcpLabel } stats={ () => detail.record()?.tcp } untested={ t().detail.untested } successLabel={ t().detail.successRate } />
+                    <LatencyCell label={ t().ping.proxyLabel } stats={ () => detail.record()?.proxy } untested={ t().detail.untested } successLabel={ t().detail.successRate } />
+                </div>
             </Card>
 
             <Show when={ !canConnect(config().protocol) }>
@@ -189,17 +166,6 @@ export default component ConfigDetail()
         }
     </Show>
 }
-
-/** The untested placeholder for the health section's Show fallback. */
-const untested = (message: string): HTMLElement =>
-{
-    const element = document.createElement('p');
-
-    element.className = 'text-sm text-faint';
-    element.textContent = message;
-
-    return element;
-};
 
 /** The "nothing selected" state shown in the wide side panel. */
 const emptyState = (title: string, hint: string): HTMLElement =>

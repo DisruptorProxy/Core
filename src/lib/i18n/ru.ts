@@ -254,6 +254,14 @@ export const ru: Strings =
         emptyHint: 'Выберите сервер из списка, чтобы увидеть детали.'
     },
 
+    ping:
+    {
+        tcp: 'TCP-пинг',
+        proxy: 'Пинг через прокси',
+        tcpLabel: 'TCP',
+        proxyLabel: 'Прокси'
+    },
+
     common:
     {
         close: 'Готово',

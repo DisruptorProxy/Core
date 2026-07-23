@@ -254,6 +254,14 @@ export const id: Strings =
         emptyHint: 'Pilih server dari daftar untuk melihat detailnya.'
     },
 
+    ping:
+    {
+        tcp: 'Ping TCP',
+        proxy: 'Ping proxy',
+        tcpLabel: 'TCP',
+        proxyLabel: 'Proxy'
+    },
+
     common:
     {
         close: 'Selesai',

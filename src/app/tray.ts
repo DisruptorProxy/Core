@@ -62,9 +62,9 @@ export const installTray = (labels: () => TrayLabels): void =>
         // able to reject the whole install.
         try
         {
-            if (await TrayIcon.getById('guardian') !== null)
+            if (await TrayIcon.getById('disruptor-proxy') !== null)
             {
-                await TrayIcon.removeById('guardian');
+                await TrayIcon.removeById('disruptor-proxy');
             }
         }
         catch
@@ -73,7 +73,7 @@ export const installTray = (labels: () => TrayLabels): void =>
         }
 
         return TrayIcon.new({
-            id: 'guardian',
+            id: 'disruptor-proxy',
             tooltip: initial.tooltip,
             icon: (await defaultWindowIcon()) ?? undefined,
             showMenuOnLeftClick: false,

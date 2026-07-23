@@ -10,7 +10,7 @@ import { LogicalSize, getCurrentWindow } from '@tauri-apps/api/window';
  */
 type WindowMode = 'compact' | 'expanded';
 
-const STORAGE_KEY = 'guardian.window-mode';
+const STORAGE_KEY = 'disruptor-proxy.window-mode';
 
 const COMPACT = new LogicalSize(400, 720);
 /** The size an expand lands on - comfortably inside the bounds below. */

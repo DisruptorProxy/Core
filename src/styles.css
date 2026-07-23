@@ -192,7 +192,7 @@
     }
 
     /* Tailwind v4's preflight leaves buttons on `cursor: default` (the native-app
-       convention). Guardian's controls are web-idiom clickables, so restore the
+       convention). Disruptor Proxy's controls are web-idiom clickables, so restore the
        pointer affordance on everything interactive - except while disabled. */
     button:not(:disabled),
     [role="button"]:not(:disabled),

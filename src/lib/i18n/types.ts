@@ -266,6 +266,18 @@ export interface Strings
         emptyHint: string;
     };
 
+    ping:
+    {
+        /** Menu item / action: a raw TCP handshake to the server. */
+        tcp: string;
+        /** Menu item / action: a real round-trip through the proxy. */
+        proxy: string;
+        /** Short column label for the TCP figure in the detail health card. */
+        tcpLabel: string;
+        /** Short column label for the proxy figure in the detail health card. */
+        proxyLabel: string;
+    };
+
     common:
     {
         close: string;

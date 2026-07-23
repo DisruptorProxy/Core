@@ -254,6 +254,14 @@ export const en: Strings =
         emptyHint: 'Pick a server from the list to see its details.'
     },
 
+    ping:
+    {
+        tcp: 'TCP ping',
+        proxy: 'Proxy ping',
+        tcpLabel: 'TCP',
+        proxyLabel: 'Proxy'
+    },
+
     common:
     {
         close: 'Done',

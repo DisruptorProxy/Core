@@ -21,6 +21,16 @@ const buildPath = (samples: number[]): string =>
         return '';
     }
 
+    // One sample has no trend to plot, and a lone moveto (`M x,y`) draws nothing at
+    // all - so render a flat line across the middle: something after the first ping,
+    // not an empty box.
+    if (samples.length === 1)
+    {
+        const mid = (HEIGHT / 2).toFixed(1);
+
+        return `M0,${ mid } L${ WIDTH },${ mid }`;
+    }
+
     const max = Math.max(...samples, 1);
     const min = Math.min(...samples, 0);
     const span = Math.max(1, max - min);

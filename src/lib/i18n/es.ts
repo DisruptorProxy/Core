@@ -254,6 +254,14 @@ export const es: Strings =
         emptyHint: 'Elige un servidor de la lista para ver sus detalles.'
     },
 
+    ping:
+    {
+        tcp: 'Ping TCP',
+        proxy: 'Ping proxy',
+        tcpLabel: 'TCP',
+        proxyLabel: 'Proxy'
+    },
+
     common:
     {
         close: 'Hecho',

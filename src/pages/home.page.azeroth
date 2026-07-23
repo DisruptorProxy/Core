@@ -3,7 +3,7 @@ import { Match, Show, Switch } from 'azerothjs';
 import { Power, Wifi, WifiOff, Zap } from 'lucide';
 
 import { humanizeError } from '../lib/health/humanize-error';
-import { bucketFor, score } from '../lib/health/score';
+import { bucketFor } from '../lib/health/score';
 
 import { useConfigs } from '../stores/configs';
 import { useConnection } from '../stores/connection';
@@ -70,7 +70,7 @@ export default component HomePage()
     {
         const rowsList = rows();
         const tested = rowsList
-            .map((row) => ({ row, s: score(health.recordOf(row.id)) }))
+            .map((row) => ({ row, s: health.scoreOf(row.id) }))
             .filter((entry) => Number.isFinite(entry.s))
             .sort((a, b) => a.s - b.s)
             .map((entry) => entry.row);
@@ -211,8 +211,7 @@ const candidateList = (
 
     for (const row of list)
     {
-        const record = health.recordOf(row.id);
-        const latencyMs = record?.ewmaMs;
+        const latencyMs = health.latencyOf(row.id);
         const tone = LATENCY_TONE[bucketFor(latencyMs)] ?? '';
 
         const button = document.createElement('button');

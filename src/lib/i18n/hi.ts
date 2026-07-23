@@ -254,6 +254,14 @@ export const hi: Strings =
         emptyHint: 'विवरण देखने के लिए सूची से एक सर्वर चुनें।'
     },
 
+    ping:
+    {
+        tcp: 'TCP पिंग',
+        proxy: 'प्रॉक्सी पिंग',
+        tcpLabel: 'TCP',
+        proxyLabel: 'प्रॉक्सी'
+    },
+
     common:
     {
         close: 'हो गया',

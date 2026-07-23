@@ -254,6 +254,14 @@ export const tr: Strings =
         emptyHint: 'Ayrıntılarını görmek için listeden bir sunucu seçin.'
     },
 
+    ping:
+    {
+        tcp: 'TCP ping',
+        proxy: 'Proxy ping',
+        tcpLabel: 'TCP',
+        proxyLabel: 'Proxy'
+    },
+
     common:
     {
         close: 'Bitti',

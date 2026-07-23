@@ -256,6 +256,14 @@ export const fa: Strings =
         emptyHint: 'برای دیدن جزئیات، سروری را از فهرست انتخاب کنید.'
     },
 
+    ping:
+    {
+        tcp: 'پینگ TCP',
+        proxy: 'پینگ پروکسی',
+        tcpLabel: 'TCP',
+        proxyLabel: 'پروکسی'
+    },
+
     common:
     {
         close: 'تمام',

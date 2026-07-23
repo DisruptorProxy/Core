@@ -1,4 +1,4 @@
-import type { HealthRecord } from '../db/schema';
+import type { LatencyStats } from '../db/schema';
 
 import type { PingResult } from '../../features/connection/engine/port';
 
@@ -8,23 +8,23 @@ const ALPHA = 0.4;
 /** Recent samples kept for the sparkline. A sparkline, not a time series - bounded. */
 const MAX_SAMPLES = 20;
 
-const EMPTY: HealthRecord =
+const EMPTY: LatencyStats =
 {
-    configId: '',
     successRate: 0,
     attempts: 0,
     samples: []
 };
 
 /**
- * Folds a fresh probe into a server's running health.
+ * Folds a fresh probe into one mode's running stats for a server.
  *
  * A single ping is a coin flip; what tells a flaky server from a dead one is the
  * TREND. So latency is an exponentially-weighted mean (recent probes matter more)
  * and reliability is a success rate over the window - never a single sample shown
- * as if it were the truth, which is the way other clients mislead.
+ * as if it were the truth, which is the way other clients mislead. Each mode folds
+ * into its OWN stats, so a TCP sample never skews the proxy latency or vice versa.
  */
-export const fold = (previous: HealthRecord | undefined, result: PingResult, now = Date.now()): HealthRecord =>
+export const foldStats = (previous: LatencyStats | undefined, result: PingResult, now = Date.now()): LatencyStats =>
 {
     const base = previous ?? EMPTY;
     const attempts = base.attempts + 1;
@@ -48,7 +48,6 @@ export const fold = (previous: HealthRecord | undefined, result: PingResult, now
     }
 
     return {
-        configId: base.configId,
         ewmaMs,
         successRate,
         attempts,
@@ -86,12 +85,12 @@ export const bucketFor = (ewmaMs: number | undefined): LatencyBucket =>
  * A 100ms server that answers half the time is worse than a steady 250ms one, and
  * this ordering says so. Lower is better; unmeasured sorts to the bottom.
  */
-export const score = (record: HealthRecord | undefined): number =>
+export const score = (stats: LatencyStats | undefined): number =>
 {
-    if (record?.ewmaMs === undefined || record.successRate === 0)
+    if (stats?.ewmaMs === undefined || stats.successRate === 0)
     {
         return Number.POSITIVE_INFINITY;
     }
 
-    return record.ewmaMs / Math.max(0.05, record.successRate);
+    return stats.ewmaMs / Math.max(0.05, stats.successRate);
 };

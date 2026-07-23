@@ -6,7 +6,7 @@ export type ThemePreference = 'system' | 'light' | 'dark';
 /** What is actually painted right now. */
 type ResolvedTheme = 'light' | 'dark';
 
-const STORAGE_KEY = 'guardian.theme';
+const STORAGE_KEY = 'disruptor-proxy.theme';
 
 const isPreference = (value: string | null): value is ThemePreference =>
     value === 'system' || value === 'light' || value === 'dark';

@@ -11,6 +11,7 @@ import { useSubscriptions } from './subscriptions';
 import { useToast } from './toast';
 import { useViewport } from './viewport';
 
+import type { PingMode } from '../features/connection/engine/port';
 import { service } from '../features/connection/engine/service';
 
 /**
@@ -100,9 +101,10 @@ export const useDetail = createStore(() =>
         }
     };
 
-    // A real per-server probe (HTTP through the proxy), folded into this config's
-    // health so the latency and sparkline update in place.
-    const pingNow = async (): Promise<void> =>
+    // A per-server probe in the chosen mode - a raw TCP handshake or a real round-trip
+    // through the proxy - folded into this config's health so that mode's latency and
+    // sparkline update in place.
+    const pingNow = async (mode: PingMode): Promise<void> =>
     {
         const current = config();
 
@@ -114,9 +116,9 @@ export const useDetail = createStore(() =>
         setPinging(true);
         health.markPinging(current.id);
 
-        const result = await service.ping(current, new AbortController().signal);
+        const result = await service.ping(current, new AbortController().signal, mode);
 
-        await health.recordOne(current.id, result);
+        await health.recordOne(current.id, mode, result);
         health.clearPinging(current.id);
         setPinging(false);
     };

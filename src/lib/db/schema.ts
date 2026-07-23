@@ -1,4 +1,6 @@
-const DB_NAME = 'guardian';
+import type { PingMode } from '../../features/connection/engine/port';
+
+const DB_NAME = 'disruptor-proxy';
 const DB_VERSION = 1;
 
 export const STORE_CONFIGS = 'configs';
@@ -7,16 +9,15 @@ export const STORE_SUBSCRIPTIONS = 'subscriptions';
 export const STORE_SETTINGS = 'settings';
 
 /**
- * Health is its OWN store, keyed by config id, even though it is 1:1 with a config.
+ * Latency + reliability for ONE ping mode of a server.
  *
- * A latency probe is the highest-frequency write in the app - testing 500 servers
- * writes 500 records - and if health lived on the config row, every probe would
- * rewrite the whole config (name, credentials, tags) and invalidate every index on
- * it. Splitting them keeps a probe a small write against a small store.
+ * A server carries two of these (see `HealthRecord`). A raw TCP handshake and a real
+ * proxy round-trip measure different things and land on very different numbers, so
+ * they are tracked - and folded (see `foldStats`) - separately, never averaged into
+ * one figure that would mean neither.
  */
-export interface HealthRecord
+export interface LatencyStats
 {
-    configId: string;
     /** Exponentially-weighted mean latency in ms. Absent until the first success. */
     ewmaMs?: number;
     /** 0..1 over the recent window - a flaky server and a dead one look different. */
@@ -27,6 +28,28 @@ export interface HealthRecord
     lastCheckedAt?: number;
     /** Recent samples, newest last. Bounded - this is a sparkline, not a time series DB. */
     samples: number[];
+}
+
+/**
+ * Health is its OWN store, keyed by config id, even though it is 1:1 with a config.
+ *
+ * A latency probe is the highest-frequency write in the app - testing 500 servers
+ * writes 500 records - and if health lived on the config row, every probe would
+ * rewrite the whole config (name, credentials, tags) and invalidate every index on
+ * it. Splitting them keeps a probe a small write against a small store.
+ *
+ * The two ping modes are stored side by side rather than as one latency: they are
+ * different measurements (see `LatencyStats`), so a server can show both at once.
+ */
+export interface HealthRecord
+{
+    configId: string;
+    /** Raw TCP-handshake latency to the server's own endpoint. */
+    tcp?: LatencyStats;
+    /** Real latency of an HTTP round-trip through the server's outbound. */
+    proxy?: LatencyStats;
+    /** The mode measured most recently - what the list row and latency sort read. */
+    lastMode?: PingMode;
 }
 
 type SubscriptionStatus = 'ok' | 'stale' | 'failed' | 'never';

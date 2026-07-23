@@ -1,6 +1,6 @@
 import { Match, Show, Switch, Transition } from 'azerothjs';
 
-import { CircleStop, Download, Gauge, ListChecks, Server } from 'lucide';
+import { CircleStop, Download, ListChecks, Server } from 'lucide';
 
 import { useConfigs } from '../stores/configs';
 import { useConnection } from '../stores/connection';
@@ -14,6 +14,7 @@ import { useViewport } from '../stores/viewport';
 import Button from '../components/button.component.azeroth';
 import EmptyState from '../components/empty-state.component.azeroth';
 import { icon } from '../components/icon';
+import PingMenu from '../components/ping-menu.component.azeroth';
 import Sheet from '../components/sheet.component.azeroth';
 
 import BulkBar from '../features/configs/bulk-bar.component.azeroth';
@@ -68,7 +69,7 @@ export default component ServersPage()
     <div class="h-full">
     <div class="flex h-full min-h-0">
     <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col pb-14 md:pb-0">
-        <header class="glass-bar shrink-0 border-b border-border">
+        <header class="glass-bar relative z-30 shrink-0 border-b border-border">
             <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-4">
                 <div class="flex min-w-0 flex-col gap-0.5">
                     <h1 class="text-lg font-semibold tracking-tight text-text">{ t().servers.title }</h1>
@@ -110,15 +111,13 @@ export default component ServersPage()
                                 </button>
                             </Match>
                             <Match when={ hasServers }>
-                                <button
-                                    type="button"
-                                    class={ ICON_BTN }
-                                    aria-label={ t().servers.test }
-                                    data-tip={ t().servers.test }
-                                    onClick={ () => void health.test(query.visibleIds()) }
-                                >
-                                    { icon(Gauge, 'size-4') }
-                                </button>
+                                <PingMenu
+                                    variant="icon"
+                                    label={ t().servers.test }
+                                    tcpLabel={ t().ping.tcp }
+                                    proxyLabel={ t().ping.proxy }
+                                    onPick={ (mode) => void health.test(query.visibleIds(), mode) }
+                                />
                             </Match>
                         </Switch>
 

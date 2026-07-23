@@ -12,12 +12,12 @@
         <script>
             (() =>
             {
-                const theme = localStorage.getItem('guardian.theme') ?? 'system';
+                const theme = localStorage.getItem('disruptor-proxy.theme') ?? 'system';
                 const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
                 document.documentElement.classList.toggle('dark', dark);
 
-                const locale = localStorage.getItem('guardian.locale') ?? 'en';
+                const locale = localStorage.getItem('disruptor-proxy.locale') ?? 'en';
 
                 document.documentElement.lang = locale;
                 document.documentElement.dir = locale === 'fa' ? 'rtl' : 'ltr';

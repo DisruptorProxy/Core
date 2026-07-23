@@ -173,10 +173,11 @@ export const useConnection = createStore(() =>
         let ranked = rank();
 
         // Nothing tested yet: probe a bounded sample so "fastest" has data to rank,
-        // rather than silently doing nothing. The user gets a connection either way.
+        // rather than silently doing nothing. "Fastest" means the server that actually
+        // proxies quickest, so this ranks by the proxy round-trip, not a bare TCP touch.
         if (ranked.length === 0)
         {
-            await health.test(ids.slice(0, 80));
+            await health.test(ids.slice(0, 80), 'proxy');
             ranked = rank();
         }
 

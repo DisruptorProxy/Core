@@ -1,0 +1,22 @@
+# Every text file is normalised to LF in the repository and checked out as LF on
+# all platforms. Without this, Windows' core.autocrlf rewrites the working tree to
+# CRLF, which made ESLint's linebreak-style rule and the pre-push hook fail locally
+# even though CI (which checks out LF) passed.
+* text=auto eol=lf
+
+# Binary assets git must never normalise.
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.icns     binary
+*.woff     binary
+*.woff2    binary
+*.ttf      binary
+*.otf      binary
+*.dat      binary
+*.exe      binary
+*.dll      binary
+*.msi      binary
+*.keystore binary

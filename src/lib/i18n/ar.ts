@@ -254,6 +254,14 @@ export const ar: Strings =
         emptyHint: 'اختر خادمًا من القائمة لعرض تفاصيله.'
     },
 
+    ping:
+    {
+        tcp: 'اختبار TCP',
+        proxy: 'اختبار عبر الوكيل',
+        tcpLabel: 'TCP',
+        proxyLabel: 'الوكيل'
+    },
+
     common:
     {
         close: 'تم',
