@@ -37,6 +37,7 @@ function log(message)
 }
 
 const dryRun = process.argv.includes('--dry-run');
+const noBump = process.argv.includes('--no-bump');
 
 // `file` + an argv array, not one shell string: a value that happens to contain shell
 // metacharacters cannot change what command runs, since there is no string for it to break
@@ -141,8 +142,11 @@ Examples:
   npm run release -- 1.2.0
   npm run release -- patch
   npm run release -- minor --dry-run
+  npm run release -- --no-bump
 
 Options:
+  --no-bump    Don't bump/commit/tag; just push the existing v<current> tag,
+               re-triggering the release workflow for the version already set.
   --dry-run    Show every step; change nothing.
   -h, --help   Show this help.`);
 }
@@ -155,60 +159,86 @@ if (argvRaw.includes('-h') || argvRaw.includes('--help'))
     process.exit(0);
 }
 
-const argv = argvRaw.filter(a => a !== '--dry-run');
+const argv = argvRaw.filter(a => a !== '--dry-run' && a !== '--no-bump');
 const versionArg = argv[0];
 
-if (!versionArg)
-{
-    fail('a version or bump keyword is required, e.g. `npm run release -- patch` or `-- 1.2.0` (try --help)');
-}
-if (versionArg.startsWith('-'))
+if (versionArg !== undefined && versionArg.startsWith('-'))
 {
     fail(`unknown option: ${ versionArg } (try --help)`);
 }
 
 const pkgPath = path.join(ROOT, 'package.json');
 const current = JSON.parse(readFileSync(pkgPath, 'utf8')).version;
-const next = resolveVersion(versionArg, current);
 
-if (!VERSION_PATTERN.test(next))
+let released;
+let tag;
+
+if (noBump)
 {
-    fail(`"${ next }" is not a valid version (expected MAJOR.MINOR.PATCH)`);
+    // Re-trigger a release for the version already in package.json: no bump, no commit,
+    // no new tag - just push the existing tag (and HEAD). For when a prior run tagged but
+    // the push or the CI run didn't land.
+    released = current;
+    tag = 'v' + current;
+
+    log(`\nRe-releasing ${ current }  (tag ${ tag }, no bump)`);
+    if (dryRun)
+    {
+        log('  (dry run: nothing will be pushed)');
+    }
+
+    if (query('git', ['tag', '-l', tag]) !== tag)
+    {
+        fail(`tag ${ tag } does not exist locally - run without --no-bump to create it first`);
+    }
 }
-
-const tag = 'v' + next;
-
-log(`\nRelease ${ current } -> ${ next }  (tag ${ tag })`);
-if (dryRun)
+else
 {
-    log('  (dry run: nothing will be changed)');
+    if (!versionArg)
+    {
+        fail('a version or bump keyword is required, e.g. `npm run release -- patch` or `-- 1.2.0` (try --help)');
+    }
+
+    released = resolveVersion(versionArg, current);
+
+    if (!VERSION_PATTERN.test(released))
+    {
+        fail(`"${ released }" is not a valid version (expected MAJOR.MINOR.PATCH)`);
+    }
+
+    tag = 'v' + released;
+
+    log(`\nRelease ${ current } -> ${ released }  (tag ${ tag })`);
+    if (dryRun)
+    {
+        log('  (dry run: nothing will be changed)');
+    }
+
+    const status = query('git', ['status', '--porcelain']);
+    if (status && !dryRun)
+    {
+        fail('working tree is not clean; commit or stash first - the release commit must be just the version bump');
+    }
+
+    if (query('git', ['tag', '-l', tag]) === tag)
+    {
+        fail(`tag ${ tag } already exists`);
+    }
+
+    log('\nBumping version');
+    bumpVersion(released);
+
+    log('\nCommitting and tagging');
+    act('git', ['add', 'package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock']);
+    act('git', ['commit', '-m', `chore(release): ${ tag }`]);
+    act('git', ['tag', '-a', tag, '-m', tag]);
 }
-
-const status = query('git', ['status', '--porcelain']);
-if (status && !dryRun)
-{
-    fail('working tree is not clean; commit or stash first - the release commit must be just the version bump');
-}
-
-const existingTag = query('git', ['tag', '-l', tag]);
-if (existingTag === tag)
-{
-    fail(`tag ${ tag } already exists`);
-}
-
-log('\nBumping version');
-bumpVersion(next);
-
-log('\nCommitting and tagging');
-act('git', ['add', 'package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock']);
-act('git', ['commit', '-m', `chore(release): ${ tag }`]);
-act('git', ['tag', '-a', tag, '-m', tag]);
 
 log('\nPushing to GitHub');
 act('git', ['push', 'origin', 'HEAD']);
 act('git', ['push', 'origin', tag]);
 
-log(`\nDone: ${ next }`);
+log(`\nDone: ${ released }`);
 log('CI is now building, signing, and publishing draft releases to Core + Xray-Client.');
 log('Review both drafts on GitHub, then publish each one manually when ready - a draft is');
 log('invisible to the updater and to anonymous downloads until you do.');

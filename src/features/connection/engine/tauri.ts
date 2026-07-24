@@ -5,9 +5,10 @@ import { invoke } from '@tauri-apps/api/core';
 
 import { getAllConfigs } from '../../../lib/db/repo';
 import type { ProxyConfig } from '../../../lib/proxy/types';
-import { buildConnectConfig, buildPingConfig, canConnect } from '../../../lib/xray/config';
+import { buildConnectConfig, buildMobileConfig, buildPingConfig, canConnect } from '../../../lib/xray/config';
 import type { GeoAssets } from '../../../lib/xray/config';
 
+import { isMobilePlatform } from '../../../stores/platform';
 import { useRouting } from '../../../stores/routing';
 
 import type { ConnectionService, ConnectionStatus, PingMode, PingResult, TrafficSample } from './port';
@@ -19,8 +20,9 @@ const NOT_DESKTOP = 'Connecting is only available in the Disruptor Proxy desktop
 
 /**
  * The real engine. Generates an Xray config from the server + active routing
- * profile, then drives the bundled app-xray.exe through the Rust commands
- * (create_xray_config / run_xray_windows / end_xray_windows / ping_xray_windows).
+ * profile, then drives the bundled Xray core through the Rust commands
+ * (create_xray_config / run_xray / end_xray / ping_xray). Those commands dispatch to
+ * a per-OS backend in Rust, so this frontend is the same on every platform.
  *
  * The status is a local signal this service owns - Rust pushes nothing, so connect
  * and disconnect move it, and a failure moves it to `error` carrying the core's raw
@@ -69,10 +71,23 @@ export class TauriConnectionService implements ConnectionService
             // Embed every known server as a tagged probe outbound, so a test run while
             // connected reuses this one running core instead of spawning a second one.
             const allConfigs = await getAllConfigs();
-            const xrayConfig = buildConnectConfig(config, useRouting().rules(), allConfigs, geo);
-            const configPath = await invoke<string>('create_xray_config', { config: xrayConfig });
 
-            await invoke<string>('run_xray_windows', { configPath });
+            if (isMobilePlatform())
+            {
+                // Mobile: the OS owns the tunnel. Hand the SOCKS-inbound config to the
+                // native VPN plugin, which raises the VpnService / PacketTunnelProvider,
+                // runs the core, and bridges the OS tun fd into it.
+                const xrayConfig = buildMobileConfig(config, useRouting().rules(), allConfigs, geo);
+
+                await invoke('plugin:disruptor-vpn|start', { config: xrayConfig });
+            }
+            else
+            {
+                const xrayConfig = buildConnectConfig(config, useRouting().rules(), allConfigs, geo);
+                const configPath = await invoke<string>('create_xray_config', { config: xrayConfig });
+
+                await invoke<string>('run_xray', { configPath });
+            }
 
             this.setStatus({ phase: 'connected', config, since: Date.now() });
         }
@@ -90,7 +105,7 @@ export class TauriConnectionService implements ConnectionService
 
         try
         {
-            await invoke('end_xray_windows');
+            await invoke(isMobilePlatform() ? 'plugin:disruptor-vpn|stop' : 'end_xray');
         }
         catch (error)
         {
@@ -138,7 +153,7 @@ export class TauriConnectionService implements ConnectionService
         {
             const xrayConfig = buildPingConfig(config);
             const configPath = await invoke<string>('create_xray_config', { config: xrayConfig });
-            const latencyMs = await invoke<number>('ping_xray_windows', { configPath });
+            const latencyMs = await invoke<number>('ping_xray', { configPath });
 
             return { ok: true, latencyMs };
         }
@@ -157,7 +172,7 @@ export class TauriConnectionService implements ConnectionService
 
         try
         {
-            return await invoke<TrafficSample>('xray_traffic');
+            return await invoke<TrafficSample>(isMobilePlatform() ? 'plugin:disruptor-vpn|traffic' : 'xray_traffic');
         }
         catch
         {

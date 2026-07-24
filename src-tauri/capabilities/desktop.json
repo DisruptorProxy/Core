@@ -1,0 +1,31 @@
+{
+    "$schema": "../gen/schemas/desktop-schema.json",
+    "identifier": "desktop",
+    "description": "Desktop-only window chrome: the custom titlebar's window controls, the tray and its menu, the compact/expanded window modes, and the in-app updater. Mobile has none of these, so this capability is scoped away from android/iOS.",
+    "platforms": [
+        "windows",
+        "linux",
+        "macOS"
+    ],
+    "windows": [
+        "main"
+    ],
+    "permissions": [
+        "core:app:allow-default-window-icon",
+        "core:window:allow-start-dragging",
+        "core:window:allow-minimize",
+        "core:window:allow-close",
+        "core:window:allow-show",
+        "core:window:allow-set-size",
+        "core:window:allow-set-min-size",
+        "core:window:allow-set-max-size",
+        "core:window:allow-set-resizable",
+        "core:window:allow-center",
+        "core:window:allow-unminimize",
+        "core:window:allow-set-focus",
+        "core:tray:default",
+        "core:menu:default",
+        "updater:default",
+        "process:allow-restart"
+    ]
+}

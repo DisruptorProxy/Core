@@ -1,0 +1,12 @@
+{
+    "$schema": "../gen/schemas/desktop-schema.json",
+    "identifier": "default",
+    "description": "Permissions needed on every platform: reading the app version for the About screen, and listening for the geo-download progress event.",
+    "windows": [
+        "main"
+    ],
+    "permissions": [
+        "core:app:allow-version",
+        "core:event:default"
+    ]
+}

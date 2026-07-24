@@ -1,6 +1,7 @@
-import { ErrorBoundary, Routes } from 'azerothjs';
+import { ErrorBoundary, Routes, Show } from 'azerothjs';
 
 import { useLocale } from '../stores/locale';
+import { usePlatform } from '../stores/platform';
 import { useSubscriptions } from '../stores/subscriptions';
 import { useTheme } from '../stores/theme';
 
@@ -24,17 +25,28 @@ export default component Shell()
 {
     useTheme();
     const { t } = useLocale();
+    const platform = usePlatform();
     useSubscriptions();
 
-    installTray(() => ({ tooltip: t().app.name, show: t().app.trayShow, quit: t().app.trayQuit }));
+    // Window chrome is a desktop-only concept: mobile has no titlebar, tray, or
+    // resizable window, and calling those Tauri APIs there would fail. The tray install
+    // and the window-mode store (pulled in only by the gated Titlebar) never run on
+    // mobile as a result.
+    if (platform.isDesktop())
+    {
+        installTray(() => ({ tooltip: t().app.name, show: t().app.trayShow, quit: t().app.trayQuit }));
+    }
 
     <div class="flex h-dvh flex-col">
-        <Titlebar />
+        <Show when={ platform.isDesktop() }>
+            <Titlebar />
+        </Show>
 
         <div class="flex min-h-0 flex-1">
             <SideRail />
 
-            <main class="relative min-w-0 flex-1 overflow-hidden">
+            { /* No titlebar on mobile, so the content clears the status bar / notch itself. */ }
+            <main class="relative min-w-0 flex-1 overflow-hidden" class:pt-safe={ platform.isMobile() }>
                 <ErrorBoundary
                     fallback={ (_error, reset) =>
                         <div class="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">

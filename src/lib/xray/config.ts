@@ -506,6 +506,36 @@ export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], allConfig
 };
 
 /**
+ * The mobile (Android/iOS) connect config. Unlike the desktop config there is NO `tun`
+ * inbound - the OS owns the tunnel (Android `VpnService` / iOS `NEPacketTunnelProvider`),
+ * and a tun2socks bridge in the native layer forwards the OS tun fd into this SOCKS inbound
+ * on `CONNECT_SOCKS_PORT`. Everything else - outbounds, routing, DNS, stats, and the shared
+ * probe layer for testing while connected - matches the desktop config, so one config
+ * builder and one routing model serve every platform. `udp: true` so the tunnel carries UDP
+ * (DNS, QUIC) as well as TCP.
+ */
+export const buildMobileConfig = (config: ProxyConfig, rules: Rule[], allConfigs: ProxyConfig[], geo: GeoAssets = GEO_PRESENT): XrayConfig =>
+{
+    const probe = buildProbeLayer(allConfigs, PROBE_SOCKS_PORT);
+
+    return {
+        log: { loglevel: 'warning' },
+        dns: { servers: ['1.1.1.1', '8.8.8.8'], queryStrategy: 'UseIPv4' },
+        stats: STATS,
+        api: API,
+        policy: POLICY,
+        inbounds:
+        [
+            { tag: 'socks-in', protocol: 'socks', listen: '127.0.0.1', port: CONNECT_SOCKS_PORT, settings: { udp: true }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } },
+            API_INBOUND,
+            probe.inbound
+        ],
+        outbounds: [proxyOutbound(config), DIRECT, BLOCK, DNS_OUT, ...probe.outbounds],
+        routing: { domainStrategy: 'IPIfNonMatch', rules: [API_RULE, DNS_RULE, ...probe.rules, ...routingRulesFrom(rules, geo)] }
+    };
+};
+
+/**
  * A minimal config for a latency probe. `ping_xray_windows` reads `inbounds[0]`'s
  * port and protocol, so the SOCKS inbound must be first; the port is distinct from
  * a live connection's so a probe never collides with an active tunnel. No TUN, no

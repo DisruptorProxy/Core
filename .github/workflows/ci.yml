@@ -42,9 +42,16 @@ jobs:
 
     rust:
         name: Rust (rustfmt, clippy)
-        # Windows because src-tauri pulls in cfg(windows)-only crates that don't exist
-        # on other targets - clippy has to compile them.
-        runs-on: windows-latest
+        # The backend is platform-dispatched (src-tauri/src/platform): the Windows code is
+        # behind cfg(windows) and other targets compile the `unsupported` fallback (Linux
+        # gets its real backend in a later phase). So clippy runs on every desktop OS - a
+        # cross-platform break fails here the moment it lands, not only when someone builds
+        # on that OS.
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ ubuntu-latest, macos-latest, windows-latest ]
+        runs-on: ${{ matrix.os }}
         steps:
             -   uses: actions/checkout@v7
 
@@ -56,15 +63,23 @@ jobs:
                 with:
                     workspaces: src-tauri
 
+            # Tauri's Linux crates (webkit2gtk/gtk/soup/javascriptcore -sys) need their dev
+            # packages present for clippy to even compile the dependency tree.
+            -   name: Install Linux Tauri dependencies
+                if: runner.os == 'Linux'
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev
+
             -   name: Provide a placeholder frontend dist
-                shell: pwsh
+                shell: bash
                 run: |
                     # tauri's generate_context! reads frontendDist (../dist) at compile
                     # time, so the directory must exist for clippy/check to compile. Its
                     # contents don't affect Rust lints, so a stub is enough - this job
                     # deliberately does not build the real frontend.
-                    New-Item -ItemType Directory -Force -Path dist | Out-Null
-                    Set-Content -Path dist/index.html -Value '<!doctype html><title>ci</title>' -Encoding utf8
+                    mkdir -p dist
+                    printf '<!doctype html><title>ci</title>' > dist/index.html
 
             -   name: rustfmt
                 working-directory: src-tauri
@@ -73,3 +88,145 @@ jobs:
             -   name: clippy
                 working-directory: src-tauri
                 run: cargo clippy --all-targets --all-features -- -D warnings
+
+    linux-build:
+        name: Linux build (deb)
+        # A full tauri build is heavy, so it runs on pushes to main only - the rust matrix
+        # above already proves cross-platform compilation cheaply on every PR. This proves
+        # the Linux app actually BUNDLES: fetch the core, build the frontend, package a .deb.
+        if: github.event_name == 'push'
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: actions/setup-node@v6
+                with:
+                    node-version: 24
+                    cache: npm
+
+            -   uses: dtolnay/rust-toolchain@stable
+
+            -   uses: Swatinem/rust-cache@v2
+                with:
+                    workspaces: src-tauri
+
+            -   name: Install Linux Tauri dependencies
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev
+
+            -   run: npm ci
+
+            -   name: Fetch the Linux Xray core
+                run: node scripts/fetch-core.mjs --target linux-64
+
+            # createUpdaterArtifacts signs the build, so the updater key is needed even for
+            # a throwaway CI bundle. Secrets are only present on same-repo pushes, which is
+            # exactly where this job runs.
+            -   name: Build the .deb
+                env:
+                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+                run: npm run tauri build -- --bundles deb
+
+    macos-build:
+        name: macOS build (app)
+        # Heavy; pushes to main only. Proves the macOS app bundles. It is UNSIGNED - Apple
+        # code-signing + notarization need a paid Apple Developer account, deferred to the
+        # release pipeline once that account exists.
+        if: github.event_name == 'push'
+        runs-on: macos-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: actions/setup-node@v6
+                with:
+                    node-version: 24
+                    cache: npm
+
+            -   uses: dtolnay/rust-toolchain@stable
+
+            -   uses: Swatinem/rust-cache@v2
+                with:
+                    workspaces: src-tauri
+
+            -   run: npm ci
+
+            -   name: Fetch the macOS Xray core
+                run: node scripts/fetch-core.mjs
+
+            -   name: Build the .app (unsigned)
+                env:
+                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+                run: npm run tauri build -- --bundles app
+
+    android-build:
+        name: Android build (apk)
+        # Best-effort (continue-on-error): assembles the APK to catch build breaks. The
+        # native VPN plugin (src-tauri/mobile) is not wired yet, so this stays non-blocking
+        # until `tauri android init` + the plugin land. Pushes to main only.
+        if: github.event_name == 'push'
+        runs-on: ubuntu-latest
+        continue-on-error: true
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: actions/setup-node@v6
+                with:
+                    node-version: 24
+                    cache: npm
+
+            -   uses: actions/setup-java@v4
+                with:
+                    distribution: temurin
+                    java-version: 17
+
+            -   uses: android-actions/setup-android@v3
+
+            -   name: Install the Android NDK
+                run: sdkmanager "ndk;27.0.12077973"
+
+            -   uses: dtolnay/rust-toolchain@stable
+                with:
+                    targets: aarch64-linux-android,x86_64-linux-android
+
+            -   name: Install Linux Tauri dependencies
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev
+
+            -   run: npm ci
+
+            -   name: Fetch the Android Xray core
+                run: npm run fetch-core:android
+
+            -   name: Assemble the APK
+                env:
+                    NDK_HOME: ${{ env.ANDROID_NDK_ROOT }}
+                run: npm run tauri android build -- --apk --target aarch64
+
+    ios-build:
+        name: iOS build
+        # Placeholder (continue-on-error): iOS needs `tauri ios init` (a Mac), a Packet
+        # Tunnel extension target, an xcframework core, and a paid Apple Developer account to
+        # sign - so this stays non-blocking until those exist (see src-tauri/mobile/README.md).
+        if: github.event_name == 'push'
+        runs-on: macos-latest
+        continue-on-error: true
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: actions/setup-node@v6
+                with:
+                    node-version: 24
+                    cache: npm
+
+            -   uses: dtolnay/rust-toolchain@stable
+                with:
+                    targets: aarch64-apple-ios,aarch64-apple-ios-sim
+
+            -   run: npm ci
+
+            -   name: Build (needs tauri ios init + Apple signing)
+                run: npm run tauri ios build
