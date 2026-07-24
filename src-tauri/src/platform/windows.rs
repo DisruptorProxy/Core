@@ -37,6 +37,12 @@ pub fn core_binary_name() -> &'static str {
     "app-xray.exe"
 }
 
+/// Nothing to pin: Windows resolves its own outbound interface reliably and is not
+/// affected by the unix re-detection bug, so Xray's own `auto` is the right answer here.
+pub fn default_route_interface() -> Option<String> {
+    None
+}
+
 /// Suppresses the console window of a soon-to-spawn child.
 pub fn hide_console(cmd: &mut Command) {
     cmd.creation_flags(CREATE_NO_WINDOW);

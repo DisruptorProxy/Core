@@ -610,6 +610,13 @@ fn platform_kind() -> &'static str {
     std::env::consts::OS
 }
 
+/// The physical interface Xray should bind its outbounds to, or `None` to leave the core
+/// on its own detection. Only unix needs this - see `platform::default_route_interface`.
+#[tauri::command]
+fn tun_outbound_interface() -> Option<String> {
+    platform::default_route_interface()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -635,7 +642,8 @@ pub fn run() {
             xray_traffic,
             geo_files_status,
             update_geo_files,
-            platform_kind
+            platform_kind,
+            tun_outbound_interface
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

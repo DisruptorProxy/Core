@@ -10,6 +10,7 @@
 //! Linux, `osascript ... with administrator privileges` on macOS - isolated to
 //! `elevate_run` / `elevate_kill` below.
 
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 use std::time::{Duration, Instant};
@@ -35,6 +36,38 @@ pub fn hide_console(_cmd: &mut Command) {}
 
 /// No console window to suppress on unix.
 pub fn hide_console_tokio(_cmd: &mut tokio::process::Command) {}
+
+/// The physical interface Xray should bind its outbounds to, so the core does not have to
+/// detect one itself.
+///
+/// Linux's own detection can fail seconds AFTER a successful connect: bringing the tun
+/// device up emits route/link events, detection re-runs, finds nothing, and the core dies
+/// with "no usable outbound interface found" (XTLS/Xray-core#6412). Naming the interface
+/// up front skips that path. Best-effort - `None` leaves Xray on `auto`, today's behaviour.
+#[cfg(target_os = "linux")]
+pub fn default_route_interface() -> Option<String> {
+    let output = Command::new("ip")
+        .args(["route", "show", "default"])
+        .output()
+        .ok()?;
+
+    // "default via 192.168.1.1 dev wlan0 proto dhcp metric 600"
+    let text = String::from_utf8_lossy(&output.stdout);
+    let name = text
+        .split_whitespace()
+        .skip_while(|word| *word != "dev")
+        .nth(1)?;
+
+    (!name.is_empty()).then(|| name.to_string())
+}
+
+/// Deliberately nothing on macOS. It is not affected by the Linux re-detection bug, and
+/// pinning one interface would stop the tunnel following a network change (Wi-Fi to
+/// Ethernet, docking) - a regression traded for no fix. `auto` handles that for us.
+#[cfg(target_os = "macos")]
+pub fn default_route_interface() -> Option<String> {
+    None
+}
 
 /// Quotes a value as a bash single-quoted string literal (the `'\''` trick closes the
 /// quote, inserts an escaped quote, and reopens - the only character single-quotes cannot
@@ -254,6 +287,39 @@ fn read_logs(artifacts: &RunArtifacts) -> String {
     .join("\n\n")
 }
 
+/// Makes sure the bundled core can actually be exec'd, before the wrapper tries to.
+///
+/// The bundler does preserve the executable bit today (verified in the shipped .deb and
+/// .app), but that is not guaranteed for every route the binary reaches a user by - and on
+/// macOS an unsigned binary still carrying the download's quarantine flag is refused at
+/// exec time with no prompt at all, because it is spawned rather than opened, so there is
+/// nothing for the user to click. Both failures look identical from the UI: the wrapper
+/// starts and xray never does. Idempotent, and costs one stat on the happy path.
+fn ensure_core_runnable(xray_path: &Path) -> Result<(), String> {
+    let metadata = std::fs::metadata(xray_path)
+        .map_err(|e| format!("Bundled core missing at {}: {e}", xray_path.display()))?;
+
+    if (metadata.permissions().mode() & 0o111) == 0 {
+        let mut permissions = metadata.permissions();
+        permissions.set_mode(0o755);
+        std::fs::set_permissions(xray_path, permissions).map_err(|e| {
+            format!("The bundled core is not executable and could not be made executable: {e}")
+        })?;
+    }
+
+    // A normally installed app has no quarantine flag, so this is a no-op there; clearing
+    // it is the same thing Finder's right-click -> Open does for the app itself.
+    #[cfg(target_os = "macos")]
+    {
+        let _ = Command::new("xattr")
+            .args(["-d", "com.apple.quarantine"])
+            .arg(xray_path)
+            .status();
+    }
+
+    Ok(())
+}
+
 /// Launches the live tunnel core elevated, self-healing any orphan first.
 pub fn run_core(
     app: &tauri::AppHandle,
@@ -279,6 +345,8 @@ pub fn run_core(
         .map_err(|e| format!("Failed to create app data dir: {e}"))?;
 
     let xray_path = resource_dir.join(core_binary_name());
+
+    ensure_core_runnable(&xray_path)?;
 
     let mut process = state
         .0

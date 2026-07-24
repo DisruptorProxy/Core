@@ -6,9 +6,9 @@ import { invoke } from '@tauri-apps/api/core';
 import { getAllConfigs } from '../../../lib/db/repo';
 import type { ProxyConfig } from '../../../lib/proxy/types';
 import { buildConnectConfig, buildMobileConfig, buildPingConfig, canConnect } from '../../../lib/xray/config';
-import type { GeoAssets } from '../../../lib/xray/config';
+import type { GeoAssets, TunEnvironment } from '../../../lib/xray/config';
 
-import { isMobilePlatform } from '../../../stores/platform';
+import { isMobilePlatform, usePlatform } from '../../../stores/platform';
 import { useRouting } from '../../../stores/routing';
 
 import type { ConnectionService, ConnectionStatus, PingMode, PingResult, TrafficSample } from './port';
@@ -83,7 +83,17 @@ export class TauriConnectionService implements ConnectionService
             }
             else
             {
-                const xrayConfig = buildConnectConfig(config, useRouting().rules(), allConfigs, geo);
+                // Xray's tun inbound needs shaping per OS: macOS only accepts a utunN
+                // interface name, and Linux has to be pinned to a physical interface or
+                // it can lose the one it auto-detected moments after connecting. A failed
+                // lookup is harmless - the core just falls back to its own detection.
+                const tun: TunEnvironment =
+                {
+                    os: usePlatform().os(),
+                    outboundInterface: await invoke<string | null>('tun_outbound_interface').catch(() => null)
+                };
+
+                const xrayConfig = buildConnectConfig(config, useRouting().rules(), allConfigs, tun, geo);
                 const configPath = await invoke<string>('create_xray_config', { config: xrayConfig });
 
                 await invoke<string>('run_xray', { configPath });

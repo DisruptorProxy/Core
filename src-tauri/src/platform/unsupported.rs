@@ -18,6 +18,11 @@ pub fn core_binary_name() -> &'static str {
     "app-xray"
 }
 
+/// No interface to pin - nothing starts a core on these targets.
+pub fn default_route_interface() -> Option<String> {
+    None
+}
+
 /// No console window to suppress off Windows.
 pub fn hide_console(_cmd: &mut std::process::Command) {}
 

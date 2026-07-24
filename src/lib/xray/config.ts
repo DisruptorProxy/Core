@@ -120,6 +120,26 @@ interface XrayConfig
     routing: { domainStrategy: string; rules: XrayRoutingRule[] };
 }
 
+/**
+ * What the TUN inbound has to look like for the OS the core will run on. Xray's `tun` is
+ * cross-platform (Windows, Linux, macOS, FreeBSD) but not uniform, and two of those
+ * differences break a connection outright rather than degrading it:
+ *
+ * - **macOS** only accepts an interface name matching `utunN`. Any other name - `app-tun`
+ *   included - fails to come up, so on macOS the name is left unset and Xray picks its own.
+ * - **Linux** can lose its auto-detected outbound interface moments after connecting:
+ *   creating the tun device emits route/link events, auto-detection re-runs and finds
+ *   nothing, and the core dies with "no usable outbound interface found"
+ *   (XTLS/Xray-core#6412). Pinning a named interface skips that re-detection entirely.
+ */
+export interface TunEnvironment
+{
+    /** The OS the core will run on - it decides whether the interface may be named. */
+    os: 'windows' | 'linux' | 'macos' | 'android' | 'ios';
+    /** Physical interface to bind outbounds to; null leaves Xray on its own detection. */
+    outboundInterface: string | null;
+}
+
 /** Xray network names differ slightly from our transport names; map the odd ones. */
 const NETWORK: Record<Transport, string> =
 {
@@ -448,12 +468,18 @@ const buildProbeLayer = (configs: ProxyConfig[], port: number): ProbeLayer =>
  * the routing table.
  *
  * The TUN inbound follows Xray's native `tun` schema (xtls.github.io/config/
- * inbounds/tun.html): `gateway` is the interface's own address, `dns` is what the
- * adapter advertises to the OS. `autoSystemRoutingTable: ['0.0.0.0/0']` writes a
- * default route into the Windows routing table so every IPv4 packet is pulled into
- * the tunnel (the tunnel is IPv4-only, so IPv6 is intentionally left unrouted), and
- * `autoOutboundsInterface: 'auto'` binds Xray's own outbounds to the physical NIC so
- * the proxy connection to the server is not caught by that route and looped back.
+ * inbounds/tun.html): `gateway` is the interface's own address, and
+ * `autoSystemRoutingTable: ['0.0.0.0/0']` writes a default route into the system
+ * routing table - Windows, macOS and Linux alike - so every IPv4 packet is pulled into
+ * the tunnel (the tunnel is IPv4-only, so IPv6 is intentionally left unrouted).
+ * `autoOutboundsInterface` binds Xray's own outbounds to the physical NIC so the proxy
+ * connection to the server is not caught by that route and looped back; see
+ * `TunEnvironment` for why it is pinned to a named interface wherever one can be found,
+ * and why the interface is left unnamed on macOS.
+ *
+ * `dns` is a Windows-only field in Xray - Linux and macOS leave system DNS to the OS -
+ * but that costs nothing here: DNS_RULE hijacks port 53 into DNS_OUT on every platform,
+ * so lookups still cannot escape the tunnel in plaintext.
  *
  * DNS is forced through Xray to stop leaks: `DNS_RULE` hijacks all port-53 traffic
  * into `DNS_OUT`, which resolves via the `dns` servers (DoH first, IPv4-only), and
@@ -468,7 +494,7 @@ const buildProbeLayer = (configs: ProxyConfig[], port: number): ProbeLayer =>
  * probe's authenticated traffic is matched before the `final` catch-all, while
  * ordinary TUN/SOCKS traffic (which carries no probe user) skips them untouched.
  */
-export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], allConfigs: ProxyConfig[], geo: GeoAssets = GEO_PRESENT): XrayConfig =>
+export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], allConfigs: ProxyConfig[], tun: TunEnvironment, geo: GeoAssets = GEO_PRESENT): XrayConfig =>
 {
     const probe = buildProbeLayer(allConfigs, PROBE_SOCKS_PORT);
 
@@ -488,12 +514,13 @@ export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], allConfig
                 protocol: 'tun',
                 settings:
                 {
-                    name: 'app-tun',
+                    // macOS refuses any name that isn't utunN, so let the core name it there.
+                    ...(tun.os === 'macos' ? {} : { name: 'app-tun' }),
                     mtu: 1500,
                     gateway: ['172.19.19.1/30'],
                     dns: ['1.1.1.1'],
                     autoSystemRoutingTable: ['0.0.0.0/0'],
-                    autoOutboundsInterface: 'auto'
+                    autoOutboundsInterface: tun.outboundInterface ?? 'auto'
                 },
                 sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] }
             },
