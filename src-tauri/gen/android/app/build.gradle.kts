@@ -13,6 +13,22 @@ val tauriProperties = Properties().apply {
     }
 }
 
+// Release signing. Android refuses to install an unsigned APK, so a release build is
+// useless without this. Values come from keystore.properties (local, gitignored) or from
+// env vars (CI secrets); when neither is present the release build simply stays unsigned
+// rather than failing, so `tauri android build` still works for a smoke test.
+val keystoreProperties = Properties().apply {
+    val propFile = file("keystore.properties")
+    if (propFile.exists()) {
+        propFile.inputStream().use { load(it) }
+    }
+}
+
+fun signingValue(key: String, env: String): String? =
+    keystoreProperties.getProperty(key) ?: System.getenv(env)
+
+val keystorePath = signingValue("storeFile", "ANDROID_KEYSTORE_PATH")
+
 android {
     compileSdk = 36
     namespace = "io.disruptorproxy.client"
@@ -23,6 +39,16 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+    }
+    signingConfigs {
+        create("release") {
+            if (keystorePath != null) {
+                storeFile = file(keystorePath)
+                storePassword = signingValue("storePassword", "ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "ANDROID_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "ANDROID_KEY_PASSWORD")
+            }
+        }
     }
     buildTypes {
         getByName("debug") {
@@ -37,6 +63,9 @@ android {
             }
         }
         getByName("release") {
+            if (keystorePath != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

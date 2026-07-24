@@ -27,7 +27,14 @@ src-tauri/.updater-key.pem.pub
 src-tauri/assets/app-xray
 # The Android core is fetched per-ABI into the gradle jniLibs, likewise not committed.
 src-tauri/gen/android/app/src/main/jniLibs/*/libxray.so
-src-tauri/gen/android/app/src/main/jniLibs/*/libtun2socks.so
+# tun2socks, built from source by scripts/build-tun2socks.mjs (no prebuilt exists).
+src-tauri/gen/android/app/src/main/jniLibs/*/libhev-socks5-tunnel.so
+
+# Android release signing. The keystore and its passwords must never be committed - CI
+# supplies them from secrets instead.
+src-tauri/gen/android/app/keystore.properties
+*.jks
+*.keystore
 
 # Editor directories and files
 .vscode/*

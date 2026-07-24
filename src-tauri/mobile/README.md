@@ -1,17 +1,22 @@
-# Mobile VPN backends (Android + iOS)
+# Mobile VPN backends
 
-The frontend and config already handle mobile (Phase 0 gating; `buildMobileConfig`; the
-engine in `tauri.ts` invokes `plugin:disruptor-vpn|start/stop/traffic` on mobile). What's
-left is the **native VPN plugin** these two scaffolds become. They were written without an
-Android SDK or a Mac, so treat them as a well-structured starting point that needs building
-+ on-device iteration, not finished code.
+## Android — implemented, not yet run on a device
 
-- `android/TunnelService.kt` — the `VpnService` (tun + Xray + tun2socks).
-- `ios/PacketTunnelProvider.swift` — the Packet Tunnel `NetworkExtension`.
+The Android tunnel is wired end to end. Everything below exists and compiles; **none of it
+has been run on hardware**, so treat the first launch as a debugging session.
 
-## The command contract (already wired on the JS side)
+| Piece | Where |
+| --- | --- |
+| Plugin commands (Rust) | `src-tauri/src/vpn.rs` — inline plugin, registered in `lib.rs` |
+| Permission declaration | `src-tauri/build.rs` (`InlinedPlugin`) → `disruptor-vpn:*` |
+| ACL grant | `src-tauri/capabilities/mobile.json` |
+| Plugin bridge (Kotlin) | `gen/android/app/src/main/java/io/disruptorproxy/client/VpnPlugin.kt` |
+| The tunnel (Kotlin) | `…/TunnelService.kt` |
+| Manifest service + permissions | `gen/android/app/src/main/AndroidManifest.xml` |
+| Release signing | `gen/android/app/build.gradle.kts` (`keystore.properties` or env) |
+| Native libs | `npm run fetch-core:android` + `npm run build-tun2socks` |
 
-The frontend calls one Tauri plugin, `disruptor-vpn`, with three commands:
+### The command contract (unchanged, already wired on the JS side)
 
 | Command | Args | Returns |
 | --- | --- | --- |
@@ -19,50 +24,58 @@ The frontend calls one Tauri plugin, `disruptor-vpn`, with three commands:
 | `stop` | — | — |
 | `traffic` | — | `{ uplink: number, downlink: number }` |
 
-## Android
+### How the packets actually flow
 
-1. **Scaffold** (regenerates `gen/android` under `io.disruptorproxy.client`; the stale
-   `io.guardian` is already renamed but a fresh init is cleaner):
-   `npm run tauri android init`.
-2. **Create the plugin:** `npx tauri plugin new disruptor-vpn --android --ios --no-api`.
-   Move `TunnelService.kt` into the plugin's `android/src/main/java/...`, and implement its
-   Kotlin plugin's `@Command start/stop/traffic` to drive the service:
-   - `start`: `context.startForegroundService(Intent(ctx, TunnelService::class).setAction(ACTION_START).putExtra(EXTRA_CONFIG, config))`, after `VpnService.prepare()` consent.
-   - `stop`: send `ACTION_STOP`.
-   - `traffic`: return `TunnelService.uplink/downlink`.
-3. **Manifest** (`gen/android/app/src/main/AndroidManifest.xml`): add
-   `android.permission.FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` (API 34+),
-   `POST_NOTIFICATIONS`, and the service:
-   `<service android:name="...TunnelService" android:permission="android.permission.BIND_VPN_SERVICE" android:foregroundServiceType="specialUse"><intent-filter><action android:name="android.net.VpnService"/></intent-filter></service>`.
-4. **Cores:** `npm run fetch-core:android` drops `libxray.so` per ABI into
-   `gen/android/app/src/main/jniLibs/<abi>/` (gitignored). Add a maintained tun2socks
-   (hev-socks5-tunnel) as `libtun2socks.so` per ABI - confirm how your build takes the tun
-   fd and adjust the `ProcessBuilder` call in `TunnelService`.
-5. **Capabilities:** add `src-tauri/capabilities/mobile.json`, `platforms: ["android","iOS"]`,
-   granting `disruptor-vpn:allow-start/allow-stop/allow-traffic` (the plugin defines these).
-6. **Build:** `npm run android` (dev on a device/emulator) / `npm run android-apk`.
+```
+VpnService.establish() → tun fd → tun2socks (in-process, JNI) → SOCKS 1080 → Xray → server
+```
 
-**Verify on device:** VPN-consent dialog → key icon; real traffic routes (check your IP);
-`stop` tears down; survives background/rotation; a geo routing rule resolves.
+Xray's own `tun` inbound **cannot** create the interface on Android — the OS owns it. Its
+documented escape hatch (hand Xray a pre-opened fd via `XRAY_TUN_FD`) only works when Xray
+runs *in-process* as a gomobile library. We ship Xray as a spawned executable, and Android's
+`ProcessBuilder` closes inherited fds, so that fd would be meaningless in the child.
 
-## iOS
+Hence the split: **tun2socks is loaded into the app's own process** (so the fd stays valid)
+and bridges the tun into the SOCKS inbound that `buildMobileConfig` produces, while Xray
+stays a child process. This is the same shape every Android Xray client uses.
 
-1. **Scaffold:** `npm run tauri ios init` (needs a Mac + Xcode). Add a **Packet Tunnel
-   Provider** app-extension target with the `com.apple.developer.networking.networkextension`
-   = `packet-tunnel-provider` entitlement; move `PacketTunnelProvider.swift` into it.
-2. **Embed Xray** as an **xcframework** built with gomobile (e.g. libXray) - iOS forbids
-   subprocesses, so the core runs in-process; add an in-extension tun2socks bridging
-   `packetFlow` ↔ SOCKS 1080. Share `geoip.dat`/`geosite.dat` via an App Group container and
-   set `XRAY_LOCATION_ASSET` to it.
-3. **Plugin:** the same `disruptor-vpn` plugin's `ios/` Swift implements `start/stop/traffic`
-   by managing an `NETunnelProviderManager` (save the profile with
-   `providerConfiguration["config"] = <Xray JSON>`, then `startVPNTunnel()`).
-4. **Signing:** needs a paid Apple Developer account + provisioning for the app and the
-   extension. **Verify on a real device** (NE doesn't run in the simulator); watch memory.
+tun2socks is [hev-socks5-tunnel](https://github.com/heiher/hev-socks5-tunnel), **built from
+source** — the project publishes no Android artifacts, and its prebuilt linux-arm64 binaries
+do not work on Android. `npm run build-tun2socks` runs `ndk-build` against its `Android.mk`
+and installs `libhev-socks5-tunnel.so` per ABI. Needs `NDK_HOME`.
 
-## Notes
+### What to expect on first run
 
-- One config builder, one routing model: mobile uses `buildMobileConfig` (SOCKS inbound, no
-  tun) - the OS owns the tunnel. Geo, probes, and stats work as on desktop.
-- Loop prevention: Android uses `addDisallowedApplication(packageName)`; iOS routes only via
-  the tunnel's included routes and the extension's own sockets bypass it.
+The JNI boundary is the unproven part. `TunnelService` declares three externs
+(`TProxyStartService` / `TProxyStopService` / `TProxyGetStats`) matching what
+[sockstun](https://github.com/heiher/sockstun) exposes. If the build's symbols differ, that
+is the first thing to reconcile — an `UnsatisfiedLinkError` on connect is the tell.
+
+Then verify, in order: the VPN consent dialog appears → key icon in the status bar → your
+public IP changes → traffic counters move → `stop` tears the tunnel down → it survives
+backgrounding and rotation.
+
+### Signing
+
+Release APKs must be signed or Android refuses to install them. Locally, drop a
+`keystore.properties` next to `app/build.gradle.kts` (gitignored):
+
+```properties
+storeFile=/absolute/path/release.jks
+storePassword=…
+keyAlias=…
+keyPassword=…
+```
+
+In CI, set the `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`
+and `ANDROID_KEY_PASSWORD` secrets. With none present the release build stays **unsigned**
+rather than failing, so the job still proves the APK assembles — it just cannot be installed.
+
+## iOS — scaffold only
+
+`ios/PacketTunnelProvider.swift` is a structured starting point, nothing more. It needs a
+Mac for `tauri ios init`, a Packet Tunnel extension target with the `packet-tunnel-provider`
+entitlement, Xray embedded as a gomobile **xcframework** (iOS forbids subprocesses, so the
+core must run in-process — which does mean `XRAY_TUN_FD` works there), and a paid Apple
+Developer account to sign. NetworkExtension does not run in the simulator, so a real device
+is required.

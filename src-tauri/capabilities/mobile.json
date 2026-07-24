@@ -1,0 +1,15 @@
+{
+    "$schema": "../gen/schemas/mobile-schema.json",
+    "identifier": "mobile",
+    "description": "Mobile only: lets the frontend drive the native VPN tunnel. The desktop core commands (run_xray, end_xray, ...) are app commands and need no entry here - only plugin commands go through the ACL, so without this every disruptor-vpn invoke would be denied.",
+    "platforms": [
+        "android",
+        "iOS"
+    ],
+    "windows": [
+        "main"
+    ],
+    "permissions": [
+        "disruptor-vpn:default"
+    ]
+}

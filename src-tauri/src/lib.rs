@@ -1,5 +1,10 @@
 mod platform;
 
+/// The native VPN tunnel. Android only: every other platform runs the core itself through
+/// `platform`, while on Android the OS owns the tunnel and we drive it through a plugin.
+#[cfg(target_os = "android")]
+mod vpn;
+
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;
@@ -619,9 +624,15 @@ fn tun_outbound_interface() -> Option<String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_process::init());
+
+    // Android alone needs the VPN plugin; desktop drives the core directly.
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(vpn::init());
+
+    builder
         .manage(XrayProcess(Mutex::new(None)))
         .manage(ProbeXray(Mutex::new(None)))
         .setup(|_app| {

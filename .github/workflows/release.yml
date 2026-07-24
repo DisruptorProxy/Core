@@ -248,7 +248,26 @@ jobs:
             -   name: Fetch the Android Xray cores
                 run: npm run fetch-core:android
 
+            # No prebuilt Android tun2socks exists, so it is built from source here. It is
+            # what bridges the VpnService tun fd into the core's SOCKS inbound.
+            -   name: Build tun2socks
+                run: npm run build-tun2socks
+
+            # Android refuses to install an unsigned APK. When these secrets are absent the
+            # gradle config leaves the build unsigned rather than failing, so the job still
+            # proves the APK assembles - it just is not installable.
+            -   name: Restore the signing keystore
+                if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+                shell: bash
+                run: |
+                    echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+                    echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
             -   name: Assemble the APK
+                env:
+                    ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+                    ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+                    ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
                 run: npm run tauri android build -- --apk
 
             -   name: Stage the Android artifact

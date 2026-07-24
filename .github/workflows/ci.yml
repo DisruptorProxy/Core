@@ -244,6 +244,11 @@ jobs:
             -   name: Fetch the Android Xray core
                 run: npm run fetch-core:android
 
+            # No prebuilt Android tun2socks exists, so it is built from source here. It is
+            # what bridges the VpnService tun fd into the core's SOCKS inbound.
+            -   name: Build tun2socks
+                run: npm run build-tun2socks
+
             -   name: Assemble the APK
                 run: npm run tauri android build -- --apk --target aarch64
 
