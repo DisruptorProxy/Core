@@ -1,50 +1,141 @@
-import { For, createEffect, createMemo, createSignal, createVirtualizer, onCleanup } from 'azerothjs';
+import { For, createEffect, createMemo, createSignal, onCleanup } from 'azerothjs';
 
-interface VirtualListProps
+interface VirtualListProps<T>
 {
-    /** The ids to display, as a reactive getter. Order is the display order. */
-    ids: () => string[];
-    /** Fixed row height in CSS pixels. Every row MUST be exactly this tall. */
-    rowHeight: number;
+    /** The full item array, as a reactive getter. Order is the display order. */
+    items: () => T[];
+    /** Stable, unique key per item (identity across updates, as in `<For>`). */
+    keyOf: (item: T) => string;
+    /**
+     * Each item's height in CSS pixels. Heights are KNOWN per item (a server row vs a
+     * group header vs a quota strip), not measured - so the rendered element MUST be
+     * exactly this tall, the same contract the old fixed-height list had.
+     */
+    heightOf: (item: T) => number;
     /** Rows rendered above and below the viewport, so a fast scroll shows no gap. */
     overscan?: number;
-    /** Builds one row from its id. Called only for rows inside the window. */
-    children: (id: string) => HTMLElement;
+    /** Builds one row from its item. Called only for items inside the window. */
+    children: (item: T) => HTMLElement;
 }
 
 /**
- * A windowed list: renders only the rows in view (plus a small overscan), so 8000
- * ids cost ~25 DOM nodes instead of 8000. The windowing maths live in the
- * framework's createVirtualizer - its equality-guarded range means scrolling
- * WITHIN the current window is a reactive non-event, so rows reconcile only when
- * the window actually moves. This component owns what the framework's packaged
- * <VirtualList> does not offer yet: a ResizeObserver-measured viewport (rotate,
- * window resize, a growing filter bar) and rows in normal flow behind one
- * `translateY`, instead of an explicit fixed height with absolute rows.
+ * A windowed list over items of KNOWN but VARYING heights: renders only the items in view
+ * (plus overscan), so a grouped 8000-server list costs ~25 DOM nodes, not 8000.
+ *
+ * The framework's `createVirtualizer` is deliberately fixed-size only, so this owns its own
+ * windowing: a prefix-sum of item heights (rebuilt only when the items change, never per
+ * scroll) plus a binary search for the visible range. Because heights are derived from each
+ * item's kind rather than measured from the DOM, there is no measurement pass - collapsing a
+ * group just emits fewer items and the offsets recompute once.
+ *
+ * `startIndex`/`endIndex` are number memos, so scrolling within the current window produces
+ * the same range and nothing downstream re-runs - the equality guard the old list relied on.
  */
-export default component VirtualList(props: VirtualListProps)
+export default component VirtualList<T>(props: VirtualListProps<T>)
 {
     const [viewport, setViewport] = createSignal(0);
+    const [scrollTop, setScrollTop] = createSignal(0);
 
-    const virtualizer = createVirtualizer({
-        count: () => props.ids().length,
-        itemSize: props.rowHeight,
-        viewportSize: viewport,
-        overscan: props.overscan ?? 6
-    });
+    const overscan = (): number => props.overscan ?? 6;
 
-    const windowIds = createMemo(() =>
+    // offsets[i] = pixels before item i; the last entry is the total scroll height. Rebuilt
+    // only when the item set or a height changes - a scroll never touches this.
+    const offsets = createMemo(() =>
     {
-        const { start, end } = virtualizer.range();
+        const list = props.items();
+        const acc = new Array<number>(list.length + 1);
 
-        return props.ids().slice(start, end + 1);
+        acc[0] = 0;
+
+        for (let index = 0; index < list.length; index++)
+        {
+            acc[index + 1] = acc[index] + props.heightOf(list[index]);
+        }
+
+        return acc;
     });
 
-    const offsetY = (): number => virtualizer.offsetOf(virtualizer.range().start);
+    const totalSize = (): number =>
+    {
+        const acc = offsets();
 
-    // The scroll element is measured with a ResizeObserver rather than a one-time
-    // read: the viewport height changes on rotate, on window resize, and when the
-    // filter bar above it grows or shrinks.
+        return acc[acc.length - 1];
+    };
+
+    // The last item whose top is at or before the viewport's top edge - the first to render.
+    const startIndex = createMemo(() =>
+    {
+        const acc = offsets();
+        const n = acc.length - 1;
+
+        if (n === 0)
+        {
+            return 0;
+        }
+
+        const top = scrollTop();
+        let lo = 0;
+        let hi = n - 1;
+
+        // Rightmost index with acc[index] <= top.
+        while (lo < hi)
+        {
+            const mid = (lo + hi + 1) >> 1;
+
+            if (acc[mid] <= top)
+            {
+                lo = mid;
+            }
+            else
+            {
+                hi = mid - 1;
+            }
+        }
+
+        return Math.max(0, lo - overscan());
+    });
+
+    // The last item still touching the viewport's bottom edge.
+    const endIndex = createMemo(() =>
+    {
+        const acc = offsets();
+        const n = acc.length - 1;
+
+        if (n === 0)
+        {
+            return -1;
+        }
+
+        const bottom = scrollTop() + viewport();
+        let lo = 0;
+        let hi = n;
+
+        // Leftmost index whose top is at or after the bottom edge; the item before it is
+        // the last one still visible.
+        while (lo < hi)
+        {
+            const mid = (lo + hi) >> 1;
+
+            if (acc[mid] >= bottom)
+            {
+                hi = mid;
+            }
+            else
+            {
+                lo = mid + 1;
+            }
+        }
+
+        return Math.min(n - 1, lo - 1 + overscan());
+    });
+
+    const windowItems = createMemo(() => props.items().slice(startIndex(), endIndex() + 1));
+
+    const offsetY = (): number => offsets()[startIndex()];
+
+    // The scroll element is measured with a ResizeObserver rather than a one-time read:
+    // the viewport height changes on rotate, on window resize, and when the filter bar
+    // above it grows or shrinks.
     const attach = (element: HTMLElement): void =>
     {
         setViewport(element.clientHeight);
@@ -59,14 +150,14 @@ export default component VirtualList(props: VirtualListProps)
     <div
         ref={ attach }
         class="relative h-full overflow-y-auto overflow-x-hidden overscroll-contain"
-        onScroll={ (event) => virtualizer.setScrollOffset((event.target as HTMLElement).scrollTop) }
+        onScroll={ (event) => setScrollTop((event.target as HTMLElement).scrollTop) }
     >
-        <div class="relative w-full" style:height={ `${ virtualizer.totalSize() }px` }>
+        <div class="relative w-full" style:height={ `${ totalSize() }px` }>
             <div class="absolute inset-x-0 top-0" style:transform={ `translateY(${ offsetY() }px)` }>
-                <For each={ windowIds } key={ (id) => id }>
-                    { (id) =>
-                        <div style:height={ `${ props.rowHeight }px` }>
-                            { props.children(id) }
+                <For each={ windowItems } key={ (item) => props.keyOf(item) }>
+                    { (item) =>
+                        <div style:height={ `${ props.heightOf(item) }px` }>
+                            { props.children(item) }
                         </div>
                     }
                 </For>

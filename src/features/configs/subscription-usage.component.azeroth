@@ -1,0 +1,111 @@
+import { Show } from 'azerothjs';
+
+import type { SubscriptionRecord, SubscriptionUserinfo } from '../../lib/db/schema';
+import { formatBytes } from '../../lib/format/bytes';
+
+import { useLocale } from '../../stores/locale';
+import { useSubscriptions } from '../../stores/subscriptions';
+
+import { relativeTime } from '../../components/relative-time';
+
+interface SubscriptionUsageProps
+{
+    subId: string;
+}
+
+/**
+ * The quota + freshness strip under an expanded subscription. Split out of the header so
+ * the header can stay a uniform fixed height while this carries the variable-but-bounded
+ * detail: last-updated age, remaining data, expiry, and the usage bar. Only rendered when
+ * the provider actually reported a quota or expiry (the group decides that upstream).
+ */
+export default component SubscriptionUsage(props: SubscriptionUsageProps)
+{
+    const { t } = useLocale();
+    const subscriptions = useSubscriptions();
+
+    const sub = (): SubscriptionRecord | undefined =>
+        subscriptions.subs().find((record) => record.id === props.subId);
+
+    const info = (): SubscriptionUserinfo | undefined => sub()?.userinfo;
+
+    const totalBytes = (): number => info()?.total ?? 0;
+
+    const remainingBytes = (): number =>
+    {
+        const usage = info();
+
+        return usage ? Math.max(usage.total - usage.upload - usage.download, 0) : 0;
+    };
+
+    const usedBytes = (): number => Math.max(totalBytes() - remainingBytes(), 0);
+
+    const usedPct = (): number => (totalBytes() > 0 ? Math.min((usedBytes() / totalBytes()) * 100, 100) : 0);
+
+    const usageTone = (): string =>
+    {
+        if (usedPct() >= 90)
+        {
+            return 'bg-poor';
+        }
+
+        return usedPct() >= 75 ? 'bg-fair' : 'bg-accent';
+    };
+
+    const daysLeft = (): number | null =>
+    {
+        const expire = info()?.expire ?? 0;
+
+        return expire > 0 ? Math.ceil((expire * 1000 - Date.now()) / 86_400_000) : null;
+    };
+
+    const expiryText = (): string =>
+    {
+        const days = daysLeft();
+
+        if (days === null)
+        {
+            return '';
+        }
+
+        return days <= 0 ? t().subscriptions.expired : t().subscriptions.daysLeft(days);
+    };
+
+    <div class="flex h-full flex-col justify-center gap-1.5 border-b border-border/60 bg-elevated/20 px-5 text-[11px]">
+        <div class="flex items-baseline justify-between gap-2">
+            <Show
+                when={ sub()?.lastUpdatedAt }
+                fallback={ () => document.createElement('span') }
+            >
+                { (updatedAt) =>
+                    <span class="text-faint">{ t().subscriptions.updatedAgo(relativeTime(updatedAt(), t())) }</span>
+                }
+            </Show>
+
+            <div class="flex items-baseline gap-3">
+                <Show when={ totalBytes() > 0 }>
+                    <span class="flex items-baseline gap-1 text-muted">
+                        <span>{ t().subscriptions.remaining }</span>
+                        <span class="readout font-medium text-text" dir="ltr">{ formatBytes(remainingBytes()) }</span>
+                    </span>
+                </Show>
+
+                <Show when={ daysLeft() !== null }>
+                    <span class={ `readout font-medium ${ (daysLeft() ?? 0) <= 3 ? 'text-poor' : 'text-muted' }` }>
+                        { expiryText() }
+                    </span>
+                </Show>
+            </div>
+        </div>
+
+        <Show when={ totalBytes() > 0 }>
+            <div class="h-1 w-full overflow-hidden rounded-full bg-border/50">
+                <div class={ `h-full rounded-full ${ usageTone() }` } style:width={ `${ usedPct() }%` }></div>
+            </div>
+
+            <span class="readout self-end text-faint" dir="ltr">
+                { `${ formatBytes(usedBytes()) } / ${ formatBytes(totalBytes()) }` }
+            </span>
+        </Show>
+    </div>
+}

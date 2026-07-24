@@ -19,7 +19,6 @@ export const en: Strings =
     {
         home: 'Connect',
         servers: 'Servers',
-        subscriptions: 'Subscriptions',
         routing: 'Routing',
         settings: 'Settings'
     },
@@ -76,7 +75,14 @@ export const en: Strings =
         test: 'Test',
         testing: (done: number, total: number) =>
             `Testing ${ done.toLocaleString('en-US') } / ${ total.toLocaleString('en-US') }`,
-        stop: 'Stop'
+        stop: 'Stop',
+        otherServers: 'Other servers',
+        collapseAll: 'Collapse all',
+        expandAll: 'Expand all',
+        groupEmpty: 'No servers here yet',
+        activeHere: 'Connected server is in this group',
+        actions: 'Actions',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -103,10 +109,6 @@ export const en: Strings =
 
     subscriptions:
     {
-        title: 'Subscriptions',
-        subtitle: 'Sources that keep your server list fresh.',
-        empty: 'No subscriptions yet.',
-        emptyAction: 'Add a subscription link to pull servers in automatically.',
         add: 'Add subscription',
         addTitle: 'Add subscription',
         editTitle: 'Edit subscription',
@@ -124,10 +126,7 @@ export const en: Strings =
         updating: 'Updating…',
         delete: 'Delete',
         countLabel: (count: number) => `${ count.toLocaleString('en-US') } servers`,
-        statusNever: 'Never updated',
         statusOk: 'Up to date',
-        statusStale: 'Stale',
-        statusFailed: 'Update failed',
         updatedAgo: (text: string) => `Updated ${ text }`,
         justNow: 'just now',
         minutesAgo: (n: number) => `${ n }m ago`,

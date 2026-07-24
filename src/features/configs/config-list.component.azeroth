@@ -1,26 +1,71 @@
+import type { SubscriptionRecord } from '../../lib/db/schema';
+import type { ListItem } from '../../stores/query';
+
 import { useConfigs } from '../../stores/configs';
 import { useConnection } from '../../stores/connection';
 import { useDetail } from '../../stores/detail';
 import { useHealth } from '../../stores/health';
+import { useLocale } from '../../stores/locale';
 import { useServerQuery } from '../../stores/query';
 import { useSelection } from '../../stores/selection';
 
 import VirtualList from '../../components/virtual-list.component.azeroth';
 
 import ConfigRow from './config-row.component.azeroth';
+import GroupHeader from './group-header.component.azeroth';
+import SubscriptionUsage from './subscription-usage.component.azeroth';
 
-/** Fixed row height - the whole virtual list depends on every row being this tall. */
-const ROW_HEIGHT = 72;
+// Fixed heights per item kind - the whole windowing depends on each rendered element
+// being EXACTLY this tall (the components below fill their slot with h-full).
+const GROUP_HEIGHT = 60;
+const USAGE_HEIGHT = 76;
+const EMPTY_HEIGHT = 44;
+const SERVER_HEIGHT = 72;
+
+const heightOf = (item: ListItem): number =>
+{
+    switch (item.kind)
+    {
+        case 'group':
+            return GROUP_HEIGHT;
+        case 'usage':
+            return USAGE_HEIGHT;
+        case 'empty':
+            return EMPTY_HEIGHT;
+        case 'server':
+            return SERVER_HEIGHT;
+    }
+};
 
 /** A row whose data is momentarily gone renders as empty space, not a crash. */
 const placeholder = (): HTMLElement => document.createElement('div');
 
+const emptyRow = (message: string): HTMLElement =>
+{
+    const element = document.createElement('div');
+
+    element.className = 'flex h-full items-center border-b border-border/60 px-5 text-xs text-faint';
+    element.textContent = message;
+
+    return element;
+};
+
+interface ConfigListProps
+{
+    /** Open the subscription editor for a group's source (routed up to the page's dialog). */
+    onEditSub: (sub: SubscriptionRecord) => void;
+    /** Open the delete dialog for a group's source. */
+    onDeleteSub: (sub: SubscriptionRecord) => void;
+}
+
 /**
- * The virtualized server list. Ties the query's visible ids to the windowed list,
- * and looks each row up by id at render time - so scrolling never touches the
- * 8000-item array, only the ~25 rows on screen.
+ * The virtualized, grouped server list. One flat virtualizer windows a heterogeneous
+ * stream - subscription headers, quota strips, server rows, empty notes - so scrolling
+ * never touches the 8000-item array, only the ~25 items on screen, exactly as the flat
+ * list did. Collapsing a group just removes its items from the stream upstream; the list
+ * re-windows without any DOM measurement.
  */
-export default component ConfigList()
+export default component ConfigList(props: ConfigListProps)
 {
     const { rowById } = useConfigs();
     const query = useServerQuery();
@@ -28,6 +73,7 @@ export default component ConfigList()
     const connection = useConnection();
     const detail = useDetail();
     const health = useHealth();
+    const { t } = useLocale();
 
     const tap = (id: string): void =>
     {
@@ -43,28 +89,53 @@ export default component ConfigList()
         detail.open(id);
     };
 
-    // Block-body render so a row can be resolved and guarded: during a bulk delete
-    // the visible-id list and the row map update in separate reactive steps, so an
-    // id can briefly outlive its row. Rendering a placeholder is correct here - the
-    // next flush reconciles it away.
-    <VirtualList ids={ query.visibleIds } rowHeight={ ROW_HEIGHT } overscan={ 6 }>
-        { (id) =>
-        {
-            const row = rowById(id);
+    const renderServer = (id: string): HTMLElement =>
+    {
+        // Resolve and guard: during a bulk delete the visible-item stream and the row map
+        // update in separate reactive steps, so an id can briefly outlive its row.
+        const row = rowById(id);
 
-            return row === undefined
-                ? placeholder()
-                : ConfigRow({
-                    row,
-                    selectMode: selection.active,
-                    isSelected: () => selection.isSelected(id),
-                    isActive: () => connection.isActive(id),
-                    isOpen: () => detail.openId() === id,
-                    latency: () => health.latencyOf(id),
-                    isPinging: () => health.isPinging(id),
-                    onTap: () => tap(id),
-                    onHold: () => selection.begin(id)
+        return row === undefined
+            ? placeholder()
+            : ConfigRow({
+                row,
+                selectMode: selection.active,
+                isSelected: () => selection.isSelected(id),
+                isActive: () => connection.isActive(id),
+                isOpen: () => detail.openId() === id,
+                latency: () => health.latencyOf(id),
+                isPinging: () => health.isPinging(id),
+                onTap: () => tap(id),
+                onHold: () => selection.begin(id)
+            });
+    };
+
+    const renderItem = (item: ListItem): HTMLElement =>
+    {
+        switch (item.kind)
+        {
+            case 'group':
+                return GroupHeader({
+                    groupKey: item.groupKey,
+                    subId: item.subId,
+                    onEdit: props.onEditSub,
+                    onDelete: props.onDeleteSub
                 });
-        } }
+            case 'usage':
+                return SubscriptionUsage({ subId: item.subId });
+            case 'empty':
+                return emptyRow(t().servers.groupEmpty);
+            case 'server':
+                return renderServer(item.id);
+        }
+    };
+
+    <VirtualList
+        items={ query.visibleItems }
+        keyOf={ (item) => item.key }
+        heightOf={ heightOf }
+        overscan={ 6 }
+    >
+        { (item) => renderItem(item) }
     </VirtualList>
 }

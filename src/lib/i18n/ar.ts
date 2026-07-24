@@ -19,7 +19,6 @@ export const ar: Strings =
     {
         home: 'الاتصال',
         servers: 'الخوادم',
-        subscriptions: 'الاشتراكات',
         routing: 'التوجيه',
         settings: 'الإعدادات'
     },
@@ -76,7 +75,14 @@ export const ar: Strings =
         test: 'اختبار',
         testing: (done: number, total: number) =>
             `جارٍ الاختبار ${ done.toLocaleString('ar-EG') } / ${ total.toLocaleString('ar-EG') }`,
-        stop: 'إيقاف'
+        stop: 'إيقاف',
+        otherServers: 'خوادم أخرى',
+        collapseAll: 'طيّ الكل',
+        expandAll: 'توسيع الكل',
+        groupEmpty: 'لا خوادم هنا بعد',
+        activeHere: 'الخادم المتصل ضمن هذه المجموعة',
+        actions: 'إجراءات',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -103,10 +109,6 @@ export const ar: Strings =
 
     subscriptions:
     {
-        title: 'الاشتراكات',
-        subtitle: 'المصادر التي تُبقي قائمة خوادمك محدثة.',
-        empty: 'لا توجد اشتراكات بعد.',
-        emptyAction: 'أضف رابط اشتراك لجلب الخوادم تلقائيًا.',
         add: 'إضافة اشتراك',
         addTitle: 'إضافة اشتراك',
         editTitle: 'تعديل الاشتراك',
@@ -124,10 +126,7 @@ export const ar: Strings =
         updating: 'جارٍ التحديث…',
         delete: 'حذف',
         countLabel: (count: number) => `${ count.toLocaleString('ar-EG') } خادمًا`,
-        statusNever: 'لم يُحدَّث قط',
         statusOk: 'محدث',
-        statusStale: 'قديم',
-        statusFailed: 'فشل التحديث',
         updatedAgo: (text: string) => `حُدِّث ${ text }`,
         justNow: 'الآن',
         minutesAgo: (n: number) => `قبل ${ n.toLocaleString('ar-EG') } دقيقة`,

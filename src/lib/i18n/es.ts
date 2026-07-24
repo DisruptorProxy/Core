@@ -19,7 +19,6 @@ export const es: Strings =
     {
         home: 'Conectar',
         servers: 'Servidores',
-        subscriptions: 'Suscripciones',
         routing: 'Rutas',
         settings: 'Ajustes'
     },
@@ -76,7 +75,14 @@ export const es: Strings =
         test: 'Probar',
         testing: (done: number, total: number) =>
             `Probando ${ done.toLocaleString('es-ES') } / ${ total.toLocaleString('es-ES') }`,
-        stop: 'Detener'
+        stop: 'Detener',
+        otherServers: 'Otros servidores',
+        collapseAll: 'Contraer todo',
+        expandAll: 'Expandir todo',
+        groupEmpty: 'Aún no hay servidores aquí',
+        activeHere: 'El servidor conectado está en este grupo',
+        actions: 'Acciones',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -103,10 +109,6 @@ export const es: Strings =
 
     subscriptions:
     {
-        title: 'Suscripciones',
-        subtitle: 'Fuentes que mantienen tu lista de servidores al día.',
-        empty: 'Aún no hay suscripciones.',
-        emptyAction: 'Añade un enlace de suscripción para traer servidores automáticamente.',
         add: 'Añadir suscripción',
         addTitle: 'Añadir suscripción',
         editTitle: 'Editar suscripción',
@@ -124,10 +126,7 @@ export const es: Strings =
         updating: 'Actualizando…',
         delete: 'Eliminar',
         countLabel: (count: number) => `${ count.toLocaleString('es-ES') } servidores`,
-        statusNever: 'Nunca actualizada',
         statusOk: 'Al día',
-        statusStale: 'Desfasada',
-        statusFailed: 'Error al actualizar',
         updatedAgo: (text: string) => `Actualizada ${ text }`,
         justNow: 'justo ahora',
         minutesAgo: (n: number) => `hace ${ n } min`,

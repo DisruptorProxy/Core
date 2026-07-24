@@ -19,7 +19,6 @@ export const id: Strings =
     {
         home: 'Sambungkan',
         servers: 'Server',
-        subscriptions: 'Langganan',
         routing: 'Perutean',
         settings: 'Pengaturan'
     },
@@ -76,7 +75,14 @@ export const id: Strings =
         test: 'Uji',
         testing: (done: number, total: number) =>
             `Menguji ${ done.toLocaleString('id-ID') } / ${ total.toLocaleString('id-ID') }`,
-        stop: 'Berhenti'
+        stop: 'Berhenti',
+        otherServers: 'Server lainnya',
+        collapseAll: 'Tutup semua',
+        expandAll: 'Buka semua',
+        groupEmpty: 'Belum ada server di sini',
+        activeHere: 'Server yang terhubung ada di grup ini',
+        actions: 'Tindakan',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -103,10 +109,6 @@ export const id: Strings =
 
     subscriptions:
     {
-        title: 'Langganan',
-        subtitle: 'Sumber yang menjaga daftar server Anda tetap baru.',
-        empty: 'Belum ada langganan.',
-        emptyAction: 'Tambahkan tautan langganan agar server masuk otomatis.',
         add: 'Tambah langganan',
         addTitle: 'Tambah langganan',
         editTitle: 'Ubah langganan',
@@ -124,10 +126,7 @@ export const id: Strings =
         updating: 'Memperbarui…',
         delete: 'Hapus',
         countLabel: (count: number) => `${ count.toLocaleString('id-ID') } server`,
-        statusNever: 'Belum pernah diperbarui',
         statusOk: 'Terbaru',
-        statusStale: 'Usang',
-        statusFailed: 'Gagal memperbarui',
         updatedAgo: (text: string) => `Diperbarui ${ text }`,
         justNow: 'baru saja',
         minutesAgo: (n: number) => `${ n } mnt lalu`,

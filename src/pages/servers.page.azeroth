@@ -1,20 +1,24 @@
-import { Match, Show, Switch, Transition } from 'azerothjs';
+import { Show, Transition } from 'azerothjs';
 
-import { CircleStop, Download, ListChecks, Server } from 'lucide';
+import { ChevronsDownUp, ChevronsUpDown, CircleStop, Download, Gauge, ListChecks, Rss, Server, SlidersHorizontal } from 'lucide';
+
+import type { SubscriptionRecord } from '../lib/db/schema';
 
 import { useConfigs } from '../stores/configs';
 import { useConnection } from '../stores/connection';
 import { useDetail } from '../stores/detail';
+import { useGroups } from '../stores/groups';
 import { useHealth } from '../stores/health';
 import { useLocale } from '../stores/locale';
 import { useServerQuery } from '../stores/query';
 import { useSelection } from '../stores/selection';
+import { useSubscriptions } from '../stores/subscriptions';
 import { useViewport } from '../stores/viewport';
 
 import Button from '../components/button.component.azeroth';
+import Card from '../components/card.component.azeroth';
 import EmptyState from '../components/empty-state.component.azeroth';
 import { icon } from '../components/icon';
-import PingMenu from '../components/ping-menu.component.azeroth';
 import Sheet from '../components/sheet.component.azeroth';
 
 import BulkBar from '../features/configs/bulk-bar.component.azeroth';
@@ -23,14 +27,25 @@ import ConfigList from '../features/configs/config-list.component.azeroth';
 import FiltersBar from '../features/configs/filters-bar.component.azeroth';
 import ConnectionStatus from '../features/connection/connection-status.component.azeroth';
 import ImportSheet from '../features/import/import-sheet.component.azeroth';
+import DeleteDialog from '../features/subscriptions/delete-dialog.component.azeroth';
+import SubscriptionEditor from '../features/subscriptions/subscription-editor.component.azeroth';
+import UpdateReport from '../features/subscriptions/update-report.component.azeroth';
 
 const ICON_BTN = 'flex size-11 items-center justify-center rounded-lg border border-border text-muted hover:bg-elevated press';
 
+// One action row inside the drawer: a full-width, comfortably tappable target with an
+// icon and a clear label - the mobile-first replacement for a cramped row of icons.
+const DRAWER_ROW = 'flex w-full items-center gap-3 rounded-xl px-3 py-3 text-start text-sm font-medium text-text hover:bg-elevated press';
+
 /**
- * The server catalogue. Unlike the other screens it does NOT use the scrolling
- * Screen scaffold: the list must own a bounded height and scroll internally, or
- * virtualization has nothing to measure. So this is a full-height column - a fixed
- * header, a filter bar, and the list filling the rest.
+ * The server workspace: every server the app knows, grouped under the subscription it came
+ * from (collapsible), with manually-imported servers under their own group. This one page
+ * absorbed the old separate Subscriptions screen - adding, editing, updating and deleting a
+ * source all happen here, on its group header - so there is a single place servers live.
+ *
+ * Like the list it owns, it does NOT use the scrolling Screen scaffold: the list must own a
+ * bounded height and scroll internally, or virtualization has nothing to measure. So this is
+ * a full-height column - a fixed header, a filter bar, and the grouped list filling the rest.
  */
 export default component ServersPage()
 {
@@ -41,11 +56,86 @@ export default component ServersPage()
     const health = useHealth();
     const detail = useDetail();
     const connection = useConnection();
+    const subscriptions = useSubscriptions();
+    const groups = useGroups();
     const viewport = useViewport();
 
     state importOpen = false;
+    state actionsOpen = false;
+    state editorOpen = false;
+    state editing = null as SubscriptionRecord | null;
+    state deleteTarget = null as SubscriptionRecord | null;
 
     derived hasServers = rows().length > 0;
+    // The grouped list appears whenever there is anything to organise - servers, or even a
+    // subscription with nothing under it yet (its empty header still belongs on screen).
+    derived hasList = rows().length > 0 || subscriptions.subs().length > 0;
+    derived canTest = rows().length > 0 && !health.testState().running;
+    derived isTesting = rows().length > 0 && health.testState().running;
+
+    const openAddSub = (): void =>
+    {
+        editing = null;
+        editorOpen = true;
+    };
+
+    const openEditSub = (sub: SubscriptionRecord): void =>
+    {
+        editing = sub;
+        editorOpen = true;
+    };
+
+    const submitSub = async (url: string, name: string, intervalMin: number): Promise<void> =>
+    {
+        const current = editing;
+
+        editorOpen = false;
+
+        if (current === null)
+        {
+            const id = await subscriptions.add(url, name, intervalMin);
+
+            // A brand-new subscription updates immediately - adding a source whose servers
+            // the user cannot see is a dead end.
+            await subscriptions.update(id);
+        }
+        else
+        {
+            await subscriptions.edit({ ...current, url, name: name.trim() === '' ? current.name : name, intervalMin });
+        }
+    };
+
+    const confirmDelete = async (keepConfigs: boolean): Promise<void> =>
+    {
+        const target = deleteTarget;
+
+        deleteTarget = null;
+
+        if (target !== null)
+        {
+            await subscriptions.remove(target.id, keepConfigs);
+        }
+    };
+
+    // Collapse-all is a single toggle: if everything is already closed, open it all.
+    const allCollapsed = (): boolean =>
+    {
+        const keys = query.groupKeys();
+
+        return keys.length > 0 && keys.every((key) => groups.isCollapsed(key));
+    };
+
+    const toggleAll = (): void =>
+    {
+        if (allCollapsed())
+        {
+            groups.expandAll();
+        }
+        else
+        {
+            groups.collapseAll(query.groupKeys());
+        }
+    };
 
     // The side panel's live block: visible whenever a session is up or forming,
     // so connecting never empties the panel - it gains the connection instead.
@@ -86,53 +176,24 @@ export default component ServersPage()
                     </Show>
                 </div>
 
+                { /* One trigger instead of a crowded row of icons: the actions live in a
+                     drawer (bottom sheet on phones, centred card on wide) - roomy, labelled
+                     targets rather than five cryptic glyphs fighting for space beside the
+                     title. A live test shows its progress in the subtitle above. */ }
                 <Show when={ !selection.active() }>
-                    <div class="flex shrink-0 items-center gap-2">
-                        <button
-                            type="button"
-                            class={ ICON_BTN }
-                            aria-label={ t().importing.openAction }
-                            data-tip={ t().importing.openAction }
-                            onClick={ () => importOpen = true }
-                        >
-                            { icon(Download, 'size-4') }
-                        </button>
+                    <button
+                        type="button"
+                        class={ `${ ICON_BTN } relative shrink-0` }
+                        aria-label={ t().servers.actions }
+                        data-tip={ t().servers.actions }
+                        onClick={ () => actionsOpen = true }
+                    >
+                        { icon(SlidersHorizontal, 'size-4') }
 
-                        <Switch>
-                            <Match when={ hasServers && health.testState().running }>
-                                <button
-                                    type="button"
-                                    class="flex size-11 items-center justify-center rounded-lg border border-poor/40 text-poor hover:bg-poor/10 press"
-                                    aria-label={ t().servers.stop }
-                                    data-tip={ t().servers.stop }
-                                    onClick={ () => health.cancel() }
-                                >
-                                    { icon(CircleStop, 'size-4') }
-                                </button>
-                            </Match>
-                            <Match when={ hasServers }>
-                                <PingMenu
-                                    variant="icon"
-                                    label={ t().servers.test }
-                                    tcpLabel={ t().ping.tcp }
-                                    proxyLabel={ t().ping.proxy }
-                                    onPick={ (mode) => void health.test(query.visibleIds(), mode) }
-                                />
-                            </Match>
-                        </Switch>
-
-                        <Show when={ hasServers }>
-                            <button
-                                type="button"
-                                class={ ICON_BTN }
-                                aria-label={ t().servers.select }
-                                data-tip={ t().servers.select }
-                                onClick={ () => selection.enter() }
-                            >
-                                { icon(ListChecks, 'size-4') }
-                            </button>
+                        <Show when={ isTesting }>
+                            <span class="absolute end-1.5 top-1.5 size-2 animate-pulse rounded-full bg-accent" aria-hidden="true"></span>
                         </Show>
-                    </div>
+                    </button>
                 </Show>
             </div>
         </header>
@@ -143,21 +204,45 @@ export default component ServersPage()
                     <FiltersBar />
                 </div>
             </div>
+        </Show>
 
+        <Show when={ subscriptions.error() }>
+            <div class="shrink-0 border-b border-border">
+                <div class="mx-auto w-full max-w-3xl px-5 py-3">
+                    <p class="rounded-xl border border-poor/40 bg-poor/5 px-3 py-2 text-sm text-poor">{ subscriptions.error() }</p>
+                </div>
+            </div>
+        </Show>
+
+        <Show when={ subscriptions.lastOutcome() }>
+            { (outcome) =>
+            <div class="shrink-0 border-b border-border">
+                <div class="mx-auto w-full max-w-3xl px-5 py-3">
+                    <Card class="flex flex-col gap-2 p-3">
+                        <span class="text-xs font-medium text-muted">{ t().subscriptions.statusOk }</span>
+                        <UpdateReport diff={ outcome().diff } />
+                    </Card>
+                </div>
+            </div>
+            }
+        </Show>
+
+        <Show when={ hasList }>
             <div class="min-h-0 flex-1">
                 <div class="mx-auto h-full w-full max-w-3xl">
-                    <Show when={ query.visibleIds().length > 0 } fallback={ () => noMatches(t().servers.noMatches) }>
-                        <ConfigList />
+                    <Show when={ query.visibleItems().length > 0 } fallback={ () => noMatches(t().servers.noMatches) }>
+                        <ConfigList onEditSub={ openEditSub } onDeleteSub={ (sub) => deleteTarget = sub } />
                     </Show>
                 </div>
             </div>
         </Show>
 
-        <Show when={ !hasServers }>
+        <Show when={ !hasList }>
             <div class="flex flex-1 flex-col items-center gap-6 overflow-y-auto px-5 py-10">
                 <EmptyState glyph={ Server } title={ t().servers.empty } hint={ t().servers.emptyAction } />
 
-                <div class="w-full max-w-xs">
+                <div class="flex w-full max-w-xs flex-col gap-3">
+                    <Button label={ t().subscriptions.add } leading={ Rss } block={ true } onPress={ () => openAddSub() } />
                     <Button label={ t().importing.openAction } leading={ Download } block={ true } onPress={ () => importOpen = true } />
                 </div>
             </div>
@@ -194,7 +279,71 @@ export default component ServersPage()
         <BulkBar visibleIds={ query.visibleIds } />
     </Transition>
 
+    <Sheet open={ () => actionsOpen } onClose={ () => actionsOpen = false } title={ t().servers.actions }>
+        <div class="flex flex-col gap-1">
+            <Show when={ canTest }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; void health.test(query.visibleIds(), 'tcp'); } }>
+                    { icon(Gauge, 'size-5 shrink-0 text-muted') }
+                    <span>{ t().servers.test } · { t().ping.tcp }</span>
+                </button>
+            </Show>
+
+            <Show when={ canTest }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; void health.test(query.visibleIds(), 'proxy'); } }>
+                    { icon(Gauge, 'size-5 shrink-0 text-muted') }
+                    <span>{ t().servers.test } · { t().ping.proxy }</span>
+                </button>
+            </Show>
+
+            <Show when={ isTesting }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; health.cancel(); } }>
+                    { icon(CircleStop, 'size-5 shrink-0 text-poor') }
+                    <span class="text-poor">{ t().servers.stop }</span>
+                </button>
+            </Show>
+
+            <Show when={ hasServers }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; selection.enter(); } }>
+                    { icon(ListChecks, 'size-5 shrink-0 text-muted') }
+                    <span>{ t().servers.select }</span>
+                </button>
+            </Show>
+
+            <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; openAddSub(); } }>
+                { icon(Rss, 'size-5 shrink-0 text-muted') }
+                <span>{ t().subscriptions.add }</span>
+            </button>
+
+            <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; importOpen = true; } }>
+                { icon(Download, 'size-5 shrink-0 text-muted') }
+                <span>{ t().importing.openAction }</span>
+            </button>
+
+            <Show when={ hasList }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; toggleAll(); } }>
+                    <Show when={ allCollapsed() } fallback={ () => icon(ChevronsDownUp, 'size-5 shrink-0 text-muted') }>
+                        { icon(ChevronsUpDown, 'size-5 shrink-0 text-muted') }
+                    </Show>
+                    <span>{ () => allCollapsed() ? t().servers.expandAll : t().servers.collapseAll }</span>
+                </button>
+            </Show>
+        </div>
+    </Sheet>
+
     <ImportSheet open={ () => importOpen } onClose={ () => importOpen = false } />
+
+    <SubscriptionEditor
+        open={ () => editorOpen }
+        initial={ () => editing }
+        onClose={ () => editorOpen = false }
+        onSubmit={ (url, name, intervalMin) => void submitSub(url, name, intervalMin) }
+    />
+
+    <DeleteDialog
+        sub={ () => deleteTarget }
+        onClose={ () => deleteTarget = null }
+        onConfirm={ (keepConfigs) => void confirmDelete(keepConfigs) }
+    />
 
     <Show when={ !viewport.isWide() }>
         <Sheet open={ () => detail.openId() !== null } onClose={ () => detail.close() } title={ detail.config()?.name ?? '' }>

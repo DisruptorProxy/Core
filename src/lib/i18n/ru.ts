@@ -19,7 +19,6 @@ export const ru: Strings =
     {
         home: 'Подключение',
         servers: 'Серверы',
-        subscriptions: 'Подписки',
         routing: 'Маршруты',
         settings: 'Настройки'
     },
@@ -76,7 +75,14 @@ export const ru: Strings =
         test: 'Тест',
         testing: (done: number, total: number) =>
             `Тестирование ${ done.toLocaleString('ru-RU') } / ${ total.toLocaleString('ru-RU') }`,
-        stop: 'Стоп'
+        stop: 'Стоп',
+        otherServers: 'Другие серверы',
+        collapseAll: 'Свернуть все',
+        expandAll: 'Развернуть все',
+        groupEmpty: 'Здесь пока нет серверов',
+        activeHere: 'Подключённый сервер в этой группе',
+        actions: 'Действия',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -103,10 +109,6 @@ export const ru: Strings =
 
     subscriptions:
     {
-        title: 'Подписки',
-        subtitle: 'Источники, которые обновляют ваш список серверов.',
-        empty: 'Подписок пока нет.',
-        emptyAction: 'Добавьте ссылку подписки, чтобы серверы загружались автоматически.',
         add: 'Добавить подписку',
         addTitle: 'Добавить подписку',
         editTitle: 'Изменить подписку',
@@ -124,10 +126,7 @@ export const ru: Strings =
         updating: 'Обновление…',
         delete: 'Удалить',
         countLabel: (count: number) => `${ count.toLocaleString('ru-RU') } серверов`,
-        statusNever: 'Никогда не обновлялась',
         statusOk: 'Актуально',
-        statusStale: 'Устарело',
-        statusFailed: 'Ошибка обновления',
         updatedAgo: (text: string) => `Обновлено ${ text }`,
         justNow: 'только что',
         minutesAgo: (n: number) => `${ n } мин назад`,
