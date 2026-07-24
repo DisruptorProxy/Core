@@ -6,6 +6,12 @@ import { newRuleId } from '../lib/routing/types';
 import type { CountryMode, ProfileId, Rule, RoutingProfile } from '../lib/routing/types';
 
 const STORAGE_KEY = 'routing.profile';
+// The country-mode toggle (smart / bypass) is a standing user preference, persisted on its
+// own rather than buried in whichever profile happens to be active: it must survive
+// switching to a non-country profile and back, and be restorable the instant the page reads
+// it - a page-local copy seeded once at mount lost the value to the async load() that
+// resolved a beat later.
+const MODE_KEY = 'routing.countryMode';
 
 const clone = (rules: Rule[]): Rule[] => rules.map((rule) => ({ ...rule }));
 
@@ -35,15 +41,21 @@ export const useRouting = createStore(() =>
 
     const load = async (): Promise<void> =>
     {
-        const stored = await getSetting<RoutingProfile>(STORAGE_KEY);
+        const [stored, mode] = await Promise.all([
+            getSetting<RoutingProfile>(STORAGE_KEY),
+            getSetting<CountryMode>(MODE_KEY)
+        ]);
 
         if (stored !== undefined)
         {
             setProfileId(stored.id);
             setRules(stored.rules);
             setCountry(stored.country ?? null);
-            setCountryMode(stored.countryMode ?? 'bypass');
         }
+
+        // The saved preference wins; fall back to the active profile's mode (older installs
+        // that only ever persisted it inside the profile), then to 'bypass'.
+        setCountryMode(mode ?? stored?.countryMode ?? 'bypass');
     };
 
     /** Loads a preset's rules wholesale. */
@@ -67,6 +79,25 @@ export const useRouting = createStore(() =>
         setCountryMode(mode);
         setRules(next);
         persist('country', next, countryId, mode);
+    };
+
+    /**
+     * Picks the recipe the country grid builds on the next tap, and persists it as a
+     * standing preference (independent of the active profile, so it survives switching
+     * away and back). If a country is already active, it is re-applied under the new mode
+     * at once, so the toggle is a live control rather than a no-op until the next tap.
+     */
+    const setMode = (mode: CountryMode): void =>
+    {
+        setCountryMode(mode);
+        void putSetting<CountryMode>(MODE_KEY, mode);
+
+        const active = country();
+
+        if (profileId() === 'country' && active !== null)
+        {
+            useCountry(active, mode);
+        }
     };
 
     // Any edit diverges from the preset, so the active profile becomes `custom`.
@@ -130,6 +161,7 @@ export const useRouting = createStore(() =>
         rules,
         country,
         countryMode,
+        setMode,
         usePreset,
         useCountry,
         addRule,

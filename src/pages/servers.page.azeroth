@@ -198,41 +198,41 @@ export default component ServersPage()
             </div>
         </header>
 
+        { /* Body laid out like the Connect screen: a centred max-w-3xl column with generous
+             padding, the filter bar and any notices floating above the list rather than as
+             full-bleed bordered strips, and the list itself contained in a glass card - the
+             same raised surface Connect uses for its status card. */ }
         <Show when={ hasServers }>
-            <div class="shrink-0 border-b border-border">
-                <div class="mx-auto w-full max-w-3xl px-5 py-3">
-                    <FiltersBar />
-                </div>
+            <div class="mx-auto w-full max-w-3xl shrink-0 px-5 pt-5">
+                <FiltersBar />
             </div>
         </Show>
 
         <Show when={ subscriptions.error() }>
-            <div class="shrink-0 border-b border-border">
-                <div class="mx-auto w-full max-w-3xl px-5 py-3">
-                    <p class="rounded-xl border border-poor/40 bg-poor/5 px-3 py-2 text-sm text-poor">{ subscriptions.error() }</p>
-                </div>
+            <div class="mx-auto w-full max-w-3xl shrink-0 px-5 pt-5">
+                <p class="rounded-xl border border-poor/40 bg-poor/5 px-3 py-2 text-sm text-poor">{ subscriptions.error() }</p>
             </div>
         </Show>
 
         <Show when={ subscriptions.lastOutcome() }>
             { (outcome) =>
-            <div class="shrink-0 border-b border-border">
-                <div class="mx-auto w-full max-w-3xl px-5 py-3">
-                    <Card class="flex flex-col gap-2 p-3">
-                        <span class="text-xs font-medium text-muted">{ t().subscriptions.statusOk }</span>
-                        <UpdateReport diff={ outcome().diff } />
-                    </Card>
-                </div>
+            <div class="mx-auto w-full max-w-3xl shrink-0 px-5 pt-5">
+                <Card class="flex flex-col gap-2 p-3">
+                    <span class="text-xs font-medium text-muted">{ t().subscriptions.statusOk }</span>
+                    <UpdateReport diff={ outcome().diff } />
+                </Card>
             </div>
             }
         </Show>
 
         <Show when={ hasList }>
             <div class="min-h-0 flex-1">
-                <div class="mx-auto h-full w-full max-w-3xl">
-                    <Show when={ query.visibleItems().length > 0 } fallback={ () => noMatches(t().servers.noMatches) }>
-                        <ConfigList onEditSub={ openEditSub } onDeleteSub={ (sub) => deleteTarget = sub } />
-                    </Show>
+                <div class="mx-auto h-full w-full max-w-3xl px-5 py-5">
+                    <div class="glass h-full overflow-hidden rounded-2xl">
+                        <Show when={ query.visibleItems().length > 0 } fallback={ () => noMatches(t().servers.noMatches) }>
+                            <ConfigList onEditSub={ openEditSub } onDeleteSub={ (sub) => deleteTarget = sub } />
+                        </Show>
+                    </div>
                 </div>
             </div>
         </Show>

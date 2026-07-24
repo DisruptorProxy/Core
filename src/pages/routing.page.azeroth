@@ -56,10 +56,6 @@ export default component RoutingPage()
 
     state editorOpen = false;
     state editing = null as Rule | null;
-    // Which recipe the country grid builds on the next tap. Local, not persisted -
-    // reopening the page always offers a fresh choice rather than reconstructing
-    // whatever produced the last-applied profile.
-    state countryModeChoice = 'bypass' as CountryMode;
 
     const countryModeOptions: SegmentedOption[] =
     [
@@ -133,23 +129,20 @@ export default component RoutingPage()
             </section>
 
             <section class="flex flex-col gap-3">
-                <SectionHeading
-                    glyph={ Flag }
-                    label={ t().routing.bypassCountry }
-                    trailing={ () =>
-                        <div class="w-36 shrink-0">
-                            <Segmented
-                                label={ t().routing.countryModeLabel }
-                                options={ countryModeOptions }
-                                value={ countryModeChoice }
-                                onSelect={ (value) => countryModeChoice = value as CountryMode }
-                            />
-                        </div>
-                    }
+                <SectionHeading glyph={ Flag } label={ t().routing.bypassCountry } />
+
+                { /* Its own full-width row, not a cramped slot in the heading: the two mode
+                     labels are long in some locales (Persian "دور زدن") and need the room to
+                     stay legible with equal segments. */ }
+                <Segmented
+                    label={ t().routing.countryModeLabel }
+                    options={ countryModeOptions }
+                    value={ routing.countryMode() }
+                    onSelect={ (value) => routing.setMode(value as CountryMode) }
                 />
 
                 <p class="text-[11px] text-faint">
-                    { countryModeChoice === 'smart' ? t().routing.countryModeSmartHint : t().routing.bypassCountryHint }
+                    { routing.countryMode() === 'smart' ? t().routing.countryModeSmartHint : t().routing.bypassCountryHint }
                 </p>
 
                 <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
@@ -162,7 +155,7 @@ export default component RoutingPage()
                                     + (countryActive(code)
                                         ? 'border-accent bg-accent hover:bg-accent-hover'
                                         : 'border-border bg-surface hover:border-border-strong hover:bg-elevated') }
-                                onClick={ () => routing.useCountry(code, countryModeChoice) }
+                                onClick={ () => routing.useCountry(code, routing.countryMode()) }
                             >
                                 <span class={ `${ flagIcon(code) } flag-row shrink-0` }></span>
                                 <span class={ () => 'truncate text-sm font-semibold ' + (countryActive(code) ? 'text-accent-ink' : 'text-text') }>
