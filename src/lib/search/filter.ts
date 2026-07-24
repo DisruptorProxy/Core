@@ -2,7 +2,7 @@ import type { ConfigRow } from '../db/repo';
 
 export type SortKey = 'name' | 'latency' | 'country' | 'subscription';
 
-interface Filters
+export interface Filters
 {
     /** Free text, matched against each row's precomputed haystack. */
     query: string;
@@ -36,25 +36,17 @@ type SubNameLookup = (subId: string | undefined) => string | undefined;
 const collator = new Intl.Collator();
 
 /**
- * The one function the list depends on. Every keystroke, chip, and sort change
- * re-runs this over the full 8000-row array and returns the ids to display.
- *
- * It returns ids, not rows: the virtual list slices this array to a ~25-item
- * window and looks each row up by id, so the heavy array is built once per query
- * change, never per scroll.
+ * Builds the row predicate for a set of filters. Tokens are pre-lowercased once here, so
+ * the returned closure only does `includes` checks per row. Shared by `applyFilters` (the
+ * flat id list) and the grouped list in `useServerQuery`, so the two can never drift.
  */
-export const applyFilters = (
-    rows: ConfigRow[],
-    filters: Filters,
-    latencyOf: LatencyLookup,
-    subNameOf: SubNameLookup
-): string[] =>
+export const buildMatcher = (filters: Filters): (row: ConfigRow) => boolean =>
 {
     // Tokenized AND search: "de ws" matches a row whose haystack contains both,
-    // in any order. Tokens are pre-lowercased once here, not per row.
+    // in any order.
     const tokens = filters.query.toLowerCase().split(/\s+/).filter((token) => token !== '');
 
-    const matched = rows.filter((row) =>
+    return (row) =>
     {
         if (filters.favoritesOnly && !row.favorite)
         {
@@ -77,14 +69,32 @@ export const applyFilters = (
         }
 
         return tokens.every((token) => row.haystack.includes(token));
-    });
+    };
+};
+
+/**
+ * The one function the flat list depends on. Every keystroke, chip, and sort change
+ * re-runs this over the full 8000-row array and returns the ids to display.
+ *
+ * It returns ids, not rows: the virtual list slices this array to a ~25-item
+ * window and looks each row up by id, so the heavy array is built once per query
+ * change, never per scroll.
+ */
+export const applyFilters = (
+    rows: ConfigRow[],
+    filters: Filters,
+    latencyOf: LatencyLookup,
+    subNameOf: SubNameLookup
+): string[] =>
+{
+    const matched = rows.filter(buildMatcher(filters));
 
     matched.sort(comparator(filters.sort, latencyOf, subNameOf));
 
     return matched.map((row) => row.id);
 };
 
-const comparator = (
+export const comparator = (
     sort: SortKey,
     latencyOf: LatencyLookup,
     subNameOf: SubNameLookup

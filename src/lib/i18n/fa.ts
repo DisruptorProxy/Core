@@ -19,7 +19,6 @@ export const fa: Strings =
     {
         home: 'اتصال',
         servers: 'سرورها',
-        subscriptions: 'اشتراک‌ها',
         routing: 'مسیریابی',
         settings: 'تنظیمات'
     },
@@ -78,7 +77,14 @@ export const fa: Strings =
         test: 'تست',
         testing: (done: number, total: number) =>
             `تست ${ done.toLocaleString('fa-IR') } / ${ total.toLocaleString('fa-IR') }`,
-        stop: 'توقف'
+        stop: 'توقف',
+        otherServers: 'سایر سرورها',
+        collapseAll: 'بستن همه',
+        expandAll: 'باز کردن همه',
+        groupEmpty: 'هنوز سروری اینجا نیست',
+        activeHere: 'سرور متصل در این گروه است',
+        actions: 'اقدامات',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -105,10 +111,6 @@ export const fa: Strings =
 
     subscriptions:
     {
-        title: 'اشتراک‌ها',
-        subtitle: 'منبع‌هایی که فهرست سرورهای شما را تازه نگه می‌دارند.',
-        empty: 'هنوز اشتراکی ندارید.',
-        emptyAction: 'یک لینک اشتراک اضافه کنید تا سرورها خودکار دریافت شوند.',
         add: 'افزودن اشتراک',
         addTitle: 'افزودن اشتراک',
         editTitle: 'ویرایش اشتراک',
@@ -126,10 +128,7 @@ export const fa: Strings =
         updating: 'در حال به‌روزرسانی…',
         delete: 'حذف',
         countLabel: (count: number) => `${ count.toLocaleString('fa-IR') } سرور`,
-        statusNever: 'هرگز به‌روز نشده',
         statusOk: 'به‌روز',
-        statusStale: 'قدیمی',
-        statusFailed: 'به‌روزرسانی ناموفق',
         updatedAgo: (text: string) => `به‌روزرسانی ${ text }`,
         justNow: 'همین حالا',
         minutesAgo: (n: number) => `${ n.toLocaleString('fa-IR') } دقیقه پیش`,

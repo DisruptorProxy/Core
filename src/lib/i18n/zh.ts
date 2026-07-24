@@ -19,7 +19,6 @@ export const zh: Strings =
     {
         home: '连接',
         servers: '服务器',
-        subscriptions: '订阅',
         routing: '路由',
         settings: '设置'
     },
@@ -76,7 +75,14 @@ export const zh: Strings =
         test: '测试',
         testing: (done: number, total: number) =>
             `测试中 ${ done.toLocaleString('zh-CN') } / ${ total.toLocaleString('zh-CN') }`,
-        stop: '停止'
+        stop: '停止',
+        otherServers: '其他服务器',
+        collapseAll: '全部折叠',
+        expandAll: '全部展开',
+        groupEmpty: '这里还没有服务器',
+        activeHere: '已连接的服务器在此分组中',
+        actions: '操作',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -103,10 +109,6 @@ export const zh: Strings =
 
     subscriptions:
     {
-        title: '订阅',
-        subtitle: '让服务器列表保持最新的来源。',
-        empty: '还没有订阅。',
-        emptyAction: '添加订阅链接即可自动获取服务器。',
         add: '添加订阅',
         addTitle: '添加订阅',
         editTitle: '编辑订阅',
@@ -124,10 +126,7 @@ export const zh: Strings =
         updating: '更新中…',
         delete: '删除',
         countLabel: (count: number) => `${ count.toLocaleString('zh-CN') } 个服务器`,
-        statusNever: '从未更新',
         statusOk: '已是最新',
-        statusStale: '已陈旧',
-        statusFailed: '更新失败',
         updatedAgo: (text: string) => `更新于${ text }`,
         justNow: '刚刚',
         minutesAgo: (n: number) => `${ n } 分钟前`,

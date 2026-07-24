@@ -1,0 +1,162 @@
+import { Show } from 'azerothjs';
+
+import { ChevronRight, Pencil, RefreshCw, Server, Trash2 } from 'lucide';
+
+import type { SubscriptionRecord } from '../../lib/db/schema';
+
+import { STANDALONE_KEY, useGroups } from '../../stores/groups';
+import { useConnection } from '../../stores/connection';
+import { useLocale } from '../../stores/locale';
+import { useServerQuery } from '../../stores/query';
+import { useSubscriptions } from '../../stores/subscriptions';
+
+import { icon } from '../../components/icon';
+import { isStale } from '../../components/relative-time';
+
+interface GroupHeaderProps
+{
+    /** The collapse-state key: a subscription id, or STANDALONE_KEY. */
+    groupKey: string;
+    /** The subscription id, or null for the standalone (manually imported) group. */
+    subId: string | null;
+    onEdit: (sub: SubscriptionRecord) => void;
+    onDelete: (sub: SubscriptionRecord) => void;
+}
+
+// The status dot's colour - the same health language the rest of the app uses.
+const STATUS_DOT: Record<string, string> =
+{
+    ok: 'bg-good',
+    stale: 'bg-fair',
+    failed: 'bg-poor',
+    never: 'bg-faint'
+};
+
+const ICON_BTN = 'flex size-8 items-center justify-center rounded-lg border border-border text-muted hover:bg-elevated press disabled:opacity-40';
+
+/**
+ * A collapsible group header: the box a subscription's servers live under, or the
+ * "other servers" header for manually-imported ones. The whole title area is one toggle
+ * button (so tapping anywhere but the action icons opens/closes the group); the
+ * update/edit/delete icons are SIBLINGS of that button, never nested inside it, so they
+ * act without also toggling and without invalid nested-button markup.
+ *
+ * Everything that changes over the header's life - collapse state, the match count, the
+ * active-server marker - is read reactively from the stores here, NOT frozen onto the list
+ * item: the virtual list reuses this element across rebuilds and never re-runs its render.
+ * Fixed height by contract (GROUP_H in config-list): quota and freshness detail live in the
+ * separate usage strip below an expanded subscription, keeping this row uniform.
+ */
+export default component GroupHeader(props: GroupHeaderProps)
+{
+    const { t } = useLocale();
+    const groups = useGroups();
+    const query = useServerQuery();
+    const connection = useConnection();
+    const subscriptions = useSubscriptions();
+
+    const sub = (): SubscriptionRecord | undefined =>
+        props.subId === null ? undefined : subscriptions.subs().find((record) => record.id === props.subId);
+
+    const name = (): string => sub()?.name ?? t().servers.otherServers;
+
+    const collapsed = (): boolean => !query.isFiltering() && groups.isCollapsed(props.groupKey);
+
+    const hasActive = (): boolean =>
+    {
+        const active = connection.activeConfig();
+
+        return active !== null && (active.subId ?? STANDALONE_KEY) === props.groupKey;
+    };
+
+    const statusKey = (): string =>
+    {
+        const record = sub();
+
+        if (record === undefined)
+        {
+            return 'ok';
+        }
+
+        if (record.status === 'ok')
+        {
+            return isStale(record.lastUpdatedAt, record.intervalMin) ? 'stale' : 'ok';
+        }
+
+        return record.status;
+    };
+
+    const countLabel = (): string =>
+    {
+        const view = query.groupViews().get(props.groupKey);
+
+        if (view === undefined)
+        {
+            return '';
+        }
+
+        return view.filtering
+            ? t().servers.matchCount(view.matchCount, view.total)
+            : t().subscriptions.countLabel(view.total);
+    };
+
+    const toggleLabel = (): string => `${ name() }, ${ collapsed() ? t().servers.expandAll : t().servers.collapseAll }`;
+
+    <div class="flex h-full items-center gap-1 border-b border-border bg-elevated/40 px-3">
+        <button
+            type="button"
+            class="flex min-w-0 flex-1 items-center gap-2 rounded-md py-1 pe-1 text-start press"
+            aria-expanded={ () => collapsed() ? 'false' : 'true' }
+            aria-label={ toggleLabel }
+            onClick={ () => groups.toggle(props.groupKey) }
+        >
+            <span class={ () => `shrink-0 text-muted transition-transform ${ collapsed() ? '' : 'rotate-90' }` }>
+                { icon(ChevronRight, 'size-4') }
+            </span>
+
+            <Show
+                when={ props.subId !== null }
+                fallback={ () => <span class="shrink-0 text-faint">{ icon(Server, 'size-4') }</span> }
+            >
+                <span class={ () => `size-2 shrink-0 rounded-full ${ STATUS_DOT[statusKey()] ?? 'bg-faint' }` } aria-hidden="true"></span>
+            </Show>
+
+            <span class="truncate text-sm font-semibold text-text">{ name }</span>
+
+            <Show when={ hasActive() }>
+                <span
+                    class="size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_8px_rgba(0,191,122,0.5)]"
+                    data-tip={ t().servers.activeHere }
+                    aria-label={ t().servers.activeHere }
+                ></span>
+            </Show>
+
+            <span class="readout ms-auto shrink-0 ps-2 text-xs text-muted">{ countLabel }</span>
+        </button>
+
+        <Show when={ sub() }>
+            { (record) =>
+            <div class="flex shrink-0 items-center gap-1">
+                <button
+                    type="button"
+                    class={ ICON_BTN }
+                    aria-label={ t().subscriptions.update }
+                    data-tip={ t().subscriptions.update }
+                    disabled={ subscriptions.isUpdating(record().id) }
+                    onClick={ () => void subscriptions.update(record().id) }
+                >
+                    { icon(RefreshCw, subscriptions.isUpdating(record().id) ? 'size-4 animate-spin' : 'size-4') }
+                </button>
+
+                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.editTitle } data-tip={ t().subscriptions.editTitle } onClick={ () => props.onEdit(record()) }>
+                    { icon(Pencil, 'size-4') }
+                </button>
+
+                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.delete } data-tip={ t().subscriptions.delete } onClick={ () => props.onDelete(record()) }>
+                    { icon(Trash2, 'size-4') }
+                </button>
+            </div>
+            }
+        </Show>
+    </div>
+}

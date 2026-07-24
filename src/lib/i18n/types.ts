@@ -22,7 +22,6 @@ export interface Strings
     {
         home: string;
         servers: string;
-        subscriptions: string;
         routing: string;
         settings: string;
     };
@@ -81,6 +80,13 @@ export interface Strings
         test: string;
         testing: (done: number, total: number) => string;
         stop: string;
+        otherServers: string;
+        collapseAll: string;
+        expandAll: string;
+        groupEmpty: string;
+        activeHere: string;
+        actions: string;
+        matchCount: (matching: number, total: number) => string;
     };
 
     importing:
@@ -108,10 +114,6 @@ export interface Strings
 
     subscriptions:
     {
-        title: string;
-        subtitle: string;
-        empty: string;
-        emptyAction: string;
         add: string;
         addTitle: string;
         editTitle: string;
@@ -129,10 +131,7 @@ export interface Strings
         updating: string;
         delete: string;
         countLabel: (count: number) => string;
-        statusNever: string;
         statusOk: string;
-        statusStale: string;
-        statusFailed: string;
         updatedAgo: (text: string) => string;
         justNow: string;
         minutesAgo: (n: number) => string;

@@ -1,6 +1,6 @@
 import { Match, Show, Switch } from 'azerothjs';
 
-import { Power, Wifi, WifiOff, Zap } from 'lucide';
+import { Power, Repeat, Wifi, WifiOff, Zap } from 'lucide';
 
 import { humanizeError } from '../lib/health/humanize-error';
 import { bucketFor } from '../lib/health/score';
@@ -15,6 +15,7 @@ import Button from '../components/button.component.azeroth';
 import Card from '../components/card.component.azeroth';
 import { flagIcon } from '../components/flag';
 import { icon } from '../components/icon';
+import SectionHeading from '../components/section-heading.component.azeroth';
 
 import type { ConnectionPhase } from '../features/connection/engine/port';
 import ConnectionStatus from '../features/connection/connection-status.component.azeroth';
@@ -174,8 +175,8 @@ export default component HomePage()
                 </Switch>
 
                 <Show when={ !viewport.isWide() && candidates().length > 0 }>
-                    <section class="flex flex-col gap-2">
-                        <h2 class="text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]">{ t().home.switchServer }</h2>
+                    <section class="flex flex-col gap-3">
+                        <SectionHeading glyph={ Repeat } label={ t().home.switchServer } />
                         { candidateList(candidates(), connection.activeId(), health, connectTo) }
                     </section>
                 </Show>

@@ -1,6 +1,6 @@
 import { For, Show } from 'azerothjs';
 
-import { Check, ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide';
+import { Check, ChevronDown, ChevronUp, Flag, ListFilter, Pencil, Plus, Route, Trash2 } from 'lucide';
 
 import type { Strings } from '../lib/i18n/types';
 import { describeRule } from '../lib/routing/describe';
@@ -13,6 +13,7 @@ import { useRouting } from '../stores/routing';
 import { flagIcon } from '../components/flag';
 import { icon } from '../components/icon';
 import Screen from '../components/screen.component.azeroth';
+import SectionHeading from '../components/section-heading.component.azeroth';
 import Segmented from '../components/segmented.component.azeroth';
 import type { SegmentedOption } from '../components/segmented.component.azeroth';
 
@@ -101,7 +102,7 @@ export default component RoutingPage()
     <Screen title={ t().routing.title } subtitle={ t().routing.subtitle }>
         <div class="flex flex-col gap-6 px-5 py-6">
             <section class="flex flex-col gap-3">
-                <h2 class="text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]">{ t().routing.presets }</h2>
+                <SectionHeading glyph={ Route } label={ t().routing.presets } />
 
                 <div class="grid grid-cols-2 gap-2">
                     <For each={ PRESET_IDS } key={ (id) => id }>
@@ -132,18 +133,20 @@ export default component RoutingPage()
             </section>
 
             <section class="flex flex-col gap-3">
-                <div class="flex items-center justify-between gap-3">
-                    <h2 class="text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]">{ t().routing.bypassCountry }</h2>
-
-                    <div class="w-36 shrink-0">
-                        <Segmented
-                            label={ t().routing.countryModeLabel }
-                            options={ countryModeOptions }
-                            value={ countryModeChoice }
-                            onSelect={ (value) => countryModeChoice = value as CountryMode }
-                        />
-                    </div>
-                </div>
+                <SectionHeading
+                    glyph={ Flag }
+                    label={ t().routing.bypassCountry }
+                    trailing={ () =>
+                        <div class="w-36 shrink-0">
+                            <Segmented
+                                label={ t().routing.countryModeLabel }
+                                options={ countryModeOptions }
+                                value={ countryModeChoice }
+                                onSelect={ (value) => countryModeChoice = value as CountryMode }
+                            />
+                        </div>
+                    }
+                />
 
                 <p class="text-[11px] text-faint">
                     { countryModeChoice === 'smart' ? t().routing.countryModeSmartHint : t().routing.bypassCountryHint }
@@ -175,25 +178,27 @@ export default component RoutingPage()
             </section>
 
             <section class="flex flex-col gap-3">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]">
-                        { t().routing.rulesHeader }
+                <SectionHeading
+                    glyph={ ListFilter }
+                    label={ t().routing.rulesHeader }
+                    badge={ () =>
                         <Show when={ routing.profileId() === 'custom' }>
-                            <span class="ms-2 rounded-md border border-border px-1.5 py-0.5 text-[10px] normal-case text-muted">
+                            <span class="shrink-0 rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium normal-case text-muted">
                                 { t().routing.presetCustomName }
                             </span>
                         </Show>
-                    </h2>
-
-                    <button
-                        type="button"
-                        class="flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium text-muted hover:bg-elevated"
-                        onClick={ () => openAdd() }
-                    >
-                        { icon(Plus, 'size-3.5') }
-                        { t().routing.addRule }
-                    </button>
-                </div>
+                    }
+                    trailing={ () =>
+                        <button
+                            type="button"
+                            class="flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium text-muted hover:bg-elevated press"
+                            onClick={ () => openAdd() }
+                        >
+                            { icon(Plus, 'size-3.5') }
+                            { t().routing.addRule }
+                        </button>
+                    }
+                />
 
                 <p class="text-[11px] text-faint">{ t().routing.rulesHint }</p>
 

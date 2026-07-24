@@ -19,7 +19,6 @@ export const tr: Strings =
     {
         home: 'Bağlan',
         servers: 'Sunucular',
-        subscriptions: 'Abonelikler',
         routing: 'Yönlendirme',
         settings: 'Ayarlar'
     },
@@ -76,7 +75,14 @@ export const tr: Strings =
         test: 'Test',
         testing: (done: number, total: number) =>
             `Test ediliyor ${ done.toLocaleString('tr-TR') } / ${ total.toLocaleString('tr-TR') }`,
-        stop: 'Durdur'
+        stop: 'Durdur',
+        otherServers: 'Diğer sunucular',
+        collapseAll: 'Tümünü daralt',
+        expandAll: 'Tümünü genişlet',
+        groupEmpty: 'Burada henüz sunucu yok',
+        activeHere: 'Bağlı sunucu bu grupta',
+        actions: 'İşlemler',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -103,10 +109,6 @@ export const tr: Strings =
 
     subscriptions:
     {
-        title: 'Abonelikler',
-        subtitle: 'Sunucu listenizi güncel tutan kaynaklar.',
-        empty: 'Henüz abonelik yok.',
-        emptyAction: 'Sunucuları otomatik çekmek için bir abonelik bağlantısı ekleyin.',
         add: 'Abonelik ekle',
         addTitle: 'Abonelik ekle',
         editTitle: 'Aboneliği düzenle',
@@ -124,10 +126,7 @@ export const tr: Strings =
         updating: 'Güncelleniyor…',
         delete: 'Sil',
         countLabel: (count: number) => `${ count.toLocaleString('tr-TR') } sunucu`,
-        statusNever: 'Hiç güncellenmedi',
         statusOk: 'Güncel',
-        statusStale: 'Bayat',
-        statusFailed: 'Güncelleme başarısız',
         updatedAgo: (text: string) => `Güncellendi: ${ text }`,
         justNow: 'az önce',
         minutesAgo: (n: number) => `${ n } dk önce`,

@@ -1,0 +1,43 @@
+import type { MountNode } from 'azerothjs';
+
+import type { IconNode } from 'lucide';
+
+import { icon } from './icon';
+
+interface SectionHeadingProps
+{
+    /** The section's identifying glyph, shown in a small tile before the label. */
+    glyph: IconNode;
+    label: string;
+    /**
+     * Optional chip beside the label (e.g. a "Custom" state marker). A thunk, not a
+     * built element, so any reactive binding inside it (a <Show>) stays live.
+     */
+    badge?: () => MountNode;
+    /** Optional right-aligned control (an add button, a segmented toggle). Also a thunk. */
+    trailing?: () => MountNode;
+}
+
+/**
+ * One section marker, shared across Settings, Routing, and Home: a small icon tile, the
+ * app's eyebrow label, and optional badge / trailing slots. The tile is what gives each
+ * section a glanceable identity - the same iconographic density the server list has -
+ * while the label keeps the quiet uppercase-eyebrow rhythm the app already uses, so this
+ * enriches without shouting. Neutral by design: colour stays reserved for active states.
+ */
+export default component SectionHeading(props: SectionHeadingProps)
+{
+    <div class="flex items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-2">
+            <span class="flex size-6 shrink-0 items-center justify-center rounded-md border border-border bg-elevated text-muted">
+                { icon(props.glyph, 'size-3.5') }
+            </span>
+
+            <h2 class="truncate text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]">{ props.label }</h2>
+
+            { props.badge?.() }
+        </div>
+
+        { props.trailing?.() }
+    </div>
+}

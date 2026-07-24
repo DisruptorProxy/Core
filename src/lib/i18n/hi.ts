@@ -19,7 +19,6 @@ export const hi: Strings =
     {
         home: 'कनेक्ट',
         servers: 'सर्वर',
-        subscriptions: 'सदस्यताएँ',
         routing: 'रूटिंग',
         settings: 'सेटिंग्स'
     },
@@ -76,7 +75,14 @@ export const hi: Strings =
         test: 'परीक्षण',
         testing: (done: number, total: number) =>
             `परीक्षण ${ done.toLocaleString('hi-IN') } / ${ total.toLocaleString('hi-IN') }`,
-        stop: 'रोकें'
+        stop: 'रोकें',
+        otherServers: 'अन्य सर्वर',
+        collapseAll: 'सभी संक्षिप्त करें',
+        expandAll: 'सभी विस्तृत करें',
+        groupEmpty: 'यहाँ अभी कोई सर्वर नहीं',
+        activeHere: 'कनेक्टेड सर्वर इस समूह में है',
+        actions: 'क्रियाएँ',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -103,10 +109,6 @@ export const hi: Strings =
 
     subscriptions:
     {
-        title: 'सदस्यताएँ',
-        subtitle: 'वे स्रोत जो आपकी सर्वर सूची ताज़ा रखते हैं।',
-        empty: 'अभी कोई सदस्यता नहीं।',
-        emptyAction: 'सर्वर अपने आप लाने के लिए एक सदस्यता लिंक जोड़ें।',
         add: 'सदस्यता जोड़ें',
         addTitle: 'सदस्यता जोड़ें',
         editTitle: 'सदस्यता संपादित करें',
@@ -124,10 +126,7 @@ export const hi: Strings =
         updating: 'अपडेट हो रहा है…',
         delete: 'हटाएँ',
         countLabel: (count: number) => `${ count.toLocaleString('hi-IN') } सर्वर`,
-        statusNever: 'कभी अपडेट नहीं हुई',
         statusOk: 'अद्यतित',
-        statusStale: 'पुरानी',
-        statusFailed: 'अपडेट विफल',
         updatedAgo: (text: string) => `अपडेट हुई ${ text }`,
         justNow: 'अभी-अभी',
         minutesAgo: (n: number) => `${ n.toLocaleString('hi-IN') } मिनट पहले`,

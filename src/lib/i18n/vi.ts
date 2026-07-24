@@ -19,7 +19,6 @@ export const vi: Strings =
     {
         home: 'Kết nối',
         servers: 'Máy chủ',
-        subscriptions: 'Gói đăng ký',
         routing: 'Định tuyến',
         settings: 'Cài đặt'
     },
@@ -76,7 +75,14 @@ export const vi: Strings =
         test: 'Kiểm tra',
         testing: (done: number, total: number) =>
             `Đang kiểm tra ${ done.toLocaleString('vi-VN') } / ${ total.toLocaleString('vi-VN') }`,
-        stop: 'Dừng'
+        stop: 'Dừng',
+        otherServers: 'Máy chủ khác',
+        collapseAll: 'Thu gọn tất cả',
+        expandAll: 'Mở rộng tất cả',
+        groupEmpty: 'Chưa có máy chủ nào ở đây',
+        activeHere: 'Máy chủ đang kết nối nằm trong nhóm này',
+        actions: 'Tác vụ',
+        matchCount: (matching, total) => `${ matching } / ${ total }`
     },
 
     importing:
@@ -103,10 +109,6 @@ export const vi: Strings =
 
     subscriptions:
     {
-        title: 'Gói đăng ký',
-        subtitle: 'Các nguồn giữ danh sách máy chủ của bạn luôn mới.',
-        empty: 'Chưa có gói đăng ký nào.',
-        emptyAction: 'Thêm liên kết gói đăng ký để tự động lấy máy chủ.',
         add: 'Thêm gói đăng ký',
         addTitle: 'Thêm gói đăng ký',
         editTitle: 'Sửa gói đăng ký',
@@ -124,10 +126,7 @@ export const vi: Strings =
         updating: 'Đang cập nhật…',
         delete: 'Xóa',
         countLabel: (count: number) => `${ count.toLocaleString('vi-VN') } máy chủ`,
-        statusNever: 'Chưa từng cập nhật',
         statusOk: 'Mới nhất',
-        statusStale: 'Đã cũ',
-        statusFailed: 'Cập nhật thất bại',
         updatedAgo: (text: string) => `Cập nhật ${ text }`,
         justNow: 'vừa xong',
         minutesAgo: (n: number) => `${ n } phút trước`,

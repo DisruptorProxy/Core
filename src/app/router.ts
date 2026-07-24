@@ -4,7 +4,6 @@ import HomePage from '../pages/home.page.azeroth';
 import RoutingPage from '../pages/routing.page.azeroth';
 import ServersPage from '../pages/servers.page.azeroth';
 import SettingsPage from '../pages/settings.page.azeroth';
-import SubscriptionsPage from '../pages/subscriptions.page.azeroth';
 
 /**
  * One router instance for the app. AzerothJS routing is manual-first - `<Routes>`,
@@ -15,7 +14,6 @@ export const router = createRouter({
     routes: [
         { path: '/', component: HomePage },
         { path: '/servers', component: ServersPage },
-        { path: '/subscriptions', component: SubscriptionsPage },
         { path: '/routing', component: RoutingPage },
         { path: '/settings', component: SettingsPage }
     ]
