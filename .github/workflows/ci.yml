@@ -161,6 +161,36 @@ jobs:
                     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
                 run: npm run tauri build -- --bundles app
 
+    windows-build:
+        name: Windows build (nsis)
+        # Symmetry with the Linux/macOS build jobs: prove the Windows installer bundles on
+        # every push to main (the rust matrix only compiles). The core (app-xray.exe +
+        # wintun.dll) is committed, so no fetch. The signed public release is still cut by
+        # release.yml on a tag.
+        if: github.event_name == 'push'
+        runs-on: windows-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: actions/setup-node@v6
+                with:
+                    node-version: 24
+                    cache: npm
+
+            -   uses: dtolnay/rust-toolchain@stable
+
+            -   uses: Swatinem/rust-cache@v2
+                with:
+                    workspaces: src-tauri
+
+            -   run: npm ci
+
+            -   name: Build the installer (nsis)
+                env:
+                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+                run: npm run tauri build -- --bundles nsis
+
     android-build:
         name: Android build (apk)
         # Best-effort (continue-on-error): assembles the APK to catch build breaks. The
@@ -185,7 +215,9 @@ jobs:
             -   uses: android-actions/setup-android@v3
 
             -   name: Install the Android NDK
-                run: sdkmanager "ndk;27.0.12077973"
+                run: |
+                    sdkmanager "ndk;27.0.12077973"
+                    echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
             -   uses: dtolnay/rust-toolchain@stable
                 with:
@@ -202,31 +234,8 @@ jobs:
                 run: npm run fetch-core:android
 
             -   name: Assemble the APK
-                env:
-                    NDK_HOME: ${{ env.ANDROID_NDK_ROOT }}
                 run: npm run tauri android build -- --apk --target aarch64
 
-    ios-build:
-        name: iOS build
-        # Placeholder (continue-on-error): iOS needs `tauri ios init` (a Mac), a Packet
-        # Tunnel extension target, an xcframework core, and a paid Apple Developer account to
-        # sign - so this stays non-blocking until those exist (see src-tauri/mobile/README.md).
-        if: github.event_name == 'push'
-        runs-on: macos-latest
-        continue-on-error: true
-        steps:
-            -   uses: actions/checkout@v7
-
-            -   uses: actions/setup-node@v6
-                with:
-                    node-version: 24
-                    cache: npm
-
-            -   uses: dtolnay/rust-toolchain@stable
-                with:
-                    targets: aarch64-apple-ios,aarch64-apple-ios-sim
-
-            -   run: npm ci
-
-            -   name: Build (needs tauri ios init + Apple signing)
-                run: npm run tauri ios build
+    # iOS CI is intentionally omitted for now: it needs `tauri ios init` (a Mac), a Packet
+    # Tunnel extension target, an xcframework core, and a paid Apple Developer account to
+    # sign. Build it locally with `npm run ios-build` once set up (see src-tauri/mobile).
