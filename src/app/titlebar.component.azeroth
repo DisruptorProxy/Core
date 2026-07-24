@@ -35,7 +35,7 @@ export default component Titlebar()
     {
         if (isTauri())
         {
-            void getCurrentWindow().close();
+            void getCurrentWindow().hide();
         }
     };
 

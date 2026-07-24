@@ -51,6 +51,13 @@ const PROBE_IN_TAG = 'probe-in';
  * `xray_traffic` command queries.
  */
 const API_PORT = 10085;
+/**
+ * Loopback port Xray's metrics service serves expvar on (`/debug/vars`) during a mobile
+ * connection. Android runs Xray in-process via libXray, so it can't shell out to
+ * `xray api statsquery` the way desktop does; instead `TunnelService` reads the cumulative
+ * `outbound>>>proxy>>>traffic` counters over HTTP from here. Loopback-only.
+ */
+const METRICS_PORT = 10086;
 
 /** Protocols the config builder can produce an outbound for today. */
 const SUPPORTED_PROTOCOLS: ReadonlySet<Protocol> = new Set<Protocol>(['vmess', 'vless', 'trojan', 'shadowsocks']);
@@ -115,6 +122,8 @@ interface XrayConfig
     stats?: Record<string, unknown>;
     api?: Record<string, unknown>;
     policy?: Record<string, unknown>;
+    /** Mobile only: xray's expvar/pprof metrics listener, how in-process xray exposes stats. */
+    metrics?: Record<string, unknown>;
     inbounds: XrayInbound[];
     outbounds: XrayOutbound[];
     routing: { domainStrategy: string; rules: XrayRoutingRule[] };
@@ -397,6 +406,13 @@ const POLICY: Record<string, unknown> =
     }
 };
 const API_INBOUND: XrayInbound = { tag: 'api-in', protocol: 'dokodemo-door', listen: '127.0.0.1', port: API_PORT, settings: { address: '127.0.0.1' } };
+/**
+ * Mobile stats transport. With `listen` set, Xray's metrics service runs its own loopback
+ * HTTP listener exposing the `STATS` counters at `/debug/vars` (expvar) - no inbound or
+ * routing rule needed. This is the in-process equivalent of the desktop `xray api
+ * statsquery` path; `TunnelService` polls it for uplink/downlink.
+ */
+const METRICS: Record<string, unknown> = { tag: 'metrics', listen: `127.0.0.1:${ METRICS_PORT }` };
 const API_RULE: XrayRoutingRule = { type: 'field', inboundTag: ['api-in'], outboundTag: 'api' };
 
 /**
@@ -533,13 +549,20 @@ export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], allConfig
 };
 
 /**
- * The mobile (Android/iOS) connect config. Unlike the desktop config there is NO `tun`
- * inbound - the OS owns the tunnel (Android `VpnService` / iOS `NEPacketTunnelProvider`),
- * and a tun2socks bridge in the native layer forwards the OS tun fd into this SOCKS inbound
- * on `CONNECT_SOCKS_PORT`. Everything else - outbounds, routing, DNS, stats, and the shared
- * probe layer for testing while connected - matches the desktop config, so one config
- * builder and one routing model serve every platform. `udp: true` so the tunnel carries UDP
- * (DNS, QUIC) as well as TCP.
+ * The mobile (Android/iOS) connect config. Like desktop it uses Xray's native `tun`
+ * inbound, but the OS owns the interface: Android `VpnService` (and iOS
+ * `NEPacketTunnelProvider`) create the tun and hand Xray the fd, which the native layer
+ * injects into the config root as `env: { "xray.tun.fd": <fd> }` at connect time - the fd
+ * is only known at runtime and can't be baked in here. So the tun settings are minimal
+ * (just `mtu`): `name`/`gateway`/`autoSystemRoutingTable` are desktop concerns the OS owns
+ * on mobile, and `autoOutboundsInterface` is unsupported on Android - the proxy outbound is
+ * instead kept out of the tunnel by `VpnService.protect()`, wired through libXray's
+ * DialerController in `TunnelService`.
+ *
+ * Stats can't go through the desktop `xray api statsquery` path (no binary to exec
+ * in-process), so a loopback `METRICS` listener exposes the same counters over expvar.
+ * Everything else - outbounds, routing, DNS, and the shared probe layer for testing while
+ * connected - matches the desktop config, so one routing model serves every platform.
  */
 export const buildMobileConfig = (config: ProxyConfig, rules: Rule[], allConfigs: ProxyConfig[], geo: GeoAssets = GEO_PRESENT): XrayConfig =>
 {
@@ -551,9 +574,12 @@ export const buildMobileConfig = (config: ProxyConfig, rules: Rule[], allConfigs
         stats: STATS,
         api: API,
         policy: POLICY,
+        metrics: METRICS,
         inbounds:
         [
-            { tag: 'socks-in', protocol: 'socks', listen: '127.0.0.1', port: CONNECT_SOCKS_PORT, settings: { udp: true }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } },
+            // `port` is ignored by the tun inbound (it never listens on one), but the schema
+            // wants it present. The fd arrives via the root `env` the native layer injects.
+            { tag: 'tun-in', protocol: 'tun', port: 0, settings: { mtu: 1500 }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } },
             API_INBOUND,
             probe.inbound
         ],

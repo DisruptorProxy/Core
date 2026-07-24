@@ -39,6 +39,12 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+        // The two ABIs fetch-core installs the core for. The libXray AAR ships libgojni.so
+        // for all four, so without this the APK would also carry ~100 MB of armeabi-v7a and
+        // x86 native code no shipped device uses.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
     signingConfigs {
         create("release") {
@@ -86,7 +92,20 @@ rust {
     rootDirRel = "../../../"
 }
 
+repositories {
+    // The libXray gomobile AAR is a local artifact fetched by scripts/fetch-core.mjs into
+    // app/libs (gitignored, not committed), so it is resolved from there rather than a
+    // remote repository.
+    flatDir { dirs("libs") }
+}
+
 dependencies {
+    // Xray-core, in-process. On Android a VpnService fd can only reach Xray inside the app's
+    // own process (a spawned binary never inherits it - ProcessBuilder closes it across
+    // exec), so the core runs through libXray's gomobile bindings rather than as an exec'd
+    // libxray.so. TunnelService drives it via LibXray.invoke(...).
+    implementation(":libXray@aar")
+
     implementation("androidx.webkit:webkit:1.14.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.activity:activity-ktx:1.10.1")

@@ -1,6 +1,11 @@
 /src/main/**/generated
 /src/main/jniLibs/**/*.so
 /src/main/assets/tauri.conf.json
+# Bundle resources Tauri copies in from bundle.resources at build time. Android needs
+# none (tauri.android.conf.json sets it empty - the core is libxray.so in jniLibs, not a
+# bundled binary), but a stray desktop build config could still drop the Windows core
+# here; never let it be committed.
+/src/main/assets/assets
 /tauri.build.gradle.kts
 /proguard-tauri.pro
 /tauri.properties

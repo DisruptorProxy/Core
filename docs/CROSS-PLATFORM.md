@@ -65,47 +65,39 @@ macOS]`).
 
 ---
 
-## Android (planned)
+## Android (implemented — in-process libXray)
 
 Android can't reuse the desktop model (the OS owns the VPN via `VpnService`, and apps
-can't freely exec binaries). It's a from-scratch native integration; needs the Android
-SDK/NDK + a device/emulator to build and verify.
+can't freely exec binaries). See `src-tauri/mobile/README.md` for the implemented design;
+this is the architecture rationale.
 
-**Architecture — recommend Option B, note A:**
-- **B (v2rayNG-style, recommended):** a Kotlin `VpnService` establishes the tun and hands
-  its fd to **tun2socks** (hev-socks5-tunnel), which forwards to Xray's local SOCKS
-  inbound; Xray proxies out with its outbound socket `protect()`-ed. Package the Android
-  Xray ELF and tun2socks as jniLibs `lib*.so` (Android extracts those to the read+exec
-  nativeLibraryDir — the only place you may exec on API 29+). Reuses the config builder
-  almost verbatim (SOCKS inbound instead of the tun inbound).
-- **A (fallback):** embed Xray as a gomobile AAR (libXray), run in-process — avoids the
-  exec restriction but adds a Go/gomobile+NDK build. Choose only if B's exec path fails.
+**Why in-process, not the tun2socks split we first planned:** the original plan was a
+v2rayNG-style bridge — `VpnService` establishes the tun, a tun2socks lib (loaded in-process
+via JNI) forwards the fd into a spawned Xray's SOCKS inbound. It was abandoned once the real
+constraint was measured: a spawned Xray can't receive the tun fd at all. Android's
+`ProcessBuilder` closes every fd ≥ 3 across `exec` (verified on-device, even with
+`FD_CLOEXEC` cleared), so `XRAY_TUN_FD` is meaningless to a child process. That left two
+in-process options, and running Xray itself in-process (via libXray) is strictly simpler
+than keeping a spawned Xray plus an in-process tun2socks — and lets Xray's own `tun` inbound
+do the layer-3 work, so no tun2socks at all.
 
-**Steps:**
-1. `npm run tauri android init` — regenerates `src-tauri/gen/android` from
-   `io.disruptorproxy.client`, replacing the stale `io.guardian` scaffold. Commit it.
-2. Extend `fetch-core.mjs` to place per-ABI Xray as `jniLibs/<abi>/libxray.so`; add a
-   maintained tun2socks as `libtun2socks.so` per ABI.
-3. AndroidManifest: `BIND_VPN_SERVICE`, `FOREGROUND_SERVICE` (+ VPN type on API 34+),
-   `POST_NOTIFICATIONS`, and the `<service>` with the `android.net.VpnService` filter.
-4. Kotlin `TunnelService`: consent → `Builder` (addr/route 0.0.0.0/0, DNS, MTU) →
-   `establish()` → tun fd; exec `libxray.so` (SOCKS config + `XRAY_LOCATION_ASSET`) and
-   `libtun2socks.so` bridging the fd → SOCKS; `protect()` the Xray socket; foreground
-   service + notification; a stop that tears down both and verifies (mirror the desktop
-   contract).
-5. A Tauri Android plugin (Kotlin) exposing `connect/disconnect/status/traffic`; add
-   `capabilities/android.json`. TCP ping stays a pure socket connect.
-6. Frontend: an Android `ConnectionService` (invokes the plugin), selected by
-   `usePlatform().isMobile()` in `service.ts`; add `buildAndroidConfig()` in `config.ts`
-   (SOCKS inbound, no tun inbound). The Phase-0 chrome gating already hides the titlebar/
-   tray on mobile — verify the bottom-TabBar layout and safe-area insets on a phone.
-7. Lifecycle: `onRevoke`, Always-on VPN, reconnect, background/rotation, API 13+
-   notification permission; optional per-app routing.
-8. Build/CI: `npm run tauri android build --apk`/`--aab`, sign with an upload keystore;
-   an Actions job (android-actions/setup-android) that assembles the APK.
+**Architecture (as built):**
+- Xray runs in-process through [libXray](https://github.com/XTLS/libXray)'s gomobile AAR
+  (`fetch-core.mjs --android` → `gen/android/app/libs/libXray.aar`, gitignored). No jniLibs
+  Xray binary, no tun2socks, no NDK build for the core.
+- `TunnelService` (Kotlin): consent → `Builder` (addr/route `0.0.0.0/0`, DNS, MTU) →
+  `establish()` → tun fd → injected into the config root `env` as `xray.tun.fd` →
+  `LibXray.invoke(runXrayFromJson)`. Xray's `tun` inbound reads the fd and proxies out;
+  its outbound sockets are `protect()`-ed via libXray's `DialerController` callback.
+- `buildMobileConfig` (`config.ts`) emits the `tun` inbound (not a SOCKS inbound) plus a
+  loopback `metrics` listener; `TunnelService` polls `/debug/vars` for traffic counters,
+  since there's no binary to run `xray api statsquery` against.
+- Plugin `disruptor-vpn` (`vpn.rs` inline plugin + `VpnPlugin.kt`) exposes
+  `start/stop/traffic`; `capabilities/mobile.json` grants it. TCP ping stays a socket connect.
 
-**Verify on device:** VPN-consent dialog → key icon; traffic routes (check your IP);
-disconnect leaves no tunnel/orphan; survives background + rotation; a geo rule resolves.
+**Still open:** geo-data provisioning on mobile (routing rules that reference
+`geoip:`/`geosite:` need the `.dat` files under the app's asset dir); Always-on VPN and
+reconnect polish; per-app routing.
 
 ## iOS (planned — the biggest lift)
 

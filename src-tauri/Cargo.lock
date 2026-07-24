@@ -643,6 +643,7 @@ name = "disruptor-proxy"
 version = "1.3.0"
 dependencies = [
  "reqwest 0.12.28",
+ "rustls",
  "serde",
  "serde_json",
  "tauri",

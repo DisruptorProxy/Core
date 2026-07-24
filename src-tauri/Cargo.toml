@@ -21,6 +21,13 @@ serde = { version = "1", features = [ "derive" ] }
 tokio = { version = "1", features = [ "net", "time", "process" ] }
 reqwest = { version = "0.12", default-features = false, features = [ "socks", "rustls-tls" ] }
 
+# Not used directly - this is here purely to install a default crypto provider, see `run()`.
+# `tauri-plugin-updater` enables reqwest's `rustls-no-provider` feature, and cargo unifies
+# features across the whole graph, so *every* reqwest 0.13 client in the build ends up
+# provider-less - including the one Tauri itself uses on mobile. Same version and features
+# the updater already pulls in, so this adds nothing to the build.
+rustls = { version = "0.23", default-features = false, features = [ "ring" ] }
+
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.61", features = [
     "Win32_Foundation",

@@ -25,10 +25,9 @@ src-tauri/.updater-key.pem.pub
 # against its .dgst), not committed. The Windows core (app-xray.exe + wintun.dll) stays
 # committed for now.
 src-tauri/assets/app-xray
-# The Android core is fetched per-ABI into the gradle jniLibs, likewise not committed.
-src-tauri/gen/android/app/src/main/jniLibs/*/libxray.so
-# tun2socks, built from source by scripts/build-tun2socks.mjs (no prebuilt exists).
-src-tauri/gen/android/app/src/main/jniLibs/*/libhev-socks5-tunnel.so
+# Android runs Xray in-process via libXray's gomobile AAR (fetch-core.mjs --android). It is
+# ~90 MB and versioned upstream, so it is fetched into app/libs, not committed.
+src-tauri/gen/android/app/libs/libXray.aar
 
 # Android release signing. The keystore and its passwords must never be committed - CI
 # supplies them from secrets instead.

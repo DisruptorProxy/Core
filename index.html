@@ -24,7 +24,15 @@
             })();
         </script>
 
-        <script type="module" src="/src/main.azeroth" defer></script>
+        <!-- Deliberately `.ts`, not `.azeroth` (the file holds no component syntax anyway).
+            Vite only transforms an unknown extension when the request carries
+            `Sec-Fetch-Dest: script`, and the Android WebView omits that header on the
+            requests Tauri proxies to the dev server - so a `.azeroth` entry came back as
+            raw TypeScript with no MIME type, the WebView refused to run it as a module,
+            and the app was a white screen on device while working fine in a browser.
+            Every other `.azeroth` file is reached through an import, which Vite tags
+            with `?import` and transforms regardless of headers. -->
+        <script type="module" src="/src/main.ts" defer></script>
     </head>
 
     <body>

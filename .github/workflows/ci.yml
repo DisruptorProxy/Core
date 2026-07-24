@@ -241,13 +241,10 @@ jobs:
 
             -   run: npm ci
 
-            -   name: Fetch the Android Xray core
+            # The Android core is libXray's prebuilt gomobile AAR (Xray-core in-process); no
+            # tun2socks and no per-ABI native build - the fd goes straight to Xray's tun inbound.
+            -   name: Fetch the Android Xray core (libXray AAR)
                 run: npm run fetch-core:android
-
-            # No prebuilt Android tun2socks exists, so it is built from source here. It is
-            # what bridges the VpnService tun fd into the core's SOCKS inbound.
-            -   name: Build tun2socks
-                run: npm run build-tun2socks
 
             -   name: Assemble the APK
                 run: npm run tauri android build -- --apk --target aarch64

@@ -624,6 +624,15 @@ fn tun_outbound_interface() -> Option<String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Must happen before anything builds a reqwest client. See the `rustls` note in
+    // Cargo.toml: reqwest is compiled without a default crypto provider, and building a
+    // client without one panics - fatally, since the panic unwinds out of a Rust thread
+    // into the JVM. On Android in dev that is Tauri's own dev-server proxy
+    // (`protocol/tauri.rs`), which it builds before the first paint, so the app aborted on
+    // launch and only ever showed a white screen. Idempotent: `install_default` returns an
+    // error if a provider is already set, which is fine.
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init());

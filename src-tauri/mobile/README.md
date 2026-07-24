@@ -1,9 +1,10 @@
 # Mobile VPN backends
 
-## Android — implemented, not yet run on a device
+## Android — implemented and verified on a device
 
-The Android tunnel is wired end to end. Everything below exists and compiles; **none of it
-has been run on hardware**, so treat the first launch as a debugging session.
+The Android tunnel is wired end to end and has run on hardware: consent dialog → foreground
+service → in-process Xray (`core: Xray … started`) → the native `tun` inbound accepting the
+VpnService fd's packets (`[tun-in -> proxy]`) with real traffic flowing.
 
 | Piece | Where |
 | --- | --- |
@@ -14,7 +15,7 @@ has been run on hardware**, so treat the first launch as a debugging session.
 | The tunnel (Kotlin) | `…/TunnelService.kt` |
 | Manifest service + permissions | `gen/android/app/src/main/AndroidManifest.xml` |
 | Release signing | `gen/android/app/build.gradle.kts` (`keystore.properties` or env) |
-| Native libs | `npm run fetch-core:android` + `npm run build-tun2socks` |
+| Core (libXray AAR) | `npm run fetch-core:android` → `gen/android/app/libs/libXray.aar` |
 
 ### The command contract (unchanged, already wired on the JS side)
 
@@ -27,33 +28,33 @@ has been run on hardware**, so treat the first launch as a debugging session.
 ### How the packets actually flow
 
 ```
-VpnService.establish() → tun fd → tun2socks (in-process, JNI) → SOCKS 1080 → Xray → server
+VpnService.establish() → tun fd → config env xray.tun.fd → in-process Xray `tun` inbound → server
 ```
 
-Xray's own `tun` inbound **cannot** create the interface on Android — the OS owns it. Its
-documented escape hatch (hand Xray a pre-opened fd via `XRAY_TUN_FD`) only works when Xray
-runs *in-process* as a gomobile library. We ship Xray as a spawned executable, and Android's
-`ProcessBuilder` closes inherited fds, so that fd would be meaningless in the child.
+Xray runs **in this app's process**, via [libXray](https://github.com/XTLS/libXray)'s
+gomobile AAR. That is forced, not chosen: the tun fd from `VpnService.establish()` is only
+valid inside our own process, and Android's `ProcessBuilder` closes every fd ≥ 3 across
+`exec` (verified on-device — even with `FD_CLOEXEC` cleared), so a *spawned* `libxray.so`
+could never receive it through `XRAY_TUN_FD`. In-process, Xray's own `tun` inbound reads the
+fd (from the config root `env` that `TunnelService` injects) and does the layer-3 work
+itself — so there is **no tun2socks bridge** anymore.
 
-Hence the split: **tun2socks is loaded into the app's own process** (so the fd stays valid)
-and bridges the tun into the SOCKS inbound that `buildMobileConfig` produces, while Xray
-stays a child process. This is the same shape every Android Xray client uses.
+Xray's outbound sockets (its connection to the server) must stay out of the tunnel they
+serve. libXray calls back through a `DialerController` for every outbound socket; the
+callback runs `VpnService.protect()` on it. Stats can't use the desktop `xray api
+statsquery` path (no binary to exec), so `buildMobileConfig` adds a loopback `metrics`
+listener and `TunnelService` polls its `/debug/vars` expvar for `outbound>>>proxy>>>traffic`.
 
-tun2socks is [hev-socks5-tunnel](https://github.com/heiher/hev-socks5-tunnel), **built from
-source** — the project publishes no Android artifacts, and its prebuilt linux-arm64 binaries
-do not work on Android. `npm run build-tun2socks` runs `ndk-build` against its `Android.mk`
-and installs `libhev-socks5-tunnel.so` per ABI. Needs `NDK_HOME`.
+The AAR is libXray's prebuilt, self-contained gomobile binding (`libgojni.so` per ABI, Xray
+statically linked). `npm run fetch-core:android` downloads and unpacks it into `app/libs`
+(gitignored); no NDK and no per-ABI native build are involved.
 
 ### What to expect on first run
 
-The JNI boundary is the unproven part. `TunnelService` declares three externs
-(`TProxyStartService` / `TProxyStopService` / `TProxyGetStats`) matching what
-[sockstun](https://github.com/heiher/sockstun) exposes. If the build's symbols differ, that
-is the first thing to reconcile — an `UnsatisfiedLinkError` on connect is the tell.
-
-Then verify, in order: the VPN consent dialog appears → key icon in the status bar → your
-public IP changes → traffic counters move → `stop` tears the tunnel down → it survives
-backgrounding and rotation.
+Verify, in order: the VPN consent dialog appears → key icon in the status bar → your public
+IP changes → traffic counters move → `stop` tears the tunnel down → it survives backgrounding
+and rotation. Watch `adb`/`npm run android-log` for `RustStdoutStderr`: a bad config or
+missing geo data surfaces as a libXray `invoke` returning `success:false` with the Xray error.
 
 ### Signing
 
