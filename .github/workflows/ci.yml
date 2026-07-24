@@ -90,10 +90,11 @@ jobs:
                 run: cargo clippy --all-targets --all-features -- -D warnings
 
     linux-build:
-        name: Linux build (deb)
+        name: Linux build (deb + AppImage)
         # A full tauri build is heavy, so it runs on pushes to main only - the rust matrix
         # above already proves cross-platform compilation cheaply on every PR. This proves
-        # the Linux app actually BUNDLES: fetch the core, build the frontend, package a .deb.
+        # the Linux app actually BUNDLES, in exactly the shape release.yml ships: the .deb
+        # plus the AppImage, which is the Linux updater target.
         if: github.event_name == 'push'
         runs-on: ubuntu-latest
         steps:
@@ -123,17 +124,18 @@ jobs:
             # createUpdaterArtifacts signs the build, so the updater key is needed even for
             # a throwaway CI bundle. Secrets are only present on same-repo pushes, which is
             # exactly where this job runs.
-            -   name: Build the .deb
+            -   name: Build the .deb + AppImage
                 env:
                     TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
                     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-                run: npm run tauri build -- --bundles deb
+                run: npm run tauri build -- --bundles deb,appimage
 
     macos-build:
-        name: macOS build (app)
-        # Heavy; pushes to main only. Proves the macOS app bundles. It is UNSIGNED - Apple
-        # code-signing + notarization need a paid Apple Developer account, deferred to the
-        # release pipeline once that account exists.
+        name: macOS build (universal app + dmg)
+        # Heavy; pushes to main only. Proves the macOS app bundles in exactly the shape
+        # release.yml ships - a UNIVERSAL build whose Xray core is two arch binaries fused
+        # with lipo - so that path is exercised on a push instead of first at tag time.
+        # UNSIGNED: code-signing + notarization need a paid Apple Developer account.
         if: github.event_name == 'push'
         runs-on: macos-latest
         steps:
@@ -145,6 +147,8 @@ jobs:
                     cache: npm
 
             -   uses: dtolnay/rust-toolchain@stable
+                with:
+                    targets: aarch64-apple-darwin,x86_64-apple-darwin
 
             -   uses: Swatinem/rust-cache@v2
                 with:
@@ -152,14 +156,22 @@ jobs:
 
             -   run: npm ci
 
-            -   name: Fetch the macOS Xray core
-                run: node scripts/fetch-core.mjs
+            -   name: Fetch and fuse the macOS Xray cores
+                run: |
+                    node scripts/fetch-core.mjs --target macos-arm64-v8a
+                    mv src-tauri/assets/app-xray "$RUNNER_TEMP/app-xray-arm64"
+                    node scripts/fetch-core.mjs --target macos-64
+                    mv src-tauri/assets/app-xray "$RUNNER_TEMP/app-xray-x86_64"
+                    lipo -create "$RUNNER_TEMP/app-xray-arm64" "$RUNNER_TEMP/app-xray-x86_64" \
+                         -output src-tauri/assets/app-xray
+                    chmod +x src-tauri/assets/app-xray
+                    lipo -info src-tauri/assets/app-xray
 
-            -   name: Build the .app (unsigned)
+            -   name: Build the universal .app + .dmg (unsigned)
                 env:
                     TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
                     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-                run: npm run tauri build -- --bundles app
+                run: npm run tauri build -- --target universal-apple-darwin --bundles app,dmg
 
     windows-build:
         name: Windows build (nsis)

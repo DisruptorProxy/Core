@@ -1,7 +1,8 @@
 name: Release
 
-# Pushing a `v*` tag builds and signs the Windows installer once, then publishes it
-# to TWO places:
+# Pushing a `v*` tag builds and signs every platform - Windows (NSIS + MSI), Linux (.deb +
+# AppImage), macOS (universal .app + .dmg), and a best-effort Android APK - then publishes
+# them to TWO places:
 #   1. A draft release on THIS repo (DisruptorProxy/Core, private) - an internal
 #      record, created by tauri-action using the default GITHUB_TOKEN (which can
 #      only ever touch the repo the workflow runs in).
@@ -17,10 +18,11 @@ name: Release
 # The updater manifest (latest.json) is BUILT HERE, not copied from Core: tauri-action
 # only attaches its own latest.json to the Core release, and the download URL inside it
 # points at Core (private) - useless to end users. The "Stage public artifacts" step
-# below writes a fresh latest.json whose URL points at the Xray-Client asset and whose
-# signature is read from the installer's .sig file. Artifacts are renamed to space-free
+# below writes a fresh latest.json whose URLs point at the Xray-Client assets and whose
+# signatures are read from each platform's .sig file. Artifacts are renamed to space-free
 # names first, because GitHub mangles spaces in asset names and that would break the URL
-# the updater fetches.
+# the updater fetches. Android is absent from the manifest on purpose - the Tauri updater
+# has no Android channel, so the APK is a plain download.
 #
 # Both releases are created as DRAFTS on purpose - review each one on GitHub and publish
 # it manually. A draft is invisible to the updater and to anonymous downloads
@@ -48,7 +50,237 @@ permissions:
     contents: write
 
 jobs:
+    # Linux builds on its own runner and hands its files to `release` as an artifact.
+    # Only that job writes the releases, and it needs every platform staged together to
+    # build ONE latest.json covering them all. macOS is deliberately absent: an unsigned,
+    # un-notarized .app is blocked by Gatekeeper on every download, so it waits for a paid
+    # Apple Developer account (it still builds in ci.yml, proving it bundles).
+    linux:
+        name: Build Linux (deb + AppImage)
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: actions/setup-node@v6
+                with:
+                    node-version: 24
+                    cache: npm
+
+            -   uses: dtolnay/rust-toolchain@stable
+
+            -   name: Install Linux Tauri dependencies
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev
+
+            -   run: npm ci
+
+            # Only the Windows core is committed; every other target's is fetched and
+            # sha256-verified at build time.
+            -   name: Fetch the Linux Xray core
+                run: node scripts/fetch-core.mjs --target linux-64
+
+            -   name: Build the .deb + AppImage
+                env:
+                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+                run: npm run tauri build -- --bundles deb,appimage
+
+            -   name: Stage the Linux artifacts
+                shell: pwsh
+                run: |
+                    $ErrorActionPreference = 'Stop'
+                    $tag     = '${{ github.ref_name }}'
+                    $version = $tag.TrimStart('v')
+                    $bundle  = 'src-tauri/target/release/bundle'
+
+                    $out = 'release-assets'
+                    New-Item -ItemType Directory -Force -Path $out | Out-Null
+
+                    # The AppImage is Linux's updater target. Find whichever file has a
+                    # .sig beside it rather than assuming an extension - that way the name
+                    # published here can never drift from the one that was actually signed.
+                    $sig = Get-ChildItem "$bundle/appimage" -Filter '*.sig' | Select-Object -First 1
+                    if (-not $sig) { throw "Updater signature (.sig) not found under $bundle/appimage" }
+
+                    $payloadFile = Get-ChildItem "$bundle/appimage" |
+                        Where-Object { $_.Name -eq ($sig.Name -replace '\.sig$', '') } |
+                        Select-Object -First 1
+                    if (-not $payloadFile) { throw "Updater payload for $($sig.Name) not found" }
+
+                    # Space-free names: productName is "The Disruptor Proxy", and GitHub
+                    # mangles spaces in asset names - which would break the updater's URL.
+                    $suffix      = if ($payloadFile.Name -like '*.tar.gz') { 'AppImage.tar.gz' } else { 'AppImage' }
+                    $payloadName = "Disruptor-Proxy_${version}_amd64.$suffix"
+                    Copy-Item $payloadFile.FullName (Join-Path $out $payloadName)
+                    Copy-Item $sig.FullName         (Join-Path $out "$payloadName.sig")
+
+                    # The .deb is a direct-download convenience; the updater never uses it.
+                    $deb = Get-ChildItem "$bundle/deb" -Filter '*.deb' | Select-Object -First 1
+                    if ($deb) { Copy-Item $deb.FullName (Join-Path $out "Disruptor-Proxy_${version}_amd64.deb") }
+
+                    Write-Host "Staged Linux artifacts:"
+                    Get-ChildItem $out | ForEach-Object { Write-Host "  $($_.Name)" }
+
+            -   uses: actions/upload-artifact@v4
+                with:
+                    name: linux-assets
+                    path: release-assets
+                    if-no-files-found: error
+
+    macos:
+        name: Build macOS (universal .app + .dmg)
+        runs-on: macos-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: actions/setup-node@v6
+                with:
+                    node-version: 24
+                    cache: npm
+
+            -   uses: dtolnay/rust-toolchain@stable
+                with:
+                    targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+            -   run: npm ci
+
+            # A universal app needs a universal core. Xray ships one binary per arch, so
+            # fetch both and lipo them together - otherwise the app would launch on both
+            # Macs but only be able to run its proxy on one of them.
+            -   name: Fetch and fuse the macOS Xray cores
+                run: |
+                    node scripts/fetch-core.mjs --target macos-arm64-v8a
+                    mv src-tauri/assets/app-xray "$RUNNER_TEMP/app-xray-arm64"
+                    node scripts/fetch-core.mjs --target macos-64
+                    mv src-tauri/assets/app-xray "$RUNNER_TEMP/app-xray-x86_64"
+                    lipo -create "$RUNNER_TEMP/app-xray-arm64" "$RUNNER_TEMP/app-xray-x86_64" \
+                         -output src-tauri/assets/app-xray
+                    chmod +x src-tauri/assets/app-xray
+                    lipo -info src-tauri/assets/app-xray
+
+            # UNSIGNED and un-notarized: that needs a paid Apple Developer account. macOS
+            # will warn on first launch until then (documented on the wiki's install page).
+            -   name: Build the universal .app + .dmg
+                env:
+                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+                run: npm run tauri build -- --target universal-apple-darwin --bundles app,dmg
+
+            -   name: Stage the macOS artifacts
+                shell: pwsh
+                run: |
+                    $ErrorActionPreference = 'Stop'
+                    $tag     = '${{ github.ref_name }}'
+                    $version = $tag.TrimStart('v')
+                    $bundle  = 'src-tauri/target/universal-apple-darwin/release/bundle'
+
+                    $out = 'release-assets'
+                    New-Item -ItemType Directory -Force -Path $out | Out-Null
+
+                    # The .app.tar.gz is macOS's updater target - same trick as Linux: take
+                    # whichever file has a .sig beside it, never a guessed extension.
+                    $sig = Get-ChildItem "$bundle/macos" -Filter '*.sig' | Select-Object -First 1
+                    if (-not $sig) { throw "Updater signature (.sig) not found under $bundle/macos" }
+
+                    $payloadFile = Get-ChildItem "$bundle/macos" |
+                        Where-Object { $_.Name -eq ($sig.Name -replace '\.sig$', '') } |
+                        Select-Object -First 1
+                    if (-not $payloadFile) { throw "Updater payload for $($sig.Name) not found" }
+
+                    $payloadName = "Disruptor-Proxy_${version}_universal.app.tar.gz"
+                    Copy-Item $payloadFile.FullName (Join-Path $out $payloadName)
+                    Copy-Item $sig.FullName         (Join-Path $out "$payloadName.sig")
+
+                    # The .dmg is the direct download; the updater never uses it.
+                    $dmg = Get-ChildItem "$bundle/dmg" -Filter '*.dmg' | Select-Object -First 1
+                    if ($dmg) { Copy-Item $dmg.FullName (Join-Path $out "Disruptor-Proxy_${version}_universal.dmg") }
+
+                    Write-Host "Staged macOS artifacts:"
+                    Get-ChildItem $out | ForEach-Object { Write-Host "  $($_.Name)" }
+
+            -   uses: actions/upload-artifact@v4
+                with:
+                    name: macos-assets
+                    path: release-assets
+                    if-no-files-found: error
+
+    android:
+        name: Build Android (apk)
+        # Best-effort on purpose. The native VPN plugin (src-tauri/mobile) is still a
+        # scaffold, so this APK runs the UI but CANNOT tunnel yet, and with no keystore
+        # configured the release APK is unsigned (Android won't install it as-is). It is
+        # attached for testing only. continue-on-error keeps a broken or missing Android
+        # build from blocking a desktop release - `needs` is still satisfied either way.
+        runs-on: ubuntu-latest
+        continue-on-error: true
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   uses: actions/setup-node@v6
+                with:
+                    node-version: 24
+                    cache: npm
+
+            -   uses: actions/setup-java@v4
+                with:
+                    distribution: temurin
+                    java-version: 17
+
+            -   uses: android-actions/setup-android@v3
+
+            -   name: Install the Android NDK
+                run: |
+                    sdkmanager "ndk;27.0.12077973"
+                    echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
+
+            -   uses: dtolnay/rust-toolchain@stable
+                with:
+                    targets: aarch64-linux-android,x86_64-linux-android
+
+            -   name: Install Linux Tauri dependencies
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev
+
+            -   run: npm ci
+
+            -   name: Fetch the Android Xray cores
+                run: npm run fetch-core:android
+
+            -   name: Assemble the APK
+                run: npm run tauri android build -- --apk
+
+            -   name: Stage the Android artifact
+                shell: pwsh
+                run: |
+                    $ErrorActionPreference = 'Stop'
+                    $tag     = '${{ github.ref_name }}'
+                    $version = $tag.TrimStart('v')
+
+                    $out = 'release-assets'
+                    New-Item -ItemType Directory -Force -Path $out | Out-Null
+
+                    # Gradle's output path varies by target/flavour, so search rather than
+                    # hard-code it.
+                    $apk = Get-ChildItem 'src-tauri/gen/android/app/build/outputs/apk' -Recurse -Filter '*.apk' |
+                        Select-Object -First 1
+                    if (-not $apk) { throw "No .apk found under src-tauri/gen/android/app/build/outputs/apk" }
+
+                    Copy-Item $apk.FullName (Join-Path $out "Disruptor-Proxy_${version}.apk")
+                    Write-Host "Staged Android artifact: $($apk.Name)"
+
+            -   uses: actions/upload-artifact@v4
+                with:
+                    name: android-assets
+                    path: release-assets
+                    if-no-files-found: error
+
     release:
+        # Blocks on Linux and macOS on purpose: a release whose latest.json silently loses
+        # a platform is worse than one that fails loudly and gets re-run. Android is
+        # continue-on-error, so it satisfies `needs` whether or not it produced an APK.
+        needs: [ linux, macos, android ]
         runs-on: windows-latest
         steps:
             -   uses: actions/checkout@v7
@@ -101,6 +333,16 @@ jobs:
                     releaseDraft: true
                     prerelease: false
 
+            # Every other platform's files, staged by their own jobs. merge-multiple drops
+            # them into ./release-assets alongside the Windows ones, and the pattern makes a
+            # missing android-assets (best-effort job) a non-event instead of a failure.
+            -   name: Download the other platforms' artifacts
+                uses: actions/download-artifact@v4
+                with:
+                    path: release-assets
+                    pattern: '*-assets'
+                    merge-multiple: true
+
             # Copies the installer + its .sig under predictable, space-free names into
             # ./release-assets, and writes a latest.json whose download URL points at
             # the Xray-Client (public) asset - the manifest the updater actually reads.
@@ -134,16 +376,48 @@ jobs:
 
                     $notes = if (Test-Path 'release-notes.md') { (Get-Content -Raw 'release-notes.md').Trim() } else { "The Disruptor Proxy $version" }
                     $signature = (Get-Content -Raw $sig.FullName).Trim()
+
+                    $platforms = [ordered]@{
+                        'windows-x86_64' = [ordered]@{
+                            signature = $signature
+                            url       = "https://github.com/$repo/releases/download/$tag/$exeName"
+                        }
+                    }
+
+                    # Linux and macOS came from their own jobs (downloaded above). Each entry
+                    # is derived from whichever .sig actually arrived, so a URL can never
+                    # drift from the file that was signed. The universal macOS build serves
+                    # Apple Silicon and Intel alike - two keys, one asset.
+                    $updaterAssets = @(
+                        @{ Match = '*.AppImage*.sig';  Keys = @('linux-x86_64') },
+                        @{ Match = '*.app.tar.gz.sig'; Keys = @('darwin-aarch64', 'darwin-x86_64') }
+                    )
+                    foreach ($asset in $updaterAssets)
+                    {
+                        $found = Get-ChildItem $out | Where-Object { $_.Name -like $asset.Match } | Select-Object -First 1
+                        if (-not $found)
+                        {
+                            throw "No updater signature matching $($asset.Match) - did the $($asset.Keys -join '/') job upload its artifacts?"
+                        }
+
+                        $assetName = $found.Name -replace '\.sig$', ''
+                        $assetSig  = (Get-Content -Raw $found.FullName).Trim()
+                        foreach ($key in $asset.Keys)
+                        {
+                            $platforms[$key] = [ordered]@{
+                                signature = $assetSig
+                                url       = "https://github.com/$repo/releases/download/$tag/$assetName"
+                            }
+                        }
+                    }
+
+                    # The Android APK ships as a plain download - the Tauri updater has no
+                    # Android channel, so it is deliberately absent from the manifest.
                     $manifest = [ordered]@{
                         version   = $version
                         notes     = $notes
                         pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-                        platforms = [ordered]@{
-                            'windows-x86_64' = [ordered]@{
-                                signature = $signature
-                                url       = "https://github.com/$repo/releases/download/$tag/$exeName"
-                            }
-                        }
+                        platforms = $platforms
                     }
                     $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path (Join-Path $out 'latest.json') -Encoding utf8
 
