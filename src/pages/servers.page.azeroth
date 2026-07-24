@@ -243,7 +243,7 @@ export default component ServersPage()
 
                 <div class="flex w-full max-w-xs flex-col gap-3">
                     <Button label={ t().subscriptions.add } leading={ Rss } block={ true } onPress={ () => openAddSub() } />
-                    <Button label={ t().importing.openAction } leading={ Download } block={ true } onPress={ () => importOpen = true } />
+                    <Button label={ t().importing.openAction } leading={ Download } variant="ghost" block={ true } onPress={ () => importOpen = true } />
                 </div>
             </div>
         </Show>

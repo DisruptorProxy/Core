@@ -1,6 +1,6 @@
 import { For, Show } from 'azerothjs';
 
-import { Check } from 'lucide';
+import { Check, Globe, Info, Languages, ShieldCheck, SwatchBook } from 'lucide';
 
 import { useGeo } from '../stores/geo';
 import { LOCALES, LOCALE_COUNTRY, LOCALE_LABELS, useLocale } from '../stores/locale';
@@ -13,15 +13,15 @@ import Card from '../components/card.component.azeroth';
 import { flagIcon } from '../components/flag';
 import { icon } from '../components/icon';
 import Screen from '../components/screen.component.azeroth';
+import SectionHeading from '../components/section-heading.component.azeroth';
 import Segmented from '../components/segmented.component.azeroth';
 import type { SegmentedOption } from '../components/segmented.component.azeroth';
 
-const HEADING = 'text-xs font-semibold text-faint ltr:uppercase ltr:tracking-[0.16em]';
-
 /**
- * Settings: appearance, language, and the About section (version + update check).
- * Theme and language change every other screen, so they lead; About lets the user
- * see their build and pull a newer one.
+ * Settings: appearance, language, geo data, and About. Theme and language change every
+ * other screen, so they lead; About lets the user see their build and pull a newer one.
+ * Every section is an icon-marked heading over a card, so the page reads as one system
+ * with the rest of the app rather than a bare form.
  */
 export default component SettingsPage()
 {
@@ -44,47 +44,52 @@ export default component SettingsPage()
     <Screen title={ t().settings.title } subtitle={ t().settings.subtitle }>
         <div class="flex flex-col gap-8 px-5 py-6">
             <section class="flex flex-col gap-4">
-                <h2 class={ HEADING }>{ t().settings.appearance }</h2>
+                <SectionHeading glyph={ SwatchBook } label={ t().settings.appearance } />
 
-                <div class="flex flex-col gap-2">
-                    <p class="text-sm font-medium text-text">{ t().settings.theme }</p>
-                    <Segmented
-                        label={ t().settings.theme }
-                        options={ themeOptions }
-                        value={ preference() }
-                        onSelect={ (value) => setPreference(value as ThemePreference) }
-                    />
-                </div>
-
-                <div class="flex flex-col gap-2">
-                    <p class="text-sm font-medium text-text">{ t().settings.language }</p>
-
-                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        <For each={ LOCALES } key={ (code) => code }>
-                            { (code) =>
-                                <button
-                                    type="button"
-                                    aria-pressed={ locale() === code }
-                                    class={ () => 'flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors '
-                                        + (locale() === code
-                                            ? 'border-accent bg-accent text-accent-ink hover:bg-accent-hover'
-                                            : 'border-border bg-surface text-text hover:border-border-strong hover:bg-elevated') }
-                                    onClick={ () => setLocale(code) }
-                                >
-                                    <span class={ `${ flagIcon(LOCALE_COUNTRY[code]) } flag-row shrink-0` }></span>
-                                    { LOCALE_LABELS[code] }
-                                    <Show when={ locale() === code }>
-                                        { icon(Check, 'size-4 shrink-0') }
-                                    </Show>
-                                </button>
-                            }
-                        </For>
+                <Card class="flex flex-col gap-5 p-4">
+                    <div class="flex flex-col gap-2">
+                        <p class="text-sm font-medium text-text">{ t().settings.theme }</p>
+                        <Segmented
+                            label={ t().settings.theme }
+                            options={ themeOptions }
+                            value={ preference() }
+                            onSelect={ (value) => setPreference(value as ThemePreference) }
+                        />
                     </div>
-                </div>
+
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center gap-2">
+                            { icon(Languages, 'size-4 text-muted') }
+                            <p class="text-sm font-medium text-text">{ t().settings.language }</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                            <For each={ LOCALES } key={ (code) => code }>
+                                { (code) =>
+                                    <button
+                                        type="button"
+                                        aria-pressed={ locale() === code }
+                                        class={ () => 'flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors '
+                                            + (locale() === code
+                                                ? 'border-accent bg-accent text-accent-ink hover:bg-accent-hover'
+                                                : 'border-border bg-surface text-text hover:border-border-strong hover:bg-elevated') }
+                                        onClick={ () => setLocale(code) }
+                                    >
+                                        <span class={ `${ flagIcon(LOCALE_COUNTRY[code]) } flag-row shrink-0` }></span>
+                                        { LOCALE_LABELS[code] }
+                                        <Show when={ locale() === code }>
+                                            { icon(Check, 'size-4 shrink-0') }
+                                        </Show>
+                                    </button>
+                                }
+                            </For>
+                        </div>
+                    </div>
+                </Card>
             </section>
 
             <section class="flex flex-col gap-4">
-                <h2 class={ HEADING }>{ t().settings.geoFiles }</h2>
+                <SectionHeading glyph={ Globe } label={ t().settings.geoFiles } />
 
                 <Card class="flex flex-col gap-3 p-4">
                     <p class="text-sm text-muted">{ t().settings.geoFilesDesc }</p>
@@ -138,12 +143,20 @@ export default component SettingsPage()
             </section>
 
             <section class="flex flex-col gap-4">
-                <h2 class={ HEADING }>{ t().settings.about }</h2>
+                <SectionHeading glyph={ Info } label={ t().settings.about } />
 
                 <Card class="flex flex-col gap-3 p-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-muted">{ t().settings.version }</span>
-                        <span class="readout text-sm font-medium text-text">{ version.current() }</span>
+                    <div class="flex items-center gap-3">
+                        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-elevated text-accent">
+                            { icon(ShieldCheck, 'size-5') }
+                        </span>
+
+                        <div class="flex min-w-0 flex-col">
+                            <span class="truncate text-sm font-semibold text-text">{ t().app.name }</span>
+                            <span class="truncate text-xs text-muted">{ t().app.tagline }</span>
+                        </div>
+
+                        <span class="readout ms-auto shrink-0 text-sm font-medium text-text" dir="ltr">{ version.current() }</span>
                     </div>
 
                     <Show when={ version.state() === 'available' }>
