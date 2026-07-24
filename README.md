@@ -31,18 +31,20 @@ npm install
 npm run tauri dev
 ```
 
-`npm run dev` alone runs just the Vite frontend in a browser. Tauri-specific APIs no-op outside the desktop shell - fine for UI work, not for anything touching the proxy engine, geo files, or the updater.
+`npm run dev` alone runs just the frontend in a browser. Tauri-specific APIs no-op outside the desktop shell - fine for UI work, not for anything touching the proxy engine, geo files, or the updater.
 
 ## Useful scripts
 
 | Script | Does |
 | --- | --- |
-| `npm run dev` | Vite dev server only (browser, no Tauri shell) |
+| `npm run dev` | AzerothJS dev server only (browser, no Tauri shell) |
 | `npm run tauri dev` / `npm run desktop` | Full desktop app in dev mode |
-| `npm run typecheck` | `azeroth-tsc` across the whole frontend |
-| `npm run lint` / `npm run lint:fix` | ESLint (including `.azeroth` files) |
-| `npm run build` | Typecheck plus production frontend build |
+| `npm run check` | `azeroth check` - typechecks **and** lints the whole frontend in one pass |
+| `npm run lint` / `npm run lint:fix` | ESLint on its own (including `.azeroth` files) |
+| `npm run build` | Production frontend build |
 | `npm run desktop-build` | Full production Tauri build (installer) |
+| `npm run android` / `npm run android-apk` | Android dev on a device/emulator / assemble an APK |
+| `npm run fetch-core [-- --target linux-64]` | Download + checksum-verify the Xray core for a target |
 | `npm run tauri icon <path>` | Regenerate every platform icon from one square source image |
 | `npm run release -- <version \| patch \| minor \| major>` | Bump the version, commit, tag, and push - see Releasing below |
 

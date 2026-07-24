@@ -4,11 +4,10 @@ set -e
 # fails here first. Bypass in a pinch with:  git push --no-verify
 echo "pre-push: CI-equivalent checks (bypass with --no-verify)"
 
-echo "-> typecheck"
-npm run typecheck
-
-echo "-> lint"
-npm run lint
+# `azeroth check` is the combined gate - it typechecks AND lints in one pass, so there
+# is no separate lint step to run here.
+echo "-> check (typecheck + lint)"
+npm run check
 
 echo "-> build"
 npm run build
