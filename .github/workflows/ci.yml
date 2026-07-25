@@ -70,7 +70,7 @@ jobs:
                     sudo apt-get update
                     sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev
 
-            -   name: Provide a placeholder frontend dist
+            -   name: Provide placeholder build inputs
                 shell: bash
                 run: |
                     # tauri's generate_context! reads frontendDist (../dist) at compile
@@ -79,6 +79,14 @@ jobs:
                     # deliberately does not build the real frontend.
                     mkdir -p dist
                     printf '<!doctype html><title>ci</title>' > dist/index.html
+
+                    # tauri-build also validates that every bundle.resources path exists at
+                    # compile time. The Windows core (app-xray.exe + wintun.dll) is committed,
+                    # but the unix core (assets/app-xray, named by tauri.{linux,macos}.conf.json)
+                    # is fetched at build time and absent in this lint-only job - so stub it.
+                    # Only the path's existence is checked, not its contents.
+                    mkdir -p src-tauri/assets
+                    touch src-tauri/assets/app-xray
 
             -   name: rustfmt
                 working-directory: src-tauri
