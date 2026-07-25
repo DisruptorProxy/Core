@@ -207,13 +207,16 @@ jobs:
 
     android:
         name: Build Android (apk)
-        # Best-effort on purpose. The native VPN plugin (src-tauri/mobile) is still a
-        # scaffold, so this APK runs the UI but CANNOT tunnel yet, and with no keystore
-        # configured the release APK is unsigned (Android won't install it as-is). It is
-        # attached for testing only. continue-on-error keeps a broken or missing Android
-        # build from blocking a desktop release - `needs` is still satisfied either way.
+        # Best-effort on purpose: the release APK is signed only when the keystore secrets
+        # are present, and Android won't install an unsigned APK - so an unsigned build is
+        # attached for testing rather than distribution. continue-on-error keeps a broken or
+        # missing Android build from blocking a desktop release; `needs` is still satisfied.
         runs-on: ubuntu-latest
         continue-on-error: true
+        # `secrets` cannot be referenced from a step `if:`, but `env` can - so surface the
+        # keystore secret the signing step gates on here, and test env.* below.
+        env:
+            ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         steps:
             -   uses: actions/checkout@v7
 
@@ -254,10 +257,10 @@ jobs:
             # gradle config leaves the build unsigned rather than failing, so the job still
             # proves the APK assembles - it just is not installable.
             -   name: Restore the signing keystore
-                if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+                if: env.ANDROID_KEYSTORE_BASE64 != ''
                 shell: bash
                 run: |
-                    echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+                    echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
                     echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
             -   name: Assemble the APK
