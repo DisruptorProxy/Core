@@ -11,6 +11,8 @@ export const vi: Strings =
         crashRetry: 'Thử lại',
         expandWindow: 'Phóng to cửa sổ',
         shrinkWindow: 'Thu nhỏ cửa sổ',
+        minimizeWindow: 'Thu gọn xuống thanh tác vụ',
+        hideWindow: 'Ẩn vào khay hệ thống',
         trayShow: 'Hiện The Disruptor Proxy',
         trayQuit: 'Thoát'
     },
@@ -126,7 +128,6 @@ export const vi: Strings =
         updating: 'Đang cập nhật…',
         delete: 'Xóa',
         countLabel: (count: number) => `${ count.toLocaleString('vi-VN') } máy chủ`,
-        statusOk: 'Mới nhất',
         updatedAgo: (text: string) => `Cập nhật ${ text }`,
         justNow: 'vừa xong',
         minutesAgo: (n: number) => `${ n } phút trước`,
@@ -136,10 +137,6 @@ export const vi: Strings =
         deletePrompt: (name: string) => `Xử lý thế nào với các máy chủ từ “${ name }”?`,
         deleteRemoveConfigs: 'Xóa máy chủ của nó',
         deleteKeepConfigs: 'Giữ lại, không quản lý',
-        added: 'Thêm',
-        removed: 'Xóa',
-        unchanged: 'Không đổi',
-        keptFavorites: 'Giữ mục yêu thích',
         remaining: 'Còn lại',
         daysLeft: (n: number) => `Còn ${ n } ngày`,
         expired: 'Hết hạn'

@@ -11,6 +11,8 @@ export const hi: Strings =
         crashRetry: 'फिर कोशिश करें',
         expandWindow: 'विंडो बड़ी करें',
         shrinkWindow: 'विंडो छोटी करें',
+        minimizeWindow: 'विंडो मिनिमाइज़ करें',
+        hideWindow: 'ट्रे में छिपाएँ',
         trayShow: 'The Disruptor Proxy दिखाएँ',
         trayQuit: 'बंद करें'
     },
@@ -126,7 +128,6 @@ export const hi: Strings =
         updating: 'अपडेट हो रहा है…',
         delete: 'हटाएँ',
         countLabel: (count: number) => `${ count.toLocaleString('hi-IN') } सर्वर`,
-        statusOk: 'अद्यतित',
         updatedAgo: (text: string) => `अपडेट हुई ${ text }`,
         justNow: 'अभी-अभी',
         minutesAgo: (n: number) => `${ n.toLocaleString('hi-IN') } मिनट पहले`,
@@ -136,10 +137,6 @@ export const hi: Strings =
         deletePrompt: (name: string) => `“${ name }” के सर्वरों का क्या किया जाए?`,
         deleteRemoveConfigs: 'इसके सर्वर हटाएँ',
         deleteKeepConfigs: 'अप्रबंधित रूप में रखें',
-        added: 'जोड़े गए',
-        removed: 'हटाए गए',
-        unchanged: 'अपरिवर्तित',
-        keptFavorites: 'रखे गए पसंदीदा',
         remaining: 'शेष',
         daysLeft: (n: number) => `${ n.toLocaleString('hi-IN') } दिन बाक़ी`,
         expired: 'समाप्त'

@@ -532,6 +532,23 @@
         opacity: 1;
         transform: translateX(-50%) translateY(0);
     }
+
+    /* For controls that sit against the window edge (the titlebar's window
+       buttons), where the centred half would spill past the frame and be clipped
+       by the app's `overflow-x: hidden`. Anchors the tip's trailing edge to the
+       control's instead, so it grows inward however long the translation is. */
+    [data-tip][data-tip-align="end"]::after
+    {
+        inset-inline-start: auto;
+        inset-inline-end: 0;
+        transform: translateY(-3px);
+    }
+
+    [data-tip][data-tip-align="end"]:hover::after,
+    [data-tip][data-tip-align="end"]:focus-visible::after
+    {
+        transform: translateY(0);
+    }
 }
 
 /* Frosted glass. `glass` is the standard panel (cards, bars); `glass-strong` is

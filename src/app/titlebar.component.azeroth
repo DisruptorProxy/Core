@@ -14,7 +14,7 @@ const CTRL = 'flex size-7 items-center justify-center rounded-lg text-muted pres
 
 /**
  * The custom window chrome. The window is borderless (decorations off), so this is
- * the whole titlebar: a draggable region carrying the app mark, and minimize/close
+ * the whole titlebar: a draggable region carrying the app mark, and minimize/hide
  * controls wired to the Tauri window. In a plain browser the controls no-op, so
  * the same layout renders in dev without throwing.
  */
@@ -31,7 +31,10 @@ export default component Titlebar()
         }
     };
 
-    const close = (): void =>
+    // The X does not quit: it hides the window to the tray, which is where Show
+    // brings it back from. Labelled "hide", not "close", so the control says what
+    // it does - quitting is the tray menu's job.
+    const hide = (): void =>
     {
         if (isTauri())
         {
@@ -45,8 +48,20 @@ export default component Titlebar()
             <span class="text-xs font-semibold tracking-wide text-text">{ t().app.name }</span>
         </div>
 
+        { /* The controls sit hard against the window's right edge and the app never
+             scrolls sideways, so a centred tooltip on them is clipped by the frame -
+             the longer the translation, the more of it is lost. `data-tip-align="end"`
+             hangs them inward from the control instead, which stays inside the window
+             in every locale. */ }
         <div class="flex items-center gap-1">
-            <button type="button" class={ CTRL + ' hover:bg-elevated hover:text-text' } aria-label="Minimize" data-tip="Minimize" onClick={ () => minimize() }>
+            <button
+                type="button"
+                class={ CTRL + ' hover:bg-elevated hover:text-text' }
+                aria-label={ t().app.minimizeWindow }
+                data-tip={ t().app.minimizeWindow }
+                data-tip-align="end"
+                onClick={ () => minimize() }
+            >
                 { icon(Minus, 'size-4') }
             </button>
             <button
@@ -54,11 +69,19 @@ export default component Titlebar()
                 class={ CTRL + ' hover:bg-elevated hover:text-text' }
                 aria-label={ windowMode.mode() === 'compact' ? t().app.expandWindow : t().app.shrinkWindow }
                 data-tip={ windowMode.mode() === 'compact' ? t().app.expandWindow : t().app.shrinkWindow }
+                data-tip-align="end"
                 onClick={ () => windowMode.toggle() }
             >
                 { icon(windowMode.mode() === 'compact' ? Maximize2 : Minimize2, 'size-4 animate-icon-swap') }
             </button>
-            <button type="button" class={ CTRL + ' hover:bg-poor hover:text-white' } aria-label="Close" data-tip="Close" onClick={ () => close() }>
+            <button
+                type="button"
+                class={ CTRL + ' hover:bg-poor hover:text-white' }
+                aria-label={ t().app.hideWindow }
+                data-tip={ t().app.hideWindow }
+                data-tip-align="end"
+                onClick={ () => hide() }
+            >
                 { icon(X, 'size-4') }
             </button>
         </div>

@@ -11,6 +11,8 @@ export const tr: Strings =
         crashRetry: 'Tekrar dene',
         expandWindow: 'Pencereyi büyüt',
         shrinkWindow: 'Pencereyi küçült',
+        minimizeWindow: 'Simge durumuna küçült',
+        hideWindow: 'Tepsiye gizle',
         trayShow: 'The Disruptor Proxy’yi göster',
         trayQuit: 'Çık'
     },
@@ -126,7 +128,6 @@ export const tr: Strings =
         updating: 'Güncelleniyor…',
         delete: 'Sil',
         countLabel: (count: number) => `${ count.toLocaleString('tr-TR') } sunucu`,
-        statusOk: 'Güncel',
         updatedAgo: (text: string) => `Güncellendi: ${ text }`,
         justNow: 'az önce',
         minutesAgo: (n: number) => `${ n } dk önce`,
@@ -136,10 +137,6 @@ export const tr: Strings =
         deletePrompt: (name: string) => `“${ name }” aboneliğinin sunucularına ne olsun?`,
         deleteRemoveConfigs: 'Sunucularını sil',
         deleteKeepConfigs: 'Yönetimsiz olarak tut',
-        added: 'Eklendi',
-        removed: 'Kaldırıldı',
-        unchanged: 'Değişmedi',
-        keptFavorites: 'Korunan favoriler',
         remaining: 'Kalan',
         daysLeft: (n: number) => `${ n } gün kaldı`,
         expired: 'Süresi doldu'

@@ -11,6 +11,8 @@ export const zh: Strings =
         crashRetry: '重试',
         expandWindow: '放大窗口',
         shrinkWindow: '缩小窗口',
+        minimizeWindow: '最小化窗口',
+        hideWindow: '隐藏到托盘',
         trayShow: '显示 The Disruptor Proxy',
         trayQuit: '退出'
     },
@@ -126,7 +128,6 @@ export const zh: Strings =
         updating: '更新中…',
         delete: '删除',
         countLabel: (count: number) => `${ count.toLocaleString('zh-CN') } 个服务器`,
-        statusOk: '已是最新',
         updatedAgo: (text: string) => `更新于${ text }`,
         justNow: '刚刚',
         minutesAgo: (n: number) => `${ n } 分钟前`,
@@ -136,10 +137,6 @@ export const zh: Strings =
         deletePrompt: (name: string) => `如何处理来自“${ name }”的服务器？`,
         deleteRemoveConfigs: '删除其服务器',
         deleteKeepConfigs: '保留为未托管',
-        added: '新增',
-        removed: '移除',
-        unchanged: '未变',
-        keptFavorites: '保留的收藏',
         remaining: '剩余',
         daysLeft: (n: number) => `剩余 ${ n } 天`,
         expired: '已到期'

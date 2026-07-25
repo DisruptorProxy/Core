@@ -147,9 +147,13 @@ export default component VirtualList<T>(props: VirtualListProps<T>)
         createEffect(() => onCleanup(() => observer.disconnect()));
     };
 
+    { /* Height comes from the content (the sized spacer below), not from the parent: a
+         short list - every group collapsed - makes a short list box, and a container that
+         bounds it (a flex column with a max height) shrinks this one to fit and lets it
+         scroll. `min-h-0` is what allows that shrink as a flex item. */ }
     <div
         ref={ attach }
-        class="relative h-full overflow-y-auto overflow-x-hidden overscroll-contain"
+        class="relative min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain"
         onScroll={ (event) => setScrollTop((event.target as HTMLElement).scrollTop) }
     >
         <div class="relative w-full" style:height={ `${ totalSize() }px` }>

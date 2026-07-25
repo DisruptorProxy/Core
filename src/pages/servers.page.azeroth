@@ -1,6 +1,6 @@
 import { Show, Transition } from 'azerothjs';
 
-import { ChevronsDownUp, ChevronsUpDown, CircleStop, Download, Gauge, ListChecks, Rss, Server, SlidersHorizontal } from 'lucide';
+import { ChevronsDownUp, ChevronsUpDown, CircleStop, Download, Gauge, ListChecks, Rss, Server, SlidersHorizontal, X } from 'lucide';
 
 import type { SubscriptionRecord } from '../lib/db/schema';
 
@@ -16,7 +16,6 @@ import { useSubscriptions } from '../stores/subscriptions';
 import { useViewport } from '../stores/viewport';
 
 import Button from '../components/button.component.azeroth';
-import Card from '../components/card.component.azeroth';
 import EmptyState from '../components/empty-state.component.azeroth';
 import { icon } from '../components/icon';
 import Sheet from '../components/sheet.component.azeroth';
@@ -29,7 +28,6 @@ import ConnectionStatus from '../features/connection/connection-status.component
 import ImportSheet from '../features/import/import-sheet.component.azeroth';
 import DeleteDialog from '../features/subscriptions/delete-dialog.component.azeroth';
 import SubscriptionEditor from '../features/subscriptions/subscription-editor.component.azeroth';
-import UpdateReport from '../features/subscriptions/update-report.component.azeroth';
 
 const ICON_BTN = 'flex size-11 items-center justify-center rounded-lg border border-border text-muted hover:bg-elevated press';
 
@@ -144,6 +142,9 @@ export default component ServersPage()
 
     derived liveSettled = connection.phase() === 'connected' && !connection.switching();
 
+    /** The wide-layout side panel is open only for a chosen server. */
+    derived panelOpen = detail.openId() !== null;
+
     const liveLabel = (): string =>
     {
         if (connection.switching())
@@ -176,24 +177,37 @@ export default component ServersPage()
                     </Show>
                 </div>
 
-                { /* One trigger instead of a crowded row of icons: the actions live in a
-                     drawer (bottom sheet on phones, centred card on wide) - roomy, labelled
+                { /* Import earns its own button: it is how servers first get here, so it must
+                     not be buried a tap deep. Everything else stays behind the one drawer
+                     trigger (bottom sheet on phones, centred card on wide) - roomy, labelled
                      targets rather than five cryptic glyphs fighting for space beside the
                      title. A live test shows its progress in the subtitle above. */ }
                 <Show when={ !selection.active() }>
-                    <button
-                        type="button"
-                        class={ `${ ICON_BTN } relative shrink-0` }
-                        aria-label={ t().servers.actions }
-                        data-tip={ t().servers.actions }
-                        onClick={ () => actionsOpen = true }
-                    >
-                        { icon(SlidersHorizontal, 'size-4') }
+                    <div class="flex shrink-0 items-center gap-2">
+                        <button
+                            type="button"
+                            class={ ICON_BTN }
+                            aria-label={ t().importing.openAction }
+                            data-tip={ t().importing.openAction }
+                            onClick={ () => importOpen = true }
+                        >
+                            { icon(Download, 'size-4') }
+                        </button>
 
-                        <Show when={ isTesting }>
-                            <span class="absolute end-1.5 top-1.5 size-2 animate-pulse rounded-full bg-accent" aria-hidden="true"></span>
-                        </Show>
-                    </button>
+                        <button
+                            type="button"
+                            class={ `${ ICON_BTN } relative` }
+                            aria-label={ t().servers.actions }
+                            data-tip={ t().servers.actions }
+                            onClick={ () => actionsOpen = true }
+                        >
+                            { icon(SlidersHorizontal, 'size-4') }
+
+                            <Show when={ isTesting }>
+                                <span class="absolute end-1.5 top-1.5 size-2 animate-pulse rounded-full bg-accent" aria-hidden="true"></span>
+                            </Show>
+                        </button>
+                    </div>
                 </Show>
             </div>
         </header>
@@ -214,21 +228,14 @@ export default component ServersPage()
             </div>
         </Show>
 
-        <Show when={ subscriptions.lastOutcome() }>
-            { (outcome) =>
-            <div class="mx-auto w-full max-w-3xl shrink-0 px-5 pt-5">
-                <Card class="flex flex-col gap-2 p-3">
-                    <span class="text-xs font-medium text-muted">{ t().subscriptions.statusOk }</span>
-                    <UpdateReport diff={ outcome().diff } />
-                </Card>
-            </div>
-            }
-        </Show>
-
+        { /* The card wraps its content instead of filling the column: collapse every group
+             and it shrinks to the handful of headers left, rather than leaving a tall pane of
+             empty glass under them. `max-h-full` keeps it inside the viewport, and the list
+             inside scrolls once the content is taller than that. */ }
         <Show when={ hasList }>
             <div class="min-h-0 flex-1">
                 <div class="mx-auto h-full w-full max-w-3xl px-5 py-5">
-                    <div class="glass h-full overflow-hidden rounded-2xl">
+                    <div class="glass flex max-h-full flex-col overflow-hidden rounded-2xl">
                         <Show when={ query.visibleItems().length > 0 } fallback={ () => noMatches(t().servers.noMatches) }>
                             <ConfigList onEditSub={ openEditSub } onDeleteSub={ (sub) => deleteTarget = sub } />
                         </Show>
@@ -249,8 +256,16 @@ export default component ServersPage()
         </Show>
     </section>
 
+    { /* The panel is not a permanent fixture: with no server open it holds nothing worth
+         320px, so it collapses to zero and the list takes the whole width. Picking a server
+         slides it back out. The inner column keeps its full width throughout, so the content
+         slides rather than reflowing mid-animation. */ }
     <Show when={ viewport.isWide() }>
-        <aside class="flex h-full min-h-0 w-80 shrink-0 flex-col border-s border-border">
+        <aside
+            class={ () => `flex h-full min-h-0 shrink-0 overflow-hidden transition-[width] duration-300 ${ panelOpen ? 'w-80 border-s border-border' : 'w-0' }` }
+            aria-hidden={ () => panelOpen ? 'false' : 'true' }
+        >
+        <div class="flex h-full min-h-0 w-80 shrink-0 flex-col">
             <Show when={ liveVisible }>
                 <div class="shrink-0 border-b border-border px-4 py-4">
                     <div class="mb-3 flex items-center justify-center gap-2">
@@ -262,15 +277,28 @@ export default component ServersPage()
                 </div>
             </Show>
 
+            { /* The panel closes from here: now that it collapses away, a chosen server
+                 needs a way back to the full-width list. */ }
             <Show when={ detail.openId() }>
-                <div class="glass-bar shrink-0 border-b border-border px-4 py-4">
-                    <span class="truncate text-sm font-semibold text-text">{ detail.config()?.name ?? '' }</span>
+                <div class="glass-bar flex shrink-0 items-center gap-2 border-b border-border px-4 py-4">
+                    <span class="min-w-0 flex-1 truncate text-sm font-semibold text-text">{ detail.config()?.name ?? '' }</span>
+
+                    <button
+                        type="button"
+                        class="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-elevated hover:text-text press"
+                        aria-label={ t().common.dismiss }
+                        data-tip={ t().common.dismiss }
+                        onClick={ () => detail.close() }
+                    >
+                        { icon(X, 'size-4') }
+                    </button>
                 </div>
             </Show>
 
             <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4">
                 <ConfigDetail />
             </div>
+        </div>
         </aside>
     </Show>
     </div>
@@ -314,11 +342,6 @@ export default component ServersPage()
                 <span>{ t().subscriptions.add }</span>
             </button>
 
-            <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; importOpen = true; } }>
-                { icon(Download, 'size-5 shrink-0 text-muted') }
-                <span>{ t().importing.openAction }</span>
-            </button>
-
             <Show when={ hasList }>
                 <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; toggleAll(); } }>
                     <Show when={ allCollapsed() } fallback={ () => icon(ChevronsDownUp, 'size-5 shrink-0 text-muted') }>
@@ -358,7 +381,7 @@ const noMatches = (message: string): HTMLElement =>
 {
     const element = document.createElement('div');
 
-    element.className = 'flex h-full items-center justify-center px-8 text-center text-sm text-muted';
+    element.className = 'flex items-center justify-center px-8 py-12 text-center text-sm text-muted';
     element.textContent = message;
 
     return element;

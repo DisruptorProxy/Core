@@ -11,6 +11,8 @@ export const es: Strings =
         crashRetry: 'Reintentar',
         expandWindow: 'Ampliar ventana',
         shrinkWindow: 'Reducir ventana',
+        minimizeWindow: 'Minimizar ventana',
+        hideWindow: 'Ocultar en la bandeja',
         trayShow: 'Mostrar The Disruptor Proxy',
         trayQuit: 'Salir'
     },
@@ -126,7 +128,6 @@ export const es: Strings =
         updating: 'Actualizando…',
         delete: 'Eliminar',
         countLabel: (count: number) => `${ count.toLocaleString('es-ES') } servidores`,
-        statusOk: 'Al día',
         updatedAgo: (text: string) => `Actualizada ${ text }`,
         justNow: 'justo ahora',
         minutesAgo: (n: number) => `hace ${ n } min`,
@@ -136,10 +137,6 @@ export const es: Strings =
         deletePrompt: (name: string) => `¿Qué hacemos con los servidores de «${ name }»?`,
         deleteRemoveConfigs: 'Eliminar sus servidores',
         deleteKeepConfigs: 'Conservarlos sin gestionar',
-        added: 'Añadidos',
-        removed: 'Eliminados',
-        unchanged: 'Sin cambios',
-        keptFavorites: 'Favoritos conservados',
         remaining: 'Restante',
         daysLeft: (n: number) => `Quedan ${ n } días`,
         expired: 'Caducada'

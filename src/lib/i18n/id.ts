@@ -11,6 +11,8 @@ export const id: Strings =
         crashRetry: 'Coba lagi',
         expandWindow: 'Perbesar jendela',
         shrinkWindow: 'Perkecil jendela',
+        minimizeWindow: 'Minimalkan jendela',
+        hideWindow: 'Sembunyikan ke baki',
         trayShow: 'Tampilkan The Disruptor Proxy',
         trayQuit: 'Keluar'
     },
@@ -126,7 +128,6 @@ export const id: Strings =
         updating: 'Memperbarui…',
         delete: 'Hapus',
         countLabel: (count: number) => `${ count.toLocaleString('id-ID') } server`,
-        statusOk: 'Terbaru',
         updatedAgo: (text: string) => `Diperbarui ${ text }`,
         justNow: 'baru saja',
         minutesAgo: (n: number) => `${ n } mnt lalu`,
@@ -136,10 +137,6 @@ export const id: Strings =
         deletePrompt: (name: string) => `Apa yang terjadi pada server dari “${ name }”?`,
         deleteRemoveConfigs: 'Hapus server-nya',
         deleteKeepConfigs: 'Simpan sebagai tak terkelola',
-        added: 'Ditambahkan',
-        removed: 'Dihapus',
-        unchanged: 'Tidak berubah',
-        keptFavorites: 'Favorit dipertahankan',
         remaining: 'Tersisa',
         daysLeft: (n: number) => `${ n } hari lagi`,
         expired: 'Kedaluwarsa'

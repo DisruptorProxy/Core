@@ -11,6 +11,8 @@ export const ar: Strings =
         crashRetry: 'حاول مجددًا',
         expandWindow: 'تكبير النافذة',
         shrinkWindow: 'تصغير النافذة',
+        minimizeWindow: 'تصغير إلى شريط المهام',
+        hideWindow: 'إخفاء إلى شريط النظام',
         trayShow: 'إظهار The Disruptor Proxy',
         trayQuit: 'خروج'
     },
@@ -126,7 +128,6 @@ export const ar: Strings =
         updating: 'جارٍ التحديث…',
         delete: 'حذف',
         countLabel: (count: number) => `${ count.toLocaleString('ar-EG') } خادمًا`,
-        statusOk: 'محدث',
         updatedAgo: (text: string) => `حُدِّث ${ text }`,
         justNow: 'الآن',
         minutesAgo: (n: number) => `قبل ${ n.toLocaleString('ar-EG') } دقيقة`,
@@ -136,10 +137,6 @@ export const ar: Strings =
         deletePrompt: (name: string) => `ماذا يحدث لخوادم «${ name }»؟`,
         deleteRemoveConfigs: 'حذف خوادمه',
         deleteKeepConfigs: 'إبقاؤها غير مُدارة',
-        added: 'أُضيف',
-        removed: 'أُزيل',
-        unchanged: 'بلا تغيير',
-        keptFavorites: 'مفضلة محفوظة',
         remaining: 'المتبقي',
         daysLeft: (n: number) => `بقي ${ n.toLocaleString('ar-EG') } يومًا`,
         expired: 'منتهٍ'

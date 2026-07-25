@@ -11,6 +11,8 @@ export const fa: Strings =
         crashRetry: 'تلاش دوباره',
         expandWindow: 'بزرگ‌کردن پنجره',
         shrinkWindow: 'کوچک‌کردن پنجره',
+        minimizeWindow: 'کمینه‌کردن پنجره',
+        hideWindow: 'پنهان‌کردن در سینی سیستم',
         trayShow: 'نمایش The Disruptor Proxy',
         trayQuit: 'خروج'
     },
@@ -128,7 +130,6 @@ export const fa: Strings =
         updating: 'در حال به‌روزرسانی…',
         delete: 'حذف',
         countLabel: (count: number) => `${ count.toLocaleString('fa-IR') } سرور`,
-        statusOk: 'به‌روز',
         updatedAgo: (text: string) => `به‌روزرسانی ${ text }`,
         justNow: 'همین حالا',
         minutesAgo: (n: number) => `${ n.toLocaleString('fa-IR') } دقیقه پیش`,
@@ -138,10 +139,6 @@ export const fa: Strings =
         deletePrompt: (name: string) => `سرورهای «${ name }» چه شوند؟`,
         deleteRemoveConfigs: 'حذف سرورهایش',
         deleteKeepConfigs: 'نگه‌داشتن به‌صورت بدون‌مدیریت',
-        added: 'افزوده',
-        removed: 'حذف‌شده',
-        unchanged: 'بدون‌تغییر',
-        keptFavorites: 'برگزیده‌های نگه‌داشته',
         remaining: 'باقی‌مانده',
         daysLeft: (n: number) => `${ n.toLocaleString('fa-IR') } روز مانده`,
         expired: 'منقضی‌شده'

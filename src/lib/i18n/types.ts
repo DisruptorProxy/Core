@@ -14,6 +14,8 @@ export interface Strings
         crashRetry: string;
         expandWindow: string;
         shrinkWindow: string;
+        minimizeWindow: string;
+        hideWindow: string;
         trayShow: string;
         trayQuit: string;
     };
@@ -131,7 +133,6 @@ export interface Strings
         updating: string;
         delete: string;
         countLabel: (count: number) => string;
-        statusOk: string;
         updatedAgo: (text: string) => string;
         justNow: string;
         minutesAgo: (n: number) => string;
@@ -141,10 +142,6 @@ export interface Strings
         deletePrompt: (name: string) => string;
         deleteRemoveConfigs: string;
         deleteKeepConfigs: string;
-        added: string;
-        removed: string;
-        unchanged: string;
-        keptFavorites: string;
         // Quota + expiry from the provider's `Subscription-Userinfo` header.
         remaining: string;
         daysLeft: (n: number) => string;

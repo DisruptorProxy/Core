@@ -11,6 +11,8 @@ export const ru: Strings =
         crashRetry: 'Повторить',
         expandWindow: 'Развернуть окно',
         shrinkWindow: 'Уменьшить окно',
+        minimizeWindow: 'Свернуть окно',
+        hideWindow: 'Скрыть в трей',
         trayShow: 'Показать The Disruptor Proxy',
         trayQuit: 'Выход'
     },
@@ -126,7 +128,6 @@ export const ru: Strings =
         updating: 'Обновление…',
         delete: 'Удалить',
         countLabel: (count: number) => `${ count.toLocaleString('ru-RU') } серверов`,
-        statusOk: 'Актуально',
         updatedAgo: (text: string) => `Обновлено ${ text }`,
         justNow: 'только что',
         minutesAgo: (n: number) => `${ n } мин назад`,
@@ -136,10 +137,6 @@ export const ru: Strings =
         deletePrompt: (name: string) => `Что сделать с серверами из «${ name }»?`,
         deleteRemoveConfigs: 'Удалить её серверы',
         deleteKeepConfigs: 'Оставить как неуправляемые',
-        added: 'Добавлено',
-        removed: 'Удалено',
-        unchanged: 'Без изменений',
-        keptFavorites: 'Сохранённое избранное',
         remaining: 'Осталось',
         daysLeft: (n: number) => `Осталось ${ n } дн.`,
         expired: 'Истекла'

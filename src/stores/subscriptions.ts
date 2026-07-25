@@ -10,7 +10,6 @@ import {
     putSubscription
 } from '../lib/db/repo';
 import type { SubscriptionRecord, SubscriptionUserinfo } from '../lib/db/schema';
-import type { UpdateDiff } from '../lib/subs/diff';
 import { fetchSubscription } from '../lib/subs/fetch';
 import { parseSubscriptionUserinfo } from '../lib/subs/userinfo';
 
@@ -26,12 +25,6 @@ const SCHEDULER_TICK_MS = 60_000;
 /** A stable id for a new subscription without pulling in a uuid dependency. */
 const newId = (): string => `sub_${ Date.now().toString(36) }${ Math.random().toString(36).slice(2, 8) }`;
 
-interface UpdateOutcome
-{
-    subId: string;
-    diff: UpdateDiff;
-}
-
 /**
  * Subscriptions: the sources servers come from. Owns their records and the
  * update lifecycle; composes the configs store so a successful update refreshes
@@ -44,7 +37,6 @@ export const useSubscriptions = createStore(() =>
     const [subs, setSubs] = createSignal<SubscriptionRecord[]>([]);
     // Which subs are mid-update, so each card shows its own spinner.
     const [updating, setUpdating] = createSignal<ReadonlySet<string>>(new Set());
-    const [lastOutcome, setLastOutcome] = createSignal<UpdateOutcome | null>(null);
     const [error, setError] = createSignal<string | null>(null);
 
     const refresh = async (): Promise<void> => setSubs(await loadSubscriptions());
@@ -93,7 +85,7 @@ export const useSubscriptions = createStore(() =>
     };
 
     /** Fetches, diffs, and applies an update through the worker. */
-    const update = (id: string): Promise<UpdateOutcome> =>
+    const update = (id: string): Promise<void> =>
         new Promise((resolve, reject) =>
         {
             const record = subs().find((sub) => sub.id === id);
@@ -150,10 +142,7 @@ export const useSubscriptions = createStore(() =>
                     await refresh();
                     await configs.refresh();
 
-                    const outcome: UpdateOutcome = { subId: id, diff: message.diff };
-
-                    setLastOutcome(outcome);
-                    resolve(outcome);
+                    resolve();
                 };
 
                 worker.onerror = (event): void =>
@@ -260,7 +249,6 @@ export const useSubscriptions = createStore(() =>
     return {
         subs,
         isUpdating,
-        lastOutcome,
         error,
         refresh,
         add,
