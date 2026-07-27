@@ -4,8 +4,8 @@ export const fa: Strings =
 {
     app:
     {
-        name: 'Disruptor Proxy',
-        tagline: 'سرورهای شما، اندازه‌گیری‌شده.',
+        name: 'دیسراپتور پروکسی',
+        tagline: 'سرور ها تحت کنترل شما',
         crashTitle: 'مشکلی پیش آمد',
         crashHint: 'این صفحه با خطای غیرمنتظره‌ای مواجه شد. سرورها و تنظیمات شما در امان هستند.',
         crashRetry: 'تلاش دوباره',
@@ -13,7 +13,7 @@ export const fa: Strings =
         shrinkWindow: 'کوچک‌کردن پنجره',
         minimizeWindow: 'کمینه‌کردن پنجره',
         hideWindow: 'پنهان‌کردن در سینی سیستم',
-        trayShow: 'نمایش Disruptor Proxy',
+        trayShow: 'نمایش دیسراپتور پروکسی',
         trayQuit: 'خروج'
     },
 
