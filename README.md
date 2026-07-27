@@ -14,7 +14,7 @@
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green" />
 </p>
 
-This repository is the source, where releases are built, and where they are published - grab a build from [Releases](https://github.com/DisruptorProxy/ClientCore/releases). Guides live on the [Wiki](https://github.com/DisruptorProxy/Wiki).
+This repository is the source, where releases are built, and where they are published - grab a build from [Releases](https://github.com/DisruptorProxy/Core/releases). Guides live on the [Wiki](https://github.com/DisruptorProxy/Wiki).
 
 ## Stack
 

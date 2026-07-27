@@ -1,8 +1,8 @@
 name: Release
 
 # Pushing a `v*` tag builds, signs, and publishes a draft release ON THIS REPO
-# (DisruptorProxy/ClientCore) - there is no second repo and no mirror step. tauri.conf.json's
-# updater endpoint points at ClientCore/releases/latest/download/latest.json, so the release
+# (DisruptorProxy/Core) - there is no second repo and no mirror step. tauri.conf.json's
+# updater endpoint points at Core/releases/latest/download/latest.json, so the release
 # this workflow creates is the one the updater reads.
 #
 # Exactly four assets are built and attached, plus the updater manifest:

@@ -4,10 +4,10 @@ How a version gets from this repo to users, and the one-time setup that makes it
 
 ## The shape of it
 
-One repository: **`DisruptorProxy/ClientCore`** — the source, where the release workflow
+One repository: **`DisruptorProxy/Core`** — the source, where the release workflow
 runs, and where the release lands. Users and the auto-updater download from here too;
 `tauri.conf.json`'s updater endpoint points at
-`ClientCore/releases/latest/download/latest.json`.
+`Core/releases/latest/download/latest.json`.
 
 Pushing a `v*` tag triggers `.github/workflows/release.yml`, which builds and signs, then
 publishes a **draft** release on this repo.
@@ -74,7 +74,7 @@ What this means day to day:
 
 After publishing the draft:
 
-- `https://github.com/DisruptorProxy/ClientCore/releases/latest/download/latest.json`
+- `https://github.com/DisruptorProxy/Core/releases/latest/download/latest.json`
   returns JSON with the new `version` and a `platforms.windows-x86_64.url` pointing at
   `Disruptor-Proxy_<version>_x64-setup.exe`.
 - That URL actually downloads the installer.
