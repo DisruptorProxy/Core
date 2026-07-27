@@ -1,4 +1,4 @@
-import { createSignal, Show } from 'azerothjs';
+import { Show } from 'azerothjs';
 
 import { Activity, ChevronDown, Gauge, Globe, Zap } from 'lucide';
 
@@ -42,7 +42,7 @@ const ITEM = 'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start
  */
 export default component PingMenu(props: PingMenuProps)
 {
-    const [open, setOpen] = createSignal(false);
+    state open = false;
 
     // The active outside-click listener's remover, so closing (by any path - a pick,
     // the trigger, an outside click) always tears it down exactly once.
@@ -50,14 +50,14 @@ export default component PingMenu(props: PingMenuProps)
 
     const close = (): void =>
     {
-        setOpen(false);
+        open = false;
         removeOutside?.();
         removeOutside = null;
     };
 
     const openMenu = (): void =>
     {
-        setOpen(true);
+        open = true;
 
         const onDown = (event: Event): void =>
         {
@@ -71,7 +71,7 @@ export default component PingMenu(props: PingMenuProps)
         // closes it; skip if a fast pick already closed it in the meantime.
         window.setTimeout(() =>
         {
-            if (!open())
+            if (!open)
             {
                 return;
             }
@@ -104,9 +104,9 @@ export default component PingMenu(props: PingMenuProps)
             aria-label={ props.label }
             data-tip={ props.label }
             aria-haspopup="menu"
-            aria-expanded={ open() ? 'true' : 'false' }
+            aria-expanded={ open ? 'true' : 'false' }
             disabled={ props.disabled?.() === true }
-            onClick={ () => open() ? close() : openMenu() }
+            onClick={ () => open ? close() : openMenu() }
         >
             { glyph() }
 
@@ -118,7 +118,7 @@ export default component PingMenu(props: PingMenuProps)
             </Show>
         </button>
 
-        <Show when={ open() }>
+        <Show when={ open }>
             <div
                 class="absolute end-0 top-full z-50 mt-1 min-w-44 rounded-xl glass-strong p-1"
                 role="menu"
