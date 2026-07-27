@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Release helper for Disruptor Proxy.
 //
-// Bumps the version everywhere it is pinned (package.json, src-tauri/Cargo.toml, and
-// src-tauri/Cargo.lock's own entry), commits that as one release commit, tags it, and
+// Bumps the version everywhere it is pinned (package.json, package-lock.json, and
+// src-tauri/Cargo.toml + Cargo.lock's own entry), commits that as one release commit, tags it, and
 // pushes both. Pushing the tag is the whole handoff - .github/workflows/release.yml picks
 // it up from there: builds, signs with the updater keypair, and publishes ONE DRAFT release
 // on this repo. This script never builds, signs, or publishes anything itself, and never
@@ -90,7 +90,7 @@ function resolveVersion(input, current)
     return ''; // unreachable - fail() exits the process
 }
 
-/** Updates package.json + src-tauri/Cargo.toml, then syncs Cargo.lock's own entry. */
+/** Updates package.json + src-tauri/Cargo.toml, then syncs both lockfiles' own entries. */
 function bumpVersion(version)
 {
     const pkgPath = path.join(ROOT, 'package.json');
@@ -102,6 +102,28 @@ function bumpVersion(version)
         writeFileSync(pkgPath, JSON.stringify(pkg, null, 4) + '\n');
     }
     log(`  package.json -> ${ version }`);
+
+    // package-lock.json records the root package's version in two places, and `npm ci`
+    // refuses to install when either disagrees with package.json - which would fail every
+    // CI job on the release tag. Patch the two fields in place rather than shelling out to
+    // `npm install --package-lock-only`: a bump must not re-resolve dependencies behind
+    // your back. npm writes this file with 2-space indent; match it so the diff stays small.
+    const lockPath = path.join(ROOT, 'package-lock.json');
+    if (existsSync(lockPath))
+    {
+        const lock = JSON.parse(readFileSync(lockPath, 'utf8'));
+
+        lock.version = version;
+        if (lock.packages?.[''])
+        {
+            lock.packages[''].version = version;
+        }
+        if (!dryRun)
+        {
+            writeFileSync(lockPath, JSON.stringify(lock, null, 2) + '\n');
+        }
+        log(`  package-lock.json -> ${ version }`);
+    }
 
     const cargoPath = path.join(ROOT, 'src-tauri', 'Cargo.toml');
     const cargoText = readFileSync(cargoPath, 'utf8');
@@ -133,8 +155,8 @@ function printHelp()
 Usage:  npm run release -- <version | patch | minor | major> [options]
         node scripts/release.mjs <version | patch | minor | major> [options]
 
-Bumps package.json + src-tauri/Cargo.toml (+ syncs Cargo.lock's own entry),
-commits, tags, and pushes. Pushing the tag is the whole handoff -
+Bumps package.json + src-tauri/Cargo.toml (+ syncs both lockfiles' own
+entries), commits, tags, and pushes. Pushing the tag is the whole handoff -
 .github/workflows/release.yml takes it from there: builds, signs, and
 publishes one DRAFT release on this repo.
 
@@ -229,7 +251,7 @@ else
     bumpVersion(released);
 
     log('\nCommitting and tagging');
-    act('git', ['add', 'package.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock']);
+    act('git', ['add', 'package.json', 'package-lock.json', 'src-tauri/Cargo.toml', 'src-tauri/Cargo.lock']);
     act('git', ['commit', '-m', `chore(release): ${ tag }`]);
     act('git', ['tag', '-a', tag, '-m', tag]);
 }
