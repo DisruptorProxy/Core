@@ -203,9 +203,13 @@ jobs:
         needs: [ linux, android ]
         runs-on: windows-latest
         steps:
+            # fetch-depth: 0 alone is not enough for git-cliff: actions/checkout fetches with
+            # --no-tags, so without fetch-tags it sees only the tag being built and treats the
+            # entire history as this release's changelog. Both are required.
             -   uses: actions/checkout@v7
                 with:
                     fetch-depth: 0
+                    fetch-tags: true
 
             -   uses: actions/setup-node@v6
                 with:
