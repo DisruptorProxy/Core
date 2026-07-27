@@ -668,7 +668,7 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app_handle, event| {
-            // When The Disruptor Proxy exits - the titlebar/tray both close the only window,
+            // When Disruptor Proxy exits - the titlebar/tray both close the only window,
             // which ends the app - tear down xray with it. Nothing else stops the
             // elevated child on close, so without this a session left connected
             // would leak an orphan core holding the TUN adapter and routes.

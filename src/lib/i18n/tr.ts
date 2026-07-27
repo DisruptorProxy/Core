@@ -4,7 +4,7 @@ export const tr: Strings =
 {
     app:
     {
-        name: 'The Disruptor Proxy',
+        name: 'Disruptor Proxy',
         tagline: 'Sunucularınız, ölçülmüş.',
         crashTitle: 'Bir şeyler ters gitti',
         crashHint: 'Bu ekran beklenmeyen bir hatayla karşılaştı. Sunucularınız ve ayarlarınız güvende.',
@@ -13,7 +13,7 @@ export const tr: Strings =
         shrinkWindow: 'Pencereyi küçült',
         minimizeWindow: 'Simge durumuna küçült',
         hideWindow: 'Tepsiye gizle',
-        trayShow: 'The Disruptor Proxy’yi göster',
+        trayShow: 'Disruptor Proxy’yi göster',
         trayQuit: 'Çık'
     },
 

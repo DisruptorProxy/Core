@@ -473,7 +473,7 @@ pub fn end_core(state: &XrayProcess) -> Result<String, String> {
 
 /// Stops the running xray on app shutdown: signal the already-elevated wrapper (no new
 /// UAC prompt), wait briefly, and force-kill anything that survives. The core must never
-/// outlive The Disruptor Proxy holding the TUN adapter and the system route table - that
+/// outlive Disruptor Proxy holding the TUN adapter and the system route table - that
 /// would leave the machine tunnelling through a proxy no running app owns any more.
 pub fn stop_core_on_exit(state: &XrayProcess) {
     // The lock is released before any waiting: holding it across a multi-second stop

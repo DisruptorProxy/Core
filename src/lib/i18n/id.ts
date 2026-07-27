@@ -4,7 +4,7 @@ export const id: Strings =
 {
     app:
     {
-        name: 'The Disruptor Proxy',
+        name: 'Disruptor Proxy',
         tagline: 'Server Anda, terukur.',
         crashTitle: 'Terjadi kesalahan',
         crashHint: 'Layar ini mengalami galat tak terduga. Server dan pengaturan Anda aman.',
@@ -13,7 +13,7 @@ export const id: Strings =
         shrinkWindow: 'Perkecil jendela',
         minimizeWindow: 'Minimalkan jendela',
         hideWindow: 'Sembunyikan ke baki',
-        trayShow: 'Tampilkan The Disruptor Proxy',
+        trayShow: 'Tampilkan Disruptor Proxy',
         trayQuit: 'Keluar'
     },
 

@@ -3,10 +3,10 @@ name: Release
 # Pushing a `v*` tag builds and signs every platform - Windows (NSIS + MSI), Linux (.deb +
 # AppImage), macOS (universal .app + .dmg), and a best-effort Android APK - then publishes
 # them to TWO places:
-#   1. A draft release on THIS repo (DisruptorProxy/Core, private) - an internal
-#      record, created by tauri-action using the default GITHUB_TOKEN (which can
+#   1. A draft release on THIS repo (DisruptorProxy/Core) - the build record,
+#      created by tauri-action using the default GITHUB_TOKEN (which can
 #      only ever touch the repo the workflow runs in).
-#   2. A draft release on DisruptorProxy/Xray-Client (public) - what real users and
+#   2. A draft release on DisruptorProxy/Xray-Client - what real users and
 #      the updater plugin actually see. tauri.conf.json's updater endpoint points at
 #      Xray-Client/releases/latest/download/latest.json, so THIS is the publish that
 #      makes auto-update work; Core's release does not.
@@ -17,7 +17,7 @@ name: Release
 #
 # The updater manifest (latest.json) is BUILT HERE, not copied from Core: tauri-action
 # only attaches its own latest.json to the Core release, and the download URL inside it
-# points at Core (private) - useless to end users. The "Stage public artifacts" step
+# points at Core - the wrong repo for the updater endpoint. The "Stage public artifacts" step
 # below writes a fresh latest.json whose URLs point at the Xray-Client assets and whose
 # signatures are read from each platform's .sig file. Artifacts are renamed to space-free
 # names first, because GitHub mangles spaces in asset names and that would break the URL
@@ -108,7 +108,7 @@ jobs:
                         Select-Object -First 1
                     if (-not $payloadFile) { throw "Updater payload for $($sig.Name) not found" }
 
-                    # Space-free names: productName is "The Disruptor Proxy", and GitHub
+                    # Space-free names: productName is "Disruptor Proxy", and GitHub
                     # mangles spaces in asset names - which would break the updater's URL.
                     $suffix      = if ($payloadFile.Name -like '*.tar.gz') { 'AppImage.tar.gz' } else { 'AppImage' }
                     $payloadName = "Disruptor-Proxy_${version}_amd64.$suffix"
@@ -347,7 +347,7 @@ jobs:
                     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
                 with:
                     tagName: ${{ github.ref_name }}
-                    releaseName: 'The Disruptor Proxy ${{ github.ref_name }}'
+                    releaseName: 'Disruptor Proxy ${{ github.ref_name }}'
                     releaseBody: ${{ steps.notes.outputs.body }}
                     releaseDraft: true
                     prerelease: false
@@ -393,7 +393,7 @@ jobs:
                     $msi = Get-ChildItem "$bundle/msi" | Where-Object { $_.Name -like '*.msi' } | Select-Object -First 1
                     if ($msi) { Copy-Item $msi.FullName (Join-Path $out "Disruptor-Proxy_${version}_x64.msi") }
 
-                    $notes = if (Test-Path 'release-notes.md') { (Get-Content -Raw 'release-notes.md').Trim() } else { "The Disruptor Proxy $version" }
+                    $notes = if (Test-Path 'release-notes.md') { (Get-Content -Raw 'release-notes.md').Trim() } else { "Disruptor Proxy $version" }
                     $signature = (Get-Content -Raw $sig.FullName).Trim()
 
                     $platforms = [ordered]@{
@@ -450,7 +450,7 @@ jobs:
                     repository: DisruptorProxy/Xray-Client
                     token: ${{ secrets.CLIENT_REPO_TOKEN }}
                     tag_name: ${{ github.ref_name }}
-                    name: 'The Disruptor Proxy ${{ github.ref_name }}'
+                    name: 'Disruptor Proxy ${{ github.ref_name }}'
                     body_path: release-notes.md
                     draft: true
                     prerelease: false

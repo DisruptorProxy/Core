@@ -4,7 +4,7 @@ import type { ProxyDraft } from './uri';
  * The identity of a server is WHERE IT SENDS YOUR TRAFFIC and HOW - never what a
  * provider decided to call it.
  *
- * This is the whole reason The Disruptor Proxy dedups where other clients do not: the same
+ * This is the whole reason Disruptor Proxy dedups where other clients do not: the same
  * server appears in six subscriptions under six different names ("🇩🇪 DE-04",
  * "Germany | 2x", "vip-de4"), and any identity that includes the name treats them
  * as six servers. Hashing only the connection-defining fields collapses them to

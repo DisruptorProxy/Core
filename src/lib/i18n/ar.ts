@@ -4,7 +4,7 @@ export const ar: Strings =
 {
     app:
     {
-        name: 'The Disruptor Proxy',
+        name: 'Disruptor Proxy',
         tagline: 'خوادمك، مُقاسة.',
         crashTitle: 'حدث خطأ ما',
         crashHint: 'واجهت هذه الشاشة خطأً غير متوقع. خوادمك وإعداداتك بأمان.',
@@ -13,7 +13,7 @@ export const ar: Strings =
         shrinkWindow: 'تصغير النافذة',
         minimizeWindow: 'تصغير إلى شريط المهام',
         hideWindow: 'إخفاء إلى شريط النظام',
-        trayShow: 'إظهار The Disruptor Proxy',
+        trayShow: 'إظهار Disruptor Proxy',
         trayQuit: 'خروج'
     },
 

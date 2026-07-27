@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Release helper for The Disruptor Proxy.
+// Release helper for Disruptor Proxy.
 //
 // Bumps the version everywhere it is pinned (package.json, src-tauri/Cargo.toml, and
 // src-tauri/Cargo.lock's own entry), commits that as one release commit, tags it, and
 // pushes both. Pushing the tag is the whole handoff - .github/workflows/release.yml picks
 // it up from there: builds, signs with the updater keypair, and publishes DRAFT releases
-// to both this repo (Core, private) and DisruptorProxy/Xray-Client (public). This script
+// to both this repo (Core) and DisruptorProxy/Xray-Client. This script
 // never builds, signs, or publishes anything itself, and never touches GitHub Releases.
 //
 // Usage:
@@ -128,7 +128,7 @@ function bumpVersion(version)
 
 function printHelp()
 {
-    log(`Release The Disruptor Proxy.
+    log(`Release Disruptor Proxy.
 
 Usage:  npm run release -- <version | patch | minor | major> [options]
         node scripts/release.mjs <version | patch | minor | major> [options]

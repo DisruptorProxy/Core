@@ -4,7 +4,7 @@ export const vi: Strings =
 {
     app:
     {
-        name: 'The Disruptor Proxy',
+        name: 'Disruptor Proxy',
         tagline: 'Máy chủ của bạn, được đo lường.',
         crashTitle: 'Đã xảy ra lỗi',
         crashHint: 'Màn hình này gặp lỗi không mong muốn. Máy chủ và cài đặt của bạn vẫn an toàn.',
@@ -13,7 +13,7 @@ export const vi: Strings =
         shrinkWindow: 'Thu nhỏ cửa sổ',
         minimizeWindow: 'Thu gọn xuống thanh tác vụ',
         hideWindow: 'Ẩn vào khay hệ thống',
-        trayShow: 'Hiện The Disruptor Proxy',
+        trayShow: 'Hiện Disruptor Proxy',
         trayQuit: 'Thoát'
     },
 

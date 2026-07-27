@@ -1,27 +1,26 @@
 <p align="center">
-  <img src="src/assets/logo-square.png" alt="The Disruptor Proxy" width="120" />
+  <img src="src/assets/logo-square.png" alt="Disruptor Proxy" width="120" />
 </p>
 
 <h1 align="center">DisruptorProxy/Core</h1>
 
 <p align="center">
-  Private source for <strong>The Disruptor Proxy</strong>, a Windows proxy client built on
+  Source of <strong>Disruptor Proxy</strong>, a proxy client for Windows, Linux, macOS, and Android built on
   <a href="https://github.com/XTLS/Xray-core">Xray-core</a>.
 </p>
 
 <p align="center">
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows-0078D6?logo=windows&logoColor=white" />
-  <img alt="License" src="https://img.shields.io/badge/license-proprietary-blue" />
-  <img alt="Status" src="https://img.shields.io/badge/status-private-lightgrey" />
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-0078D6" />
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-green" />
 </p>
 
-The public face of the app - downloads, releases, user-facing docs - lives at [DisruptorProxy/Xray-Client](https://github.com/DisruptorProxy/Xray-Client). This repository is private; do not mirror or share its contents outside the team.
+This repository is the source, and where releases are built. Downloads, releases, and user-facing docs live at [DisruptorProxy/Xray-Client](https://github.com/DisruptorProxy/Xray-Client); guides live on the [Wiki](https://github.com/DisruptorProxy/Wiki).
 
 ## Stack
 
 - **Frontend**: [AzerothJS](https://github.com/AzerothJS/AzerothJS) (`.azeroth` components, fine-grained reactivity) + Tailwind CSS, bundled with Vite.
 - **Shell**: [Tauri 2](https://tauri.app/) - a Rust-backed native window around the web frontend, roughly 10-20x smaller than an Electron equivalent.
-- **Proxy core**: bundled `xray.exe` ([Xray-core](https://github.com/XTLS/Xray-core)), driven via generated JSON configs and Tauri commands (`src-tauri/src/lib.rs`).
+- **Proxy core**: bundled `app-xray` ([Xray-core](https://github.com/XTLS/Xray-core)), driven via generated JSON configs and Tauri commands (`src-tauri/src/lib.rs`).
 - **Storage**: IndexedDB for the server catalogue (`src/lib/db/`), scales to thousands of rows without a backend.
 
 ## Local development
@@ -79,11 +78,11 @@ npm run release -- patch --dry-run    # see every step first, changes nothing
 What that does, and what happens after:
 
 1. Bumps `package.json`, `src-tauri/Cargo.toml`, and syncs `Cargo.lock`'s own entry; commits and tags (`vX.Y.Z`); pushes both.
-2. The pushed tag triggers `.github/workflows/release.yml`: builds and signs the installer once, then publishes a **draft** release to both this repo (private record) and `DisruptorProxy/Xray-Client` (public - what the updater endpoint actually polls).
+2. The pushed tag triggers `.github/workflows/release.yml`: builds and signs the installer once, then publishes a **draft** release to both this repo (build record) and `DisruptorProxy/Xray-Client` (what the updater endpoint actually polls).
 3. Review each draft on GitHub, then publish it manually. A draft is invisible to the updater and to anonymous downloads until you do.
 
 The updater's public key lives in `tauri.conf.json`; the matching private key is a GitHub Actions secret (`TAURI_SIGNING_PRIVATE_KEY`) on this repo, never committed. Publishing to `Xray-Client` needs a `CLIENT_REPO_TOKEN` secret too (a fine-grained PAT scoped to only that repo) - the default `GITHUB_TOKEN` can't reach a different repo than the one running the workflow.
 
 ## License
 
-Proprietary; see [LICENSE](LICENSE).
+[MIT](LICENSE).

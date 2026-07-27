@@ -1,6 +1,6 @@
 # Cross-platform architecture & roadmap
 
-How The Disruptor Proxy runs the Xray core on each OS, what's done, and how the remaining
+How Disruptor Proxy runs the Xray core on each OS, what's done, and how the remaining
 platforms get built. (For *releasing*, see `RELEASING.md`.)
 
 ## Status

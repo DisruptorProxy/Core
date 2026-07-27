@@ -4,7 +4,7 @@ export const zh: Strings =
 {
     app:
     {
-        name: 'The Disruptor Proxy',
+        name: 'Disruptor Proxy',
         tagline: '你的服务器，一目了然。',
         crashTitle: '出错了',
         crashHint: '此页面遇到意外错误。你的服务器和设置安全无损。',
@@ -13,7 +13,7 @@ export const zh: Strings =
         shrinkWindow: '缩小窗口',
         minimizeWindow: '最小化窗口',
         hideWindow: '隐藏到托盘',
-        trayShow: '显示 The Disruptor Proxy',
+        trayShow: '显示 Disruptor Proxy',
         trayQuit: '退出'
     },
 

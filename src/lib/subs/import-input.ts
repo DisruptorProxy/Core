@@ -12,7 +12,7 @@ type ImportInput =
     | { kind: 'configs'; text: string }
     | { kind: 'empty' };
 
-/** The config URI schemes The Disruptor Proxy reads - a line starting with one is raw configs. */
+/** The config URI schemes Disruptor Proxy reads - a line starting with one is raw configs. */
 const CONFIG_SCHEMES = ['vmess://', 'vless://', 'trojan://', 'ss://', 'hysteria2://', 'hy2://', 'tuic://'];
 
 /**

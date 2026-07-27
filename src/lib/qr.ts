@@ -1,7 +1,7 @@
 /**
  * QR scanning via the native BarcodeDetector, no library.
  *
- * The Chromium-based webview The Disruptor Proxy runs in ships BarcodeDetector, so a
+ * The Chromium-based webview Disruptor Proxy runs in ships BarcodeDetector, so a
  * dependency-free scan is possible where it is available and cleanly absent where
  * it is not. Capability is checked up front so the UI can hide the option rather
  * than offer a button that does nothing.

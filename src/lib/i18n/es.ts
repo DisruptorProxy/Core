@@ -4,7 +4,7 @@ export const es: Strings =
 {
     app:
     {
-        name: 'The Disruptor Proxy',
+        name: 'Disruptor Proxy',
         tagline: 'Tus servidores, medidos.',
         crashTitle: 'Algo salió mal',
         crashHint: 'Esta pantalla encontró un error inesperado. Tus servidores y ajustes están a salvo.',
@@ -13,7 +13,7 @@ export const es: Strings =
         shrinkWindow: 'Reducir ventana',
         minimizeWindow: 'Minimizar ventana',
         hideWindow: 'Ocultar en la bandeja',
-        trayShow: 'Mostrar The Disruptor Proxy',
+        trayShow: 'Mostrar Disruptor Proxy',
         trayQuit: 'Salir'
     },
 

@@ -1,6 +1,6 @@
 import NetworkExtension
 
-// iOS VPN backend for The Disruptor Proxy - a Packet Tunnel Provider NetworkExtension.
+// iOS VPN backend for Disruptor Proxy - a Packet Tunnel Provider NetworkExtension.
 //
 // This is a SCAFFOLD - real, structured Swift, but NOT built or run (written without a Mac /
 // Xcode). It becomes live only after `tauri ios init`, adding a Packet Tunnel app-extension

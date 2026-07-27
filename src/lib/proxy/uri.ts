@@ -1,7 +1,7 @@
 import type { Protocol, Security, Transport } from './types';
 
 /**
- * A parsed server before The Disruptor Proxy owns it: no id, no display name, no tags. The
+ * A parsed server before Disruptor Proxy owns it: no id, no display name, no tags. The
  * dispatcher in parse.ts finishes the job (fingerprint, name normalization), so
  * each protocol parser only has to understand its own URI shape.
  */

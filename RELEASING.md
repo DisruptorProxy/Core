@@ -1,4 +1,4 @@
-# Releasing The Disruptor Proxy
+# Releasing Disruptor Proxy
 
 How a version gets from this repo to users, and the one-time setup that makes it work.
 
@@ -6,9 +6,9 @@ How a version gets from this repo to users, and the one-time setup that makes it
 
 Two repositories are involved:
 
-- **`DisruptorProxy/Core`** (private) — the source, and where the release workflow
+- **`DisruptorProxy/Core`** — the source, and where the release workflow
   runs. Building happens here.
-- **`DisruptorProxy/Xray-Client`** (public) — download-only. Real users and the
+- **`DisruptorProxy/Xray-Client`** — download-only. Real users and the
   auto-updater fetch from here. Nothing is built here.
 
 Pushing a `v*` tag to Core triggers `.github/workflows/release.yml`, which builds and
@@ -39,7 +39,7 @@ Then, on GitHub:
 
 1. Watch the **Actions** tab on Core until the `Release` run is green (~14 min).
 2. Open **Xray-Client → Releases**, review the draft, and **Publish** it. (Publish the
-   Core draft too if you want the internal record public; it's optional.)
+   Core draft too if you want the build record visible; it's optional.)
 3. Verify (below).
 
 ## Release notes

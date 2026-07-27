@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.tauri.app/config/2",
-    "productName": "The Disruptor Proxy",
+    "productName": "Disruptor Proxy",
     "identifier": "io.disruptorproxy.client",
     "build":
     {
@@ -14,7 +14,7 @@
         "windows":
         [
             {
-                "title": "The Disruptor Proxy",
+                "title": "Disruptor Proxy",
                 "width": 400,
                 "height": 720,
                 "center": true,

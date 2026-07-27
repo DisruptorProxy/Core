@@ -4,7 +4,7 @@ export const hi: Strings =
 {
     app:
     {
-        name: 'The Disruptor Proxy',
+        name: 'Disruptor Proxy',
         tagline: 'आपके सर्वर, मापे हुए।',
         crashTitle: 'कुछ गलत हो गया',
         crashHint: 'इस स्क्रीन पर अप्रत्याशित त्रुटि आई। आपके सर्वर और सेटिंग्स सुरक्षित हैं।',
@@ -13,7 +13,7 @@ export const hi: Strings =
         shrinkWindow: 'विंडो छोटी करें',
         minimizeWindow: 'विंडो मिनिमाइज़ करें',
         hideWindow: 'ट्रे में छिपाएँ',
-        trayShow: 'The Disruptor Proxy दिखाएँ',
+        trayShow: 'Disruptor Proxy दिखाएँ',
         trayQuit: 'बंद करें'
     },
 

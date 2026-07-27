@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">"The Disruptor Proxy"</string>
-    <string name="main_activity_title">"The Disruptor Proxy"</string>
+    <string name="app_name">"Disruptor Proxy"</string>
+    <string name="main_activity_title">"Disruptor Proxy"</string>
 </resources>

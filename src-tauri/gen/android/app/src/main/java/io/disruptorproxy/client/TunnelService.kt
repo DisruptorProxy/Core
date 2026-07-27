@@ -1,6 +1,6 @@
 package io.disruptorproxy.client
 
-// The Android VPN tunnel for The Disruptor Proxy.
+// The Android VPN tunnel for Disruptor Proxy.
 //
 // Xray runs IN THIS PROCESS, via libXray's gomobile bindings (see app/libs/libXray.aar,
 // fetched by scripts/fetch-core.mjs). That is not a preference but a hard constraint: the
@@ -108,7 +108,7 @@ class TunnelService : VpnService() {
         // must not be pulled back into the tunnel it is serving (protect() guards the
         // individual sockets; this keeps our other traffic out too).
         val builder = Builder()
-            .setSession("The Disruptor Proxy")
+            .setSession("Disruptor Proxy")
             .setMtu(1500)
             .addAddress("172.19.19.1", 30)
             .addRoute("0.0.0.0", 0)
@@ -220,7 +220,7 @@ class TunnelService : VpnService() {
         }
 
         return Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("The Disruptor Proxy")
+            .setContentTitle("Disruptor Proxy")
             .setContentText("Connected")
             .setSmallIcon(applicationInfo.icon)
             .setOngoing(true)
