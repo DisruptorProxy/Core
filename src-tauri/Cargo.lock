@@ -640,7 +640,7 @@ dependencies = [
 
 [[package]]
 name = "disruptor-proxy"
-version = "1.5.0"
+version = "1.6.0"
 dependencies = [
  "reqwest 0.12.28",
  "rustls",
