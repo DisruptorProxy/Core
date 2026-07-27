@@ -4,21 +4,34 @@ How a version gets from this repo to users, and the one-time setup that makes it
 
 ## The shape of it
 
-Two repositories are involved:
+One repository: **`DisruptorProxy/ClientCore`** — the source, where the release workflow
+runs, and where the release lands. Users and the auto-updater download from here too;
+`tauri.conf.json`'s updater endpoint points at
+`ClientCore/releases/latest/download/latest.json`.
 
-- **`DisruptorProxy/Core`** — the source, and where the release workflow
-  runs. Building happens here.
-- **`DisruptorProxy/Xray-Client`** — download-only. Real users and the
-  auto-updater fetch from here. Nothing is built here.
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which builds and signs, then
+publishes a **draft** release on this repo.
 
-Pushing a `v*` tag to Core triggers `.github/workflows/release.yml`, which builds and
-signs once, then publishes a **draft** release to *both* repos. The Xray-Client draft
-is the one that matters to users — `tauri.conf.json`'s updater endpoint points at
-`Xray-Client/releases/latest/download/latest.json`.
-
-Drafts are invisible to anonymous downloads and to the updater (`releases/latest` only
+A draft is invisible to anonymous downloads and to the updater (`releases/latest` only
 resolves to a *published* release), so a bad build never reaches anyone until you
 publish it by hand.
+
+### What gets built
+
+Exactly four assets, plus the updater manifest:
+
+| Asset | Purpose |
+| --- | --- |
+| `Disruptor-Proxy_<version>_x64-setup.exe` | Windows installer — the updater's target |
+| `Disruptor-Proxy_<version>_x64-setup.exe.sig` | Its updater signature |
+| `Disruptor-Proxy_<version>_amd64.deb` | Linux, direct download |
+| `Disruptor-Proxy_<version>.apk` | Android, direct download |
+| `latest.json` | The updater manifest |
+
+Nothing else is bundled: no MSI, no AppImage, no macOS `.app`/`.dmg`. macOS still builds
+in `ci.yml`, proving it bundles — it just isn't released. Because the AppImage was Linux's
+only updater target and macOS is gone, `latest.json` covers `windows-x86_64` **only** —
+`.deb` and `.apk` users update by downloading the new file.
 
 ## Cutting a release
 
@@ -37,17 +50,16 @@ version makes the updater either miss the update or offer the same version forev
 
 Then, on GitHub:
 
-1. Watch the **Actions** tab on Core until the `Release` run is green (~14 min).
-2. Open **Xray-Client → Releases**, review the draft, and **Publish** it. (Publish the
-   Core draft too if you want the build record visible; it's optional.)
+1. Watch the **Actions** tab until the `Release` run is green (~14 min).
+2. Open **Releases**, review the draft, and **Publish** it.
 3. Verify (below).
 
 ## Release notes
 
 Notes are generated automatically from your **Conventional Commits** by git-cliff
 (`cliff.toml`) during the CI run — there is no hand-maintained `CHANGELOG.md`. The same
-generated notes are spliced into all three surfaces: the Core release body, the
-Xray-Client release body, and the updater's in-app `notes`.
+generated notes are spliced into both surfaces: the release body and the updater's in-app
+`notes`.
 
 What this means day to day:
 
@@ -60,9 +72,9 @@ What this means day to day:
 
 ## Verifying a published release
 
-After publishing the Xray-Client draft:
+After publishing the draft:
 
-- `https://github.com/DisruptorProxy/Xray-Client/releases/latest/download/latest.json`
+- `https://github.com/DisruptorProxy/ClientCore/releases/latest/download/latest.json`
   returns JSON with the new `version` and a `platforms.windows-x86_64.url` pointing at
   `Disruptor-Proxy_<version>_x64-setup.exe`.
 - That URL actually downloads the installer.
@@ -72,13 +84,17 @@ installed — so the first version a user can update *to* is the one after their
 
 ## One-time setup (already done — recorded here so it isn't lost)
 
-### Secrets (Core → Settings → Secrets and variables → Actions)
+### Secrets (Settings → Secrets and variables → Actions)
 
 | Secret | What it is |
 | --- | --- |
 | `TAURI_SIGNING_PRIVATE_KEY` | The updater signing key — the base64 contents of the `.key` file exactly as `tauri signer generate` wrote it. Do not reformat or re-encode it. |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | The password entered when the key was generated. |
-| `CLIENT_REPO_TOKEN` | A token that can write to Xray-Client. The default `GITHUB_TOKEN` can only touch the repo the workflow runs in (Core), so this is the only way the mirror step reaches Xray-Client. Either a fine-grained PAT scoped to **only Xray-Client** with **Contents: Read and write**, or a classic PAT with the **`repo`** scope. |
+
+The release itself is published by the default `GITHUB_TOKEN`; no PAT is needed now that
+everything lands on this repo. (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+`ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` sign the APK — without them it builds unsigned
+and therefore uninstallable.)
 
 ### The signing keypair
 
@@ -104,11 +120,10 @@ password problem: the value must be the full base64 of the `.key` file, exactly 
 generator printed it. Re-copy it without reformatting. (The build succeeds and only the
 signing step fails.)
 
-**`Error: Parameter token or opts.auth is required`** — `CLIENT_REPO_TOKEN` is empty or
-unset. The build and signing pass; only the Xray-Client mirror step fails.
+**`fail_on_unmatched_files` / no `.deb` staged** — the Linux job failed. It blocks the
+release on purpose; fix it and re-run. A missing `.apk` does *not* fail the run (that job
+is `continue-on-error`), so check whether the APK is actually attached before publishing.
 
-**`403` on the mirror step** — the token exists but can't write to Xray-Client. Check its
-scope, and if the org enforces SAML SSO, authorize the token for `DisruptorProxy`.
-
-**`latest.json` returns 404 at the `releases/latest` URL** — the Xray-Client release is
-still a draft. Publish it.
+**`latest.json` returns 404 at the `releases/latest` URL** — the release is still a draft.
+Publish it. Note that on a **private** repo the updater cannot read `latest.json` at all,
+published or not — the repo has to be public for auto-update to work.

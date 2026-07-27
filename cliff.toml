@@ -1,8 +1,8 @@
 # git-cliff configuration - turns Conventional Commits into release notes.
 #
 # CI (.github/workflows/release.yml) runs `git-cliff --current` on a tag build and
-# splices the result into THREE places: the Core release body, the Xray-Client release
-# body, and the updater's latest.json "notes". There is no committed CHANGELOG.md - the
+# splices the result into TWO places: the release body and the updater's latest.json
+# "notes". There is no committed CHANGELOG.md - the
 # notes are regenerated from git history on every release. Docs: https://git-cliff.org
 #
 # No [changelog] header/footer on purpose: `--current` then emits only the current tag's

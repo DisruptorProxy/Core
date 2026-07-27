@@ -4,17 +4,17 @@
 // Bumps the version everywhere it is pinned (package.json, src-tauri/Cargo.toml, and
 // src-tauri/Cargo.lock's own entry), commits that as one release commit, tags it, and
 // pushes both. Pushing the tag is the whole handoff - .github/workflows/release.yml picks
-// it up from there: builds, signs with the updater keypair, and publishes DRAFT releases
-// to both this repo (Core) and DisruptorProxy/Xray-Client. This script
-// never builds, signs, or publishes anything itself, and never touches GitHub Releases.
+// it up from there: builds, signs with the updater keypair, and publishes ONE DRAFT release
+// on this repo. This script never builds, signs, or publishes anything itself, and never
+// touches GitHub Releases.
 //
 // Usage:
 //   npm run release -- 1.2.0
 //   npm run release -- patch | minor | major
 //   npm run release -- 1.2.0 --dry-run
 //
-// After it finishes: review both draft releases on GitHub and publish them manually. A
-// draft is invisible to the auto-updater and to anonymous downloads until you do that.
+// After it finishes: review the draft release on GitHub and publish it manually. A draft is
+// invisible to the auto-updater and to anonymous downloads until you do that.
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
@@ -136,7 +136,7 @@ Usage:  npm run release -- <version | patch | minor | major> [options]
 Bumps package.json + src-tauri/Cargo.toml (+ syncs Cargo.lock's own entry),
 commits, tags, and pushes. Pushing the tag is the whole handoff -
 .github/workflows/release.yml takes it from there: builds, signs, and
-publishes DRAFT releases to both Core and DisruptorProxy/Xray-Client.
+publishes one DRAFT release on this repo.
 
 Examples:
   npm run release -- 1.2.0
@@ -239,6 +239,6 @@ act('git', ['push', 'origin', 'HEAD']);
 act('git', ['push', 'origin', tag]);
 
 log(`\nDone: ${ released }`);
-log('CI is now building, signing, and publishing draft releases to Core + Xray-Client.');
-log('Review both drafts on GitHub, then publish each one manually when ready - a draft is');
+log('CI is now building, signing, and publishing a draft release on this repo.');
+log('Review the draft on GitHub, then publish it manually when ready - a draft is');
 log('invisible to the updater and to anonymous downloads until you do.');

@@ -14,7 +14,7 @@
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green" />
 </p>
 
-This repository is the source, and where releases are built. Downloads, releases, and user-facing docs live at [DisruptorProxy/Xray-Client](https://github.com/DisruptorProxy/Xray-Client); guides live on the [Wiki](https://github.com/DisruptorProxy/Wiki).
+This repository is the source, where releases are built, and where they are published - grab a build from [Releases](https://github.com/DisruptorProxy/ClientCore/releases). Guides live on the [Wiki](https://github.com/DisruptorProxy/Wiki).
 
 ## Stack
 
@@ -78,10 +78,10 @@ npm run release -- patch --dry-run    # see every step first, changes nothing
 What that does, and what happens after:
 
 1. Bumps `package.json`, `src-tauri/Cargo.toml`, and syncs `Cargo.lock`'s own entry; commits and tags (`vX.Y.Z`); pushes both.
-2. The pushed tag triggers `.github/workflows/release.yml`: builds and signs the installer once, then publishes a **draft** release to both this repo (build record) and `DisruptorProxy/Xray-Client` (what the updater endpoint actually polls).
-3. Review each draft on GitHub, then publish it manually. A draft is invisible to the updater and to anonymous downloads until you do.
+2. The pushed tag triggers `.github/workflows/release.yml`: builds and signs, then publishes a **draft** release on this repo - the Windows installer + its `.sig`, the `.deb`, the `.apk`, and the `latest.json` the updater polls. Nothing else is bundled (no MSI, AppImage, or macOS build).
+3. Review the draft on GitHub, then publish it manually. A draft is invisible to the updater and to anonymous downloads until you do.
 
-The updater's public key lives in `tauri.conf.json`; the matching private key is a GitHub Actions secret (`TAURI_SIGNING_PRIVATE_KEY`) on this repo, never committed. Publishing to `Xray-Client` needs a `CLIENT_REPO_TOKEN` secret too (a fine-grained PAT scoped to only that repo) - the default `GITHUB_TOKEN` can't reach a different repo than the one running the workflow.
+The updater's public key lives in `tauri.conf.json`; the matching private key is a GitHub Actions secret (`TAURI_SIGNING_PRIVATE_KEY`) on this repo, never committed. The release is published by the default `GITHUB_TOKEN`.
 
 ## License
 
