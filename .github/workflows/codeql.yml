@@ -1,0 +1,89 @@
+name: CodeQL
+
+# Replaces CodeQL's default setup, which auto-detected every language in the tree and then
+# failed trying to build two of them:
+#
+#   swift       - `src-tauri/mobile/ios/PacketTunnelProvider.swift` is a loose scaffold file
+#                 with no Xcode project, workspace, or Package.swift, so autobuild has
+#                 nothing to build. Swift has no `build-mode: none`, and iOS is not a
+#                 supported platform, so Swift is simply not scanned.
+#   java-kotlin - the Android sources live in `src-tauri/gen/android`, a Tauri-GENERATED
+#                 Gradle project nested below the repo root, so autobuild finds no build at
+#                 the root. `build-mode: none` would not help either: it skips Kotlin, and
+#                 every Android source here is Kotlin. Analysing it properly needs a full
+#                 Gradle + NDK build, which is not worth it for generated glue.
+#
+# What is left is what actually matters: the TypeScript frontend, the Rust host that runs
+# the core with elevated privileges, and the workflows themselves (which handle signing
+# secrets). All three analyse without a build.
+#
+# RUST RUNS TWICE, on Linux and on Windows, on purpose. `src-tauri/src/platform` dispatches
+# by target: `windows.rs` is `#[cfg(windows)]` and pulls in `std::os::windows` plus the
+# `windows` crate, while `unix.rs` is `#[cfg(linux/macos)]`. On a single runner the other
+# platform's file cannot resolve its imports and is reported as "extracted with errors", so
+# each OS extracts the backend that is real for it. windows.rs is the one that elevates and
+# spawns the core, so leaving it unanalysed would skip the highest-risk code in the repo.
+# `vpn.rs` (`#[cfg(target_os = "android")]`) still cannot be extracted on either runner - it
+# needs an Android target and NDK - so one extraction error there is expected and accepted.
+#
+# The category MUST carry the OS as well as the language. Two analyses of the same language
+# that share a category overwrite each other's results.
+#
+# NOTE: default setup must stay OFF - Settings > Code security > Code scanning > CodeQL >
+# Switch to advanced. Uploads are rejected while both are enabled.
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+    schedule:
+        # Weekly, so a newly published advisory is caught without waiting for a commit.
+        -   cron: '27 4 * * 1'
+
+permissions:
+    contents: read
+
+concurrency:
+    group: codeql-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    analyze:
+        name: Analyze (${{ matrix.language }} on ${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 30
+        permissions:
+            security-events: write
+            actions: read
+            contents: read
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    -   language: javascript-typescript
+                        os: ubuntu-latest
+                    -   language: actions
+                        os: ubuntu-latest
+                    -   language: rust
+                        os: ubuntu-latest
+                    -   language: rust
+                        os: windows-latest
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   name: Initialize CodeQL
+                uses: github/codeql-action/init@v4
+                with:
+                    languages: ${{ matrix.language }}
+                    build-mode: none
+                    config-file: ./.github/codeql-config.yml
+                    # Default plus the lower-severity and lower-precision security queries.
+                    # Worth the extra noise for a censorship-circumvention tool; drop to the
+                    # default suite by removing this line if triage becomes a chore.
+                    queries: security-extended
+
+            -   name: Analyze
+                uses: github/codeql-action/analyze@v4
+                with:
+                    category: /language:${{ matrix.language }}/os:${{ matrix.os }}

@@ -45,6 +45,9 @@
     --g-canvas-b: oklch(0.66 0.16 25 / 0.18);
     --g-surface: oklch(1 0 0 / 0.62);
     --g-elevated: oklch(1 0 0 / 0.82);
+    /* Popovers sit directly over content with no scrim behind them, so they need more
+       opacity than a sheet does or the options lose contrast against a busy list. */
+    --g-popover: oklch(1 0 0 / 0.97);
     --g-border: oklch(0.30 0.02 258 / 0.14);
     --g-border-strong: oklch(0.30 0.02 258 / 0.22);
     --g-highlight: oklch(1 0 0 / 0.75);
@@ -102,6 +105,7 @@
     --g-canvas-b: oklch(0.55 0.19 24 / 0.16);
     --g-surface: oklch(0.30 0.03 262 / 0.44);
     --g-elevated: oklch(0.32 0.032 262 / 0.72);
+    --g-popover: oklch(0.26 0.028 262 / 0.97);
     --g-border: oklch(1 0 0 / 0.10);
     --g-border-strong: oklch(1 0 0 / 0.20);
     --g-highlight: oklch(1 0 0 / 0.14);
@@ -428,6 +432,41 @@
 @utility animate-icon-swap
 {
     animation: g-icon-swap var(--g-dur-base) var(--g-ease-pop);
+}
+
+/* Anchored popovers (filter-menu on a fine pointer). Grows from the trigger edge it
+   is docked to rather than fading in place, so the connection between chip and panel
+   is legible. `transform-origin` follows the flip, and the whole thing collapses under
+   the reduced-motion block above. */
+@keyframes g-popover-in
+{
+    from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.g-popover
+{
+    /* Overrides glass-strong's translucency: a sheet reads against its own scrim, but a
+       popover reads against whatever list is behind it, and at 0.72 alpha the options
+       lose contrast over bright rows. */
+    background-color: var(--g-popover);
+    transform-origin: top left;
+    animation: g-popover-in var(--g-dur-quick) var(--g-ease-out);
+}
+
+.g-popover:where(.end-0)
+{
+    transform-origin: top right;
+}
+
+[dir="rtl"] .g-popover
+{
+    transform-origin: top right;
+}
+
+[dir="rtl"] .g-popover:where(.end-0)
+{
+    transform-origin: top left;
 }
 
 /* The bulk-selection bar (bulk-bar.component), driven by <Transition name="g-bulkbar">.

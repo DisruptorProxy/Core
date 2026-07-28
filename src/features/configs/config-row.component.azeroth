@@ -1,4 +1,4 @@
-import { For, Show } from 'azerothjs';
+import { For, Show, onCleanup } from 'azerothjs';
 
 import { Activity, Check, Star } from 'lucide';
 
@@ -97,6 +97,12 @@ export default component ConfigRow(props: ConfigRowProps)
     };
 
     const cancelHold = (): void => window.clearTimeout(holdTimer);
+
+    // Rows mount and unmount constantly in the virtualized list, and a press that
+    // scrolls the row out of the window unmounts it mid-hold. Without this the timer
+    // survives and fires `props.onHold()` for a row that is no longer on screen -
+    // select mode would engage from a row the user already scrolled past.
+    onCleanup(cancelHold);
 
     const moveHold = (event: PointerEvent): void =>
     {
