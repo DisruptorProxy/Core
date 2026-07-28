@@ -43,7 +43,14 @@
             "icons/icon.png",
             "icons/icon.ico"
         ],
-        "createUpdaterArtifacts": true
+        "createUpdaterArtifacts": true,
+        "windows":
+        {
+            "nsis":
+            {
+                "installMode": "currentUser"
+            }
+        }
     },
     "plugins":
     {
