@@ -309,7 +309,7 @@ jobs:
 
             # The one draft release, on this repo - installer, its .sig, the .deb, the .apk,
             # the latest.json the updater reads, and the generated release notes.
-            -   uses: softprops/action-gh-release@v2
+            -   uses: softprops/action-gh-release@v3
                 with:
                     token: ${{ secrets.GITHUB_TOKEN }}
                     tag_name: ${{ github.ref_name }}
