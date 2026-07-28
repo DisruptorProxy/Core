@@ -1,0 +1,113 @@
+name: Bug report
+description: Something in Disruptor Proxy isn't working right.
+labels: [bug]
+body:
+    -   type: markdown
+        attributes:
+            value: |
+                Thanks for taking the time to report this.
+
+                **Never paste a real config link, subscription URL, or server credential.**
+                Those carry passwords, UUIDs, and REALITY keys. Redact the host and any
+                secret before pasting anything - `vless://REDACTED@REDACTED:443?...` is
+                plenty for us to work with.
+
+                Security problem? Do not file it here - see
+                [SECURITY.md](https://github.com/DisruptorProxy/Core/blob/main/SECURITY.md).
+
+    -   type: checkboxes
+        id: preflight
+        attributes:
+            label: Before reporting
+            options:
+                -   label: I am on the latest release, and it still happens.
+                    required: true
+                -   label: I searched existing issues and did not find this one.
+                    required: true
+
+    -   type: input
+        id: version
+        attributes:
+            label: App version
+            description: Settings > About, or the installer filename you downloaded.
+            placeholder: e.g. 1.6.0
+        validations:
+            required: true
+
+    -   type: dropdown
+        id: platform
+        attributes:
+            label: Platform
+            options:
+                - Windows
+                - Linux
+                - macOS
+                - Android
+        validations:
+            required: true
+
+    -   type: input
+        id: os-version
+        attributes:
+            label: OS version
+            placeholder: e.g. Windows 11 24H2, Ubuntu 24.04, macOS 15.2, Android 15
+        validations:
+            required: true
+
+    -   type: textarea
+        id: what-happened
+        attributes:
+            label: What happened?
+            description: What did you expect to happen instead?
+        validations:
+            required: true
+
+    -   type: textarea
+        id: steps
+        attributes:
+            label: Steps to reproduce
+            placeholder: |
+                1. Open the app
+                2. ...
+                3. ...
+        validations:
+            required: true
+
+    -   type: dropdown
+        id: area
+        attributes:
+            label: Where does it happen?
+            options:
+                - Connecting or disconnecting
+                - Server list, search, or filters
+                - Subscriptions
+                - Importing configs
+                - Latency testing
+                - Routing rules
+                - Settings, theme, or language
+                - Updating the app
+                - Installing or launching
+                - Somewhere else / not sure
+        validations:
+            required: true
+
+    -   type: input
+        id: protocol
+        attributes:
+            label: Protocol involved
+            description: If it is connection-related. No credentials - just the protocol and transport.
+            placeholder: e.g. VLESS + REALITY over TCP, or Shadowsocks over ws
+
+    -   type: textarea
+        id: logs
+        attributes:
+            label: Logs, errors, or screenshots
+            description: Any error text the app showed. Screenshots help for anything visual.
+            render: shell
+
+    -   type: checkboxes
+        id: regression
+        attributes:
+            label: Regression
+            options:
+                -   label: This used to work in an earlier version.

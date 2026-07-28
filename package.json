@@ -53,14 +53,5 @@
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.63.0",
         "vite": "^8.1.4"
-    },
-    "overrides": {
-        "@azerothjs/schema": "^1.1.0",
-        "@azerothjs/logger": "^1.1.0",
-        "@azerothjs/http": "^1.1.0",
-        "@azerothjs/kit": "^1.1.0",
-        "@azerothjs/testing": "^1.1.0",
-        "@azerothjs/ws": "^1.1.0",
-        "@azerothjs/cron": "^1.1.0"
     }
 }

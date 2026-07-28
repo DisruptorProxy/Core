@@ -7,11 +7,11 @@ platforms get built. (For *releasing*, see `RELEASING.md`.)
 
 | Platform | Backend | State |
 | --- | --- | --- |
-| **Windows** | `platform/windows.rs` | ✅ shipping |
-| **Linux** | `platform/unix.rs` (pkexec) | code + CI (compile & `.deb`); runtime = on-device |
-| **macOS** | `platform/unix.rs` (osascript) | code + CI (compile & unsigned `.app`); runtime = on-device |
-| **Android** | — | planned (see below) |
-| **iOS** | — | planned (see below) |
+| **Windows** | `platform/windows.rs` | shipping - NSIS installer, signed, auto-updates |
+| **Linux** | `platform/unix.rs` (pkexec) | shipping - `.deb` on the release |
+| **macOS** | `platform/unix.rs` (osascript) | supported, but no release artifact yet - the release workflow has no macOS job, because an unsigned, un-notarized `.app` is Gatekeeper-blocked. Build from source until an Apple Developer account is in place. |
+| **Android** | `vpn` module + libXray AAR | shipping - `.apk` on the release |
+| **iOS** | - | not supported |
 
 ## How it works
 

@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest something Disruptor Proxy should do.
+labels: [enhancement]
+body:
+    -   type: markdown
+        attributes:
+            value: |
+                Good feature requests start from a problem rather than a solution - what were
+                you trying to do when the app got in your way?
+
+    -   type: textarea
+        id: problem
+        attributes:
+            label: What problem does this solve?
+            description: What are you trying to do today, and what makes it awkward or impossible?
+        validations:
+            required: true
+
+    -   type: textarea
+        id: proposal
+        attributes:
+            label: What would you like to happen?
+        validations:
+            required: true
+
+    -   type: textarea
+        id: alternatives
+        attributes:
+            label: Anything you tried instead?
+            description: Workarounds you use now, or how another client handles it.
+
+    -   type: dropdown
+        id: platform
+        attributes:
+            label: Platforms this matters on
+            multiple: true
+            options:
+                - Windows
+                - Linux
+                - macOS
+                - Android
+                - All of them
+
+    -   type: checkboxes
+        id: help
+        attributes:
+            label: Would you like to build it?
+            options:
+                -   label: I would be willing to open a pull request for this.

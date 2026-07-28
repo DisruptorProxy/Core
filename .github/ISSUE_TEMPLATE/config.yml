@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+    -   name: Latest release
+        url: https://github.com/DisruptorProxy/Core/releases/latest
+        about: Update before reporting a bug - it might already be fixed.
+    -   name: Guides and FAQ
+        url: https://github.com/DisruptorProxy/Wiki
+        about: Install steps, subscriptions, and routing rules are documented here.
+    -   name: Report a security vulnerability
+        url: https://github.com/DisruptorProxy/Core/security/advisories/new
+        about: Never report a security problem in a public issue.

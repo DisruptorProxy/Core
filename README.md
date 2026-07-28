@@ -68,7 +68,7 @@ scripts/
 
 ## Releasing
 
-Releasing is two-repo: this repo builds and signs the installer; the public repo is where users and the auto-updater actually get it from.
+Everything happens in this repo: it builds and signs the installer, and it is where users and the auto-updater get it from.
 
 ```
 npm run release -- patch     # or: minor, major, or an explicit X.Y.Z
