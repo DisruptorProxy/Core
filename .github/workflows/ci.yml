@@ -54,11 +54,11 @@ jobs:
         steps:
             -   uses: actions/checkout@v7
 
-            -   uses: dtolnay/rust-toolchain@stable
+            -   uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
                 with:
                     components: rustfmt, clippy
 
-            -   uses: Swatinem/rust-cache@v2
+            -   uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
                 with:
                     workspaces: src-tauri
 
@@ -112,9 +112,9 @@ jobs:
                     node-version: 24
                     cache: npm
 
-            -   uses: dtolnay/rust-toolchain@stable
+            -   uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
 
-            -   uses: Swatinem/rust-cache@v2
+            -   uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
                 with:
                     workspaces: src-tauri
 
@@ -153,11 +153,11 @@ jobs:
                     node-version: 24
                     cache: npm
 
-            -   uses: dtolnay/rust-toolchain@stable
+            -   uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
                 with:
                     targets: aarch64-apple-darwin,x86_64-apple-darwin
 
-            -   uses: Swatinem/rust-cache@v2
+            -   uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
                 with:
                     workspaces: src-tauri
 
@@ -196,9 +196,9 @@ jobs:
                     node-version: 24
                     cache: npm
 
-            -   uses: dtolnay/rust-toolchain@stable
+            -   uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
 
-            -   uses: Swatinem/rust-cache@v2
+            -   uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
                 with:
                     workspaces: src-tauri
 
@@ -231,14 +231,14 @@ jobs:
                     distribution: temurin
                     java-version: 17
 
-            -   uses: android-actions/setup-android@v4
+            -   uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4
 
             -   name: Install the Android NDK
                 run: |
                     sdkmanager "ndk;27.0.12077973"
                     echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973" >> "$GITHUB_ENV"
 
-            -   uses: dtolnay/rust-toolchain@stable
+            -   uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
                 with:
                     targets: aarch64-linux-android,x86_64-linux-android
 
