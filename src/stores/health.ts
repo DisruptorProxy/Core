@@ -211,10 +211,17 @@ export const useHealth = createStore(() =>
         // A proxy test reuses ONE core for the whole set (the live tunnel when
         // connected, or a single throwaway prober when idle - never a core per
         // server); a TCP test needs no core at all, just a handshake per server.
-        const session = await startProbeSession(configs, mode);
+        //
+        // Starting the session is INSIDE the try, and the flush timer is cleared in
+        // `finally`: a prober that cannot start (missing core, port already bound) or a
+        // pool that throws would otherwise leave the 200ms interval ticking for the rest
+        // of the session.
+        let session: Awaited<ReturnType<typeof startProbeSession>> | undefined;
 
         try
         {
+            session = await startProbeSession(configs, mode);
+
             await runPool(configs, session.probe, CONCURRENCY, {
                 onStart,
                 onResult,
@@ -223,10 +230,10 @@ export const useHealth = createStore(() =>
         }
         finally
         {
-            await session.stop();
+            await session?.stop();
+            window.clearInterval(timer);
         }
 
-        window.clearInterval(timer);
         flush();
 
         // Drop any lingering in-flight marks: a cancelled test leaves ids that started
