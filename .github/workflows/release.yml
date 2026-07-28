@@ -99,7 +99,7 @@ jobs:
 
                     Write-Host "Staged Linux artifact: $($deb.Name)"
 
-            -   uses: actions/upload-artifact@v4
+            -   uses: actions/upload-artifact@v7
                 with:
                     name: linux-assets
                     path: release-assets
@@ -189,7 +189,7 @@ jobs:
                     Copy-Item $apk.FullName (Join-Path $out "Disruptor-Proxy_${version}.apk")
                     Write-Host "Staged Android artifact: $($apk.Name)"
 
-            -   uses: actions/upload-artifact@v4
+            -   uses: actions/upload-artifact@v7
                 with:
                     name: android-assets
                     path: release-assets
