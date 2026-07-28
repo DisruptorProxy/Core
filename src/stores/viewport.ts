@@ -10,6 +10,14 @@ import { createSignal, createStore } from 'azerothjs';
  */
 const WIDE = '(min-width: 900px)';
 
+/**
+ * A real mouse or trackpad, as opposed to a finger. This is a CAPABILITY, not a size:
+ * menus anchor to their trigger as popovers where there is a precise pointer and a
+ * hover state to preview with, and become modal bottom sheets where there is not.
+ * A narrow desktop window still deserves a popover; a wide tablet still does not.
+ */
+const FINE_POINTER = '(hover: hover) and (pointer: fine)';
+
 export const useViewport = createStore(() =>
 {
     const query = window.matchMedia(WIDE);
@@ -17,5 +25,10 @@ export const useViewport = createStore(() =>
 
     query.addEventListener('change', (event) => setIsWide(event.matches));
 
-    return { isWide };
+    const pointer = window.matchMedia(FINE_POINTER);
+    const [isFinePointer, setIsFinePointer] = createSignal(pointer.matches);
+
+    pointer.addEventListener('change', (event) => setIsFinePointer(event.matches));
+
+    return { isWide, isFinePointer };
 });
