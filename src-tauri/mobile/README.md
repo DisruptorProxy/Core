@@ -2,20 +2,21 @@
 
 ## Android — implemented and verified on a device
 
-The Android tunnel is wired end to end and has run on hardware: consent dialog → foreground
-service → in-process Xray (`core: Xray … started`) → the native `tun` inbound accepting the
-VpnService fd's packets (`[tun-in -> proxy]`) with real traffic flowing.
+The Android tunnel is wired end to end: consent dialog → foreground service → the Xray core
+as a child process → its native `tun` inbound accepting the VpnService fd's packets
+(`[tun-in -> proxy]`) with real traffic flowing.
 
 | Piece | Where |
 | --- | --- |
 | Plugin commands (Rust) | `src-tauri/src/vpn.rs` — inline plugin, registered in `lib.rs` |
+| Core spawner (Rust) | `src-tauri/src/android_core.rs` — JNI, called from `XrayCore.kt` |
 | Permission declaration | `src-tauri/build.rs` (`InlinedPlugin`) → `disruptor-vpn:*` |
 | ACL grant | `src-tauri/capabilities/mobile.json` |
 | Plugin bridge (Kotlin) | `gen/android/app/src/main/java/io/disruptorproxy/client/VpnPlugin.kt` |
 | The tunnel (Kotlin) | `…/TunnelService.kt` |
 | Manifest service + permissions | `gen/android/app/src/main/AndroidManifest.xml` |
 | Release signing | `gen/android/app/build.gradle.kts` (`keystore.properties` or env) |
-| Core (libXray AAR) | `npm run fetch-core:android` → `gen/android/app/libs/libXray.aar` |
+| Core (per ABI) | `npm run fetch-core:android` → `gen/android/app/xrayLibs/<abi>/libxray.so` |
 
 ### The command contract (unchanged, already wired on the JS side)
 
@@ -28,33 +29,48 @@ VpnService fd's packets (`[tun-in -> proxy]`) with real traffic flowing.
 ### How the packets actually flow
 
 ```
-VpnService.establish() → tun fd → config env xray.tun.fd → in-process Xray `tun` inbound → server
+VpnService.establish() → tun fd → dup() → exec libxray.so with XRAY_TUN_FD → Xray `tun` inbound → server
 ```
 
-Xray runs **in this app's process**, via [libXray](https://github.com/XTLS/libXray)'s
-gomobile AAR. That is forced, not chosen: the tun fd from `VpnService.establish()` is only
-valid inside our own process, and Android's `ProcessBuilder` closes every fd ≥ 3 across
-`exec` (verified on-device — even with `FD_CLOEXEC` cleared), so a *spawned* `libxray.so`
-could never receive it through `XRAY_TUN_FD`. In-process, Xray's own `tun` inbound reads the
-fd (from the config root `env` that `TunnelService` injects) and does the layer-3 work
-itself — so there is **no tun2socks bridge** anymore.
+The core is the **stock Xray-core binary** — the same artifact the desktop builds use,
+shipped per ABI as `libxray.so` — run as a child process. Xray's own `tun` inbound reads the
+descriptor named by `XRAY_TUN_FD` and does the layer-3 work itself, so there is **no
+tun2socks bridge** and no gomobile binding.
+
+Getting a live fd to that child is the whole trick, and it is why the spawn happens in Rust
+(`android_core.rs`) rather than Kotlin. Java's `ProcessBuilder` closes every fd ≥ 3 before
+`exec`, so a core started from Kotlin would find nothing behind the number no matter what
+`XRAY_TUN_FD` says — that much was measured on-device. A native `fork`/`exec` does not close
+anything: `dup()` hands back a copy with `FD_CLOEXEC` cleared, the copy survives `exec` under
+the same number, and that number is what goes into `XRAY_TUN_FD`.
+
+`libxray.so` is an executable wearing a library's name. Since API 29 the only directory an
+app may `exec` from is `nativeLibraryDir`, and the only way into it is the APK's `lib/<abi>/`
+— hence the name, plus `useLegacyPackaging = true` so the file is actually extracted at
+install instead of being left compressed inside the APK.
 
 Xray's outbound sockets (its connection to the server) must stay out of the tunnel they
-serve. libXray calls back through a `DialerController` for every outbound socket; the
-callback runs `VpnService.protect()` on it. Stats can't use the desktop `xray api
-statsquery` path (no binary to exec), so `buildMobileConfig` adds a loopback `metrics`
-listener and `TunnelService` polls its `/debug/vars` expvar for `outbound>>>proxy>>>traffic`.
+serve. `VpnService.protect()` cannot reach another process's sockets, so the exclusion is
+done once, by uid: `TunnelService` calls `addDisallowedApplication(packageName)`, and the
+core runs under this app's uid. If that call ever fails the tunnel is abandoned rather than
+brought up, because the alternative is a routing loop. Stats can't use the desktop `xray api
+statsquery` path, so `buildMobileConfig` adds a loopback `metrics` listener and
+`TunnelService` polls its `/debug/vars` expvar for `outbound>>>proxy>>>traffic` — loopback,
+so the process boundary doesn't matter.
 
-The AAR is libXray's prebuilt, self-contained gomobile binding (`libgojni.so` per ABI, Xray
-statically linked). `npm run fetch-core:android` downloads and unpacks it into `app/libs`
-(gitignored); no NDK and no per-ABI native build are involved.
+`npm run fetch-core:android` downloads `Xray-android-arm64-v8a.zip` and
+`Xray-android-amd64.zip`, verifies each against its published `.dgst`, and installs the
+binaries into `app/xrayLibs/<abi>/libxray.so` (gitignored). No NDK, no gomobile, no per-ABI
+native build.
 
 ### What to expect on first run
 
 Verify, in order: the VPN consent dialog appears → key icon in the status bar → your public
 IP changes → traffic counters move → `stop` tears the tunnel down → it survives backgrounding
-and rotation. Watch `adb`/`npm run android-log` for `RustStdoutStderr`: a bad config or
-missing geo data surfaces as a libXray `invoke` returning `success:false` with the Xray error.
+and rotation. The core's own output goes nowhere (its stdio is `/dev/null`), so a bad config
+or missing geo data shows up as the core exiting during its startup grace period —
+`XrayCore.start` returns false and the half-open tunnel is torn back down. Watch
+`adb`/`npm run android-log` for the service's side of that.
 
 ### Signing
 

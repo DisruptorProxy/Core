@@ -28,6 +28,13 @@ reqwest = { version = "0.12", default-features = false, features = [ "socks", "r
 # the updater already pulls in, so this adds nothing to the build.
 rustls = { version = "0.23", default-features = false, features = [ "ring" ] }
 
+# The Xray core runs as a child process holding the VpnService tun fd, which Kotlin cannot
+# hand it (see src/android_core.rs). `jni` matches the version tauri already builds against;
+# `libc` is only here for dup/close on the fd.
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+libc = "0.2"
+
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62", features = [
     "Win32_Foundation",

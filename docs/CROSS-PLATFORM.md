@@ -10,7 +10,7 @@ platforms get built. (For *releasing*, see `RELEASING.md`.)
 | **Windows** | `platform/windows.rs` | shipping - NSIS installer, signed, auto-updates |
 | **Linux** | `platform/unix.rs` (pkexec) | shipping - `.deb` on the release |
 | **macOS** | `platform/unix.rs` (osascript) | supported, but no release artifact yet - the release workflow has no macOS job, because an unsigned, un-notarized `.app` is Gatekeeper-blocked. Build from source until an Apple Developer account is in place. |
-| **Android** | `vpn` module + libXray AAR | shipping - `.apk` on the release |
+| **Android** | `vpn` module + spawned Xray binary | shipping - `.apk` on the release |
 | **iOS** | - | not supported |
 
 ## How it works
@@ -65,33 +65,39 @@ macOS]`).
 
 ---
 
-## Android (implemented — in-process libXray)
+## Android (implemented — the stock Xray binary, spawned with the tun fd)
 
 Android can't reuse the desktop model (the OS owns the VPN via `VpnService`, and apps
 can't freely exec binaries). See `src-tauri/mobile/README.md` for the implemented design;
 this is the architecture rationale.
 
-**Why in-process, not the tun2socks split we first planned:** the original plan was a
-v2rayNG-style bridge — `VpnService` establishes the tun, a tun2socks lib (loaded in-process
-via JNI) forwards the fd into a spawned Xray's SOCKS inbound. It was abandoned once the real
-constraint was measured: a spawned Xray can't receive the tun fd at all. Android's
-`ProcessBuilder` closes every fd ≥ 3 across `exec` (verified on-device, even with
-`FD_CLOEXEC` cleared), so `XRAY_TUN_FD` is meaningless to a child process. That left two
-in-process options, and running Xray itself in-process (via libXray) is strictly simpler
-than keeping a spawned Xray plus an in-process tun2socks — and lets Xray's own `tun` inbound
-do the layer-3 work, so no tun2socks at all.
+**Why not the tun2socks split we first planned:** the original plan was a v2rayNG-style
+bridge — `VpnService` establishes the tun, a tun2socks lib (loaded in-process via JNI)
+forwards the fd into a spawned Xray's SOCKS inbound. Unnecessary: Xray's own `tun` inbound
+does the layer-3 work given the fd, which `XRAY_TUN_FD` names.
+
+**Why the spawn is native, not Kotlin:** Java's `ProcessBuilder` closes every fd ≥ 3 across
+`exec` (measured on-device, even with `FD_CLOEXEC` cleared), so a core started from Kotlin
+would find nothing behind the number. That is a `ProcessBuilder` behaviour, not a kernel one
+— a native `fork`/`exec` inherits whatever isn't marked `FD_CLOEXEC`, and `dup()` returns a
+copy with that flag cleared. So the spawn lives in Rust, and the app ships the same official
+Xray-core binary as every other platform instead of a gomobile binding.
 
 **Architecture (as built):**
-- Xray runs in-process through [libXray](https://github.com/XTLS/libXray)'s gomobile AAR
-  (`fetch-core.mjs --android` → `gen/android/app/libs/libXray.aar`, gitignored). No jniLibs
-  Xray binary, no tun2socks, no NDK build for the core.
+- The core is `Xray-android-<abi>` from the official release, installed as
+  `gen/android/app/xrayLibs/<abi>/libxray.so` by `fetch-core.mjs --android` (gitignored) and
+  packaged with `useLegacyPackaging` so it lands in `nativeLibraryDir` — since API 29 the
+  only directory an app may exec from. No tun2socks, no NDK build for the core.
 - `TunnelService` (Kotlin): consent → `Builder` (addr/route `0.0.0.0/0`, DNS, MTU) →
-  `establish()` → tun fd → injected into the config root `env` as `xray.tun.fd` →
-  `LibXray.invoke(runXrayFromJson)`. Xray's `tun` inbound reads the fd and proxies out;
-  its outbound sockets are `protect()`-ed via libXray's `DialerController` callback.
+  `establish()` → tun fd → `XrayCore.start` → `android_core.rs` dups the fd and execs the
+  core with `XRAY_TUN_FD` and `XRAY_LOCATION_ASSET` set. Xray's `tun` inbound reads the fd
+  and proxies out.
+- The core's own uplink stays out of the tunnel by uid, not by socket: `protect()` can't
+  reach another process, so `TunnelService` excludes this package from the VPN and the child
+  inherits that exclusion.
 - `buildMobileConfig` (`config.ts`) emits the `tun` inbound (not a SOCKS inbound) plus a
   loopback `metrics` listener; `TunnelService` polls `/debug/vars` for traffic counters,
-  since there's no binary to run `xray api statsquery` against.
+  which works across the process boundary because it is loopback.
 - Plugin `disruptor-vpn` (`vpn.rs` inline plugin + `VpnPlugin.kt`) exposes
   `start/stop/traffic`; `capabilities/mobile.json` grants it. TCP ping stays a socket connect.
 

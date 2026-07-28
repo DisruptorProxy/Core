@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 // Fetches the Xray core, verified against the release's own .dgst checksum.
 //
-// Desktop cores are the Xray-core CLI binary and land in src-tauri/assets. Android is
-// different: a VpnService tun fd can only reach Xray inside the app's own process (a
-// spawned binary never inherits it - Android's ProcessBuilder closes it across exec), so
-// Android runs Xray IN-PROCESS via libXray's gomobile AAR instead of a libxray.so binary.
-// `--android` fetches that AAR into gen/android/app/libs. The Windows core is committed
-// already; everything else is fetched (and gitignored) by CI and a fresh clone before a
-// build. iOS uses an xcframework built with gomobile, so it is out of scope here.
+// Desktop cores are the Xray-core CLI binary and land in src-tauri/assets. Android gets the
+// same official binary, one per shipped ABI, installed as `libxray.so` into a jniLibs source
+// dir so the APK carries it into nativeLibraryDir - the only place Android lets an app exec a
+// file. `--android` does that for both ABIs at once. The Windows core is committed already;
+// everything else is fetched (and gitignored) by CI and a fresh clone before a build. iOS
+// uses an xcframework built with gomobile, so it is out of scope here.
 //
 // Usage:
 //   node scripts/fetch-core.mjs                      # the host desktop platform
 //   node scripts/fetch-core.mjs --target linux-64
-//   node scripts/fetch-core.mjs --android            # libXray AAR -> app/libs
+//   node scripts/fetch-core.mjs --android            # both Android ABIs -> app/xrayLibs
 //   node scripts/fetch-core.mjs --target linux-64 --version v1.8.4
-//   node scripts/fetch-core.mjs --android --libxray-version v26.7.11
+//   node scripts/fetch-core.mjs --android --version v26.3.27
 
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -26,15 +25,16 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ASSETS = path.join(ROOT, 'src-tauri', 'assets');
-const LIBS = path.join(ROOT, 'src-tauri', 'gen', 'android', 'app', 'libs');
+const XRAY_LIBS = path.join(ROOT, 'src-tauri', 'gen', 'android', 'app', 'xrayLibs');
 const RELEASES = 'https://github.com/XTLS/Xray-core/releases';
 
-// libXray ships Xray-core as a prebuilt gomobile AAR. Pinned rather than "latest" so a
-// build is reproducible and an upstream change can't silently alter the bundled core;
-// bump deliberately (and re-test the tunnel on a device - the tun/fd path is version-
-// sensitive). Overridable with --libxray-version.
-const LIBXRAY_RELEASES = 'https://github.com/XTLS/libXray/releases';
-const LIBXRAY_VERSION = 'v26.7.11';
+// The ABIs the APK ships, and the release asset that carries the core for each. Kept in
+// step with `abiFilters` in gen/android/app/build.gradle.kts: an ABI with no core here
+// would install fine and then fail to start the tunnel.
+const ANDROID_ABIS = [
+    { abi: 'arm64-v8a', target: 'android-arm64-v8a' },
+    { abi: 'x86_64', target: 'android-amd64' }
+];
 
 function fail(message)
 {
@@ -158,37 +158,35 @@ async function install(target, version)
     }
 }
 
-/** Fetches the libXray gomobile AAR and installs it into gen/android/app/libs. Unlike the
- *  desktop cores, libXray publishes no .dgst, so this pins the version and records the
- *  sha256 of what it fetched over HTTPS rather than verifying against a published digest. */
-async function installAndroidAar(version)
+/** Installs the Android core for every shipped ABI into app/xrayLibs, named `libxray.so`.
+ *  The `.so` name is not a library - it is the plain Xray-core executable wearing the only
+ *  extension Android's packager will carry into nativeLibraryDir, which since API 29 is the
+ *  one directory an app is allowed to exec from. */
+async function installAndroid(version)
 {
-    const tag = version ?? LIBXRAY_VERSION;
-    const zipName = 'libxray-android.zip';
-
-    console.log(`fetch-core: ${ zipName } (${ tag })`);
-
-    const zip = await download(`${ LIBXRAY_RELEASES }/download/${ tag }/${ zipName }`);
-    console.log(`fetch-core: sha256 ${ createHash('sha256').update(zip).digest('hex') }`);
-
-    const work = mkdtempSync(path.join(tmpdir(), 'libxray-'));
-
-    try
+    for (const { abi, target } of ANDROID_ABIS)
     {
-        const zipPath = path.join(work, zipName);
-        writeFileSync(zipPath, zip);
-        unzip(zipPath, work);
+        const work = mkdtempSync(path.join(tmpdir(), 'xray-core-'));
 
-        // The archive nests the AAR one directory down (libxray-android/libXray.aar).
-        const aar = path.join(work, 'libxray-android', 'libXray.aar');
-        mkdirSync(LIBS, { recursive: true });
-        copyFileSync(aar, path.join(LIBS, 'libXray.aar'));
+        try
+        {
+            const core = await fetchAndVerify(target, version, work);
+            const dir = path.join(XRAY_LIBS, abi);
+            mkdirSync(dir, { recursive: true });
+            const dest = path.join(dir, 'libxray.so');
+            copyFileSync(core, dest);
 
-        console.log('fetch-core: wrote gen/android/.../app/libs/libXray.aar');
-    }
-    finally
-    {
-        rmSync(work, { recursive: true, force: true });
+            if (process.platform !== 'win32')
+            {
+                chmodSync(dest, 0o755);
+            }
+
+            console.log(`fetch-core: wrote gen/android/.../app/xrayLibs/${ abi }/libxray.so`);
+        }
+        finally
+        {
+            rmSync(work, { recursive: true, force: true });
+        }
     }
 }
 
@@ -196,7 +194,7 @@ async function main()
 {
     if (process.argv.includes('--android'))
     {
-        await installAndroidAar(arg('--libxray-version'));
+        await installAndroid(arg('--version'));
         return;
     }
 
