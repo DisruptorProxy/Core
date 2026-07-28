@@ -5,6 +5,12 @@ mod platform;
 #[cfg(target_os = "android")]
 mod vpn;
 
+/// Spawning the core with the tunnel's fd attached. Android only, and called from Kotlin
+/// over JNI rather than from anything here - see the module docs for why it isn't in
+/// `vpn`'s plugin commands.
+#[cfg(target_os = "android")]
+mod android_core;
+
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;

@@ -53,8 +53,8 @@ const PROBE_IN_TAG = 'probe-in';
 const API_PORT = 10085;
 /**
  * Loopback port Xray's metrics service serves expvar on (`/debug/vars`) during a mobile
- * connection. Android runs Xray in-process via libXray, so it can't shell out to
- * `xray api statsquery` the way desktop does; instead `TunnelService` reads the cumulative
+ * connection. Android has no writable, exec-able place to run a second `xray api statsquery`
+ * from the way desktop does; instead `TunnelService` reads the cumulative
  * `outbound>>>proxy>>>traffic` counters over HTTP from here. Loopback-only.
  */
 const METRICS_PORT = 10086;
@@ -551,16 +551,15 @@ export const buildConnectConfig = (config: ProxyConfig, rules: Rule[], allConfig
 /**
  * The mobile (Android/iOS) connect config. Like desktop it uses Xray's native `tun`
  * inbound, but the OS owns the interface: Android `VpnService` (and iOS
- * `NEPacketTunnelProvider`) create the tun and hand Xray the fd, which the native layer
- * injects into the config root as `env: { "xray.tun.fd": <fd> }` at connect time - the fd
- * is only known at runtime and can't be baked in here. So the tun settings are minimal
- * (just `mtu`): `name`/`gateway`/`autoSystemRoutingTable` are desktop concerns the OS owns
- * on mobile, and `autoOutboundsInterface` is unsupported on Android - the proxy outbound is
- * instead kept out of the tunnel by `VpnService.protect()`, wired through libXray's
- * DialerController in `TunnelService`.
+ * `NEPacketTunnelProvider`) create the tun and hand Xray the fd through the `XRAY_TUN_FD`
+ * environment variable, which the native layer sets at connect time - the fd is only known
+ * at runtime and can't be baked in here. So the tun settings are minimal (just `mtu`):
+ * `name`/`gateway`/`autoSystemRoutingTable` are desktop concerns the OS owns on mobile, and
+ * `autoOutboundsInterface` is unsupported on Android - the proxy outbound is instead kept
+ * out of the tunnel by excluding this app's uid from the VPN (see `TunnelService`).
  *
- * Stats can't go through the desktop `xray api statsquery` path (no binary to exec
- * in-process), so a loopback `METRICS` listener exposes the same counters over expvar.
+ * Stats can't go through the desktop `xray api statsquery` path, so a loopback `METRICS`
+ * listener exposes the same counters over expvar.
  * Everything else - outbounds, routing, DNS, and the shared probe layer for testing while
  * connected - matches the desktop config, so one routing model serves every platform.
  */
@@ -578,7 +577,7 @@ export const buildMobileConfig = (config: ProxyConfig, rules: Rule[], allConfigs
         inbounds:
         [
             // `port` is ignored by the tun inbound (it never listens on one), but the schema
-            // wants it present. The fd arrives via the root `env` the native layer injects.
+            // wants it present. The fd arrives via `XRAY_TUN_FD` in the core's environment.
             { tag: 'tun-in', protocol: 'tun', port: 0, settings: { mtu: 1500 }, sniffing: { enabled: true, destOverride: ['http', 'tls', 'quic'] } },
             API_INBOUND,
             probe.inbound

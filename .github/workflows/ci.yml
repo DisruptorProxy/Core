@@ -249,9 +249,10 @@ jobs:
 
             -   run: npm ci
 
-            # The Android core is libXray's prebuilt gomobile AAR (Xray-core in-process); no
-            # tun2socks and no per-ABI native build - the fd goes straight to Xray's tun inbound.
-            -   name: Fetch the Android Xray core (libXray AAR)
+            # The same official Xray-core binary the desktop builds use, one per shipped
+            # ABI, packaged as libxray.so; no tun2socks and no per-ABI native build - the
+            # tun fd goes straight to Xray's tun inbound.
+            -   name: Fetch the Android Xray core
                 run: npm run fetch-core:android
 
             -   name: Assemble the APK
