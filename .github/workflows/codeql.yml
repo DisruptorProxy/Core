@@ -1,0 +1,67 @@
+name: CodeQL
+
+# Replaces CodeQL's default setup, which auto-detected every language in the tree and then
+# failed trying to build two of them:
+#
+#   swift       - `src-tauri/mobile/ios/PacketTunnelProvider.swift` is a loose scaffold file
+#                 with no Xcode project, workspace, or Package.swift, so autobuild has
+#                 nothing to build. Swift has no `build-mode: none`, and iOS is not a
+#                 supported platform, so Swift is simply not scanned.
+#   java-kotlin - the Android sources live in `src-tauri/gen/android`, a Tauri-GENERATED
+#                 Gradle project nested below the repo root, so autobuild finds no build at
+#                 the root. `build-mode: none` would not help either: it skips Kotlin, and
+#                 every Android source here is Kotlin. Analysing it properly needs a full
+#                 Gradle + NDK build, which is not worth it for generated glue.
+#
+# What is left is what actually matters: the TypeScript frontend, the Rust host that runs
+# the core with elevated privileges, and the workflows themselves (which handle signing
+# secrets). All three analyse without a build.
+#
+# IMPORTANT: default setup must be turned OFF for this file to run -
+# Settings > Code security > Code scanning > CodeQL analysis > Disable, then re-add as
+# "Advanced". Both cannot be enabled at once.
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+    schedule:
+        # Weekly, so a newly published advisory is caught without waiting for a commit.
+        -   cron: '27 4 * * 1'
+
+permissions:
+    contents: read
+
+jobs:
+    analyze:
+        name: Analyze (${{ matrix.language }})
+        runs-on: ubuntu-latest
+        permissions:
+            security-events: write
+            actions: read
+            contents: read
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    -   language: javascript-typescript
+                        build-mode: none
+                    -   language: rust
+                        build-mode: none
+                    -   language: actions
+                        build-mode: none
+        steps:
+            -   uses: actions/checkout@v7
+
+            -   name: Initialize CodeQL
+                uses: github/codeql-action/init@v4
+                with:
+                    languages: ${{ matrix.language }}
+                    build-mode: ${{ matrix.build-mode }}
+                    config-file: ./.github/codeql-config.yml
+
+            -   name: Analyze
+                uses: github/codeql-action/analyze@v4
+                with:
+                    category: /language:${{ matrix.language }}
