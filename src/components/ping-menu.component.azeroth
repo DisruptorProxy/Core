@@ -1,4 +1,4 @@
-import { Show } from 'azerothjs';
+import { Show, onCleanup } from 'azerothjs';
 
 import { Activity, ChevronDown, Gauge, Globe, Zap } from 'lucide';
 
@@ -47,10 +47,15 @@ export default component PingMenu(props: PingMenuProps)
     // The active outside-click listener's remover, so closing (by any path - a pick,
     // the trigger, an outside click) always tears it down exactly once.
     let removeOutside: (() => void) | null = null;
+    // The pending arm-the-listener timer, so an unmount between opening and arming
+    // cannot leave it to fire against a component that is already gone.
+    let armTimer = 0;
 
     const close = (): void =>
     {
         open = false;
+        window.clearTimeout(armTimer);
+        armTimer = 0;
         removeOutside?.();
         removeOutside = null;
     };
@@ -69,8 +74,10 @@ export default component PingMenu(props: PingMenuProps)
 
         // A tick later, so the very click that opened the menu is not the one that
         // closes it; skip if a fast pick already closed it in the meantime.
-        window.setTimeout(() =>
+        armTimer = window.setTimeout(() =>
         {
+            armTimer = 0;
+
             if (!open)
             {
                 return;
@@ -80,6 +87,10 @@ export default component PingMenu(props: PingMenuProps)
             removeOutside = (): void => document.removeEventListener('pointerdown', onDown, true);
         }, 0);
     };
+
+    // Unmounting while open never runs `close()` on its own, which would strand the
+    // capturing document listener (and any pending arm timer) for the life of the app.
+    onCleanup(close);
 
     const pick = (mode: PingMode): void =>
     {

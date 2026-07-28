@@ -1,15 +1,13 @@
-import { For, Show } from 'azerothjs';
+import { Show, onCleanup } from 'azerothjs';
 
-import { Check, ChevronDown, Search } from 'lucide';
+import { ChevronDown } from 'lucide';
 
+import { useViewport } from '../stores/viewport';
+
+import FilterOptions from './filter-options.component.azeroth';
+import type { FilterOption } from './filter-options.component.azeroth';
 import { icon } from './icon';
 import Sheet from './sheet.component.azeroth';
-
-export interface FilterOption
-{
-    value: string;
-    label: string;
-}
 
 interface FilterMenuProps
 {
@@ -22,100 +20,178 @@ interface FilterMenuProps
     options: () => FilterOption[];
     selected: (value: string) => boolean;
     onSelect: (value: string) => void;
-    /** Multi-select keeps the sheet open so several values can be toggled. */
+    /** Multi-select keeps the menu open so several values can be toggled. */
     multi?: boolean;
     searchable?: boolean;
     searchPlaceholder?: string;
 }
 
+/** Distinct per instance, so several menus on one bar keep their aria ids apart. */
+let seq = 0;
+
 /**
  * A filter as a dropdown, not a chip rail. A chip per option collapses once a list
  * grows - 100 subscriptions become an unusable horizontal scroll. This shows one
- * compact trigger with the current choice, and opens a searchable, scrollable sheet
- * of options. It scales from three protocols to a hundred sources without changing.
+ * compact trigger with the current choice, and opens the option list.
+ *
+ * WHERE that list opens is decided by pointer capability, not width: an anchored
+ * popover for a mouse, the modal bottom sheet for a finger. Blacking out the whole
+ * window behind a scrim to pick one of four protocols is what made this feel unlike
+ * a desktop app; a sheet is still exactly right on a phone.
+ *
+ * The popover dismisses on outside pointer-down rather than behind a fixed backdrop:
+ * this trigger sits inside a `backdrop-filter` bar, which would become the containing
+ * block for a fixed child and trap it. Same reasoning as `ping-menu`.
  */
 export default component FilterMenu(props: FilterMenuProps)
 {
+    const viewport = useViewport();
+
+    const id = `filter-menu-${ seq++ }`;
+
     state open = false;
-    state term = '';
+    // Anchor to the trigger's end edge instead of its start when opening at the start
+    // edge would push the panel off screen. Measured, because the chips sit in a
+    // horizontally scrollable row and their position is not knowable up front.
+    state flip = false;
 
-    const filtered = (): FilterOption[] =>
-    {
-        const needle = term.trim().toLowerCase();
-
-        if (needle === '')
-        {
-            return props.options();
-        }
-
-        return props.options().filter((option) => option.label.toLowerCase().includes(needle));
-    };
+    let triggerEl: HTMLButtonElement | null = null;
+    let removeOutside: (() => void) | null = null;
+    let armTimer = 0;
 
     const close = (): void =>
     {
         open = false;
-        term = '';
+        window.clearTimeout(armTimer);
+        armTimer = 0;
+        removeOutside?.();
+        removeOutside = null;
+    };
+
+    /** Closing by keyboard or by choosing must hand focus back to where it came from. */
+    const dismiss = (): void =>
+    {
+        close();
+        triggerEl?.focus();
+    };
+
+    const openMenu = (): void =>
+    {
+        open = true;
+
+        if (triggerEl !== null)
+        {
+            const box = triggerEl.getBoundingClientRect();
+            const rtl = document.documentElement.dir === 'rtl';
+            // 18rem panel; flip when the side it would grow toward has no room.
+            const room = rtl ? box.right : window.innerWidth - box.left;
+
+            flip = room < 288;
+        }
+
+        if (!viewport.isFinePointer())
+        {
+            return;
+        }
+
+        const onDown = (event: Event): void =>
+        {
+            if ((event.target as HTMLElement | null)?.closest(`[data-filter-menu="${ id }"]`) === null)
+            {
+                close();
+            }
+        };
+
+        // A tick later, so the click that opened the menu is not the one that closes it.
+        armTimer = window.setTimeout(() =>
+        {
+            armTimer = 0;
+
+            if (!open)
+            {
+                return;
+            }
+
+            document.addEventListener('pointerdown', onDown, true);
+            removeOutside = (): void => document.removeEventListener('pointerdown', onDown, true);
+        }, 0);
     };
 
     const choose = (value: string): void =>
     {
         props.onSelect(value);
 
-        if (!props.multi)
+        if (props.multi !== true)
         {
-            close();
+            dismiss();
         }
     };
 
-    <div class="contents">
+    const onTriggerKeyDown = (event: KeyboardEvent): void =>
+    {
+        // Down opens the menu from the keyboard, the way a native select does.
+        if (!open && (event.key === 'ArrowDown' || event.key === 'ArrowUp'))
+        {
+            event.preventDefault();
+            openMenu();
+        }
+    };
+
+    // A menu left open when the bar unmounts would strand its document listener.
+    onCleanup(close);
+
+    // The wrapper is a real positioned box, NOT `display: contents`. An element that
+    // generates no principal box cannot be a containing block, so an absolutely
+    // positioned popover inside one anchors to a far-away ancestor and lands off screen.
+    <div class="relative shrink-0" data-filter-menu={ id }>
         <button
+            ref={ (element: HTMLElement) => triggerEl = element as HTMLButtonElement }
             type="button"
             class={ 'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium press '
                 + (props.active()
                     ? 'border-accent bg-accent-soft text-accent'
                     : 'border-border text-muted hover:bg-elevated') }
-            onClick={ () => open = true }
+            aria-haspopup="listbox"
+            aria-expanded={ open ? 'true' : 'false' }
+            onClick={ () => open ? close() : openMenu() }
+            onKeyDown={ onTriggerKeyDown }
         >
             <span class={ props.active() ? 'text-accent/70' : 'text-faint' }>{ props.label }</span>
             <span class="max-w-32 truncate">{ props.summary() }</span>
             { icon(ChevronDown, 'size-3.5 opacity-70') }
         </button>
 
-        <Sheet open={ () => open } onClose={ close } title={ props.label }>
-            <div class="flex flex-col gap-3">
-                <Show when={ props.searchable }>
-                    <label class="glass flex items-center gap-2 rounded-xl px-3">
-                        { icon(Search, 'size-4 text-faint') }
-
-                        <input
-                            type="search"
-                            class="min-h-11 w-full bg-transparent text-sm text-text outline-none placeholder:text-faint"
-                            placeholder={ props.searchPlaceholder ?? '' }
-                            bind:value={ term }
-                        />
-                    </label>
-                </Show>
-
-                <div class="-mx-2 max-h-[52vh] overflow-y-auto">
-                    <For each={ filtered() } key={ (option) => option.value }>
-                        { (option) =>
-                            <button
-                                type="button"
-                                class="flex w-full items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-start text-sm hover:bg-elevated"
-                                onClick={ () => choose(option.value) }
-                            >
-                                <span class={ props.selected(option.value) ? 'truncate font-medium text-accent' : 'truncate text-text' }>
-                                    { option.label }
-                                </span>
-
-                                <Show when={ props.selected(option.value) }>
-                                    { icon(Check, 'size-4 shrink-0 text-accent') }
-                                </Show>
-                            </button>
-                        }
-                    </For>
-                </div>
+        <Show when={ open && viewport.isFinePointer() }>
+            <div
+                class={ 'g-popover absolute top-full z-50 mt-1.5 w-72 rounded-xl glass-strong p-2 '
+                    + (flip ? 'end-0' : 'start-0') }
+            >
+                <FilterOptions
+                    id={ id }
+                    options={ props.options }
+                    selected={ props.selected }
+                    onChoose={ choose }
+                    onDismiss={ dismiss }
+                    multi={ props.multi }
+                    searchable={ props.searchable }
+                    searchPlaceholder={ props.searchPlaceholder }
+                />
             </div>
-        </Sheet>
+        </Show>
+
+        <Show when={ !viewport.isFinePointer() }>
+            <Sheet open={ () => open } onClose={ close } title={ props.label }>
+                <FilterOptions
+                    id={ id }
+                    options={ props.options }
+                    selected={ props.selected }
+                    onChoose={ choose }
+                    onDismiss={ dismiss }
+                    multi={ props.multi }
+                    searchable={ props.searchable }
+                    searchPlaceholder={ props.searchPlaceholder }
+                />
+            </Sheet>
+        </Show>
     </div>
 }

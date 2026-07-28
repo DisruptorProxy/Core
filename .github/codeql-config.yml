@@ -1,0 +1,10 @@
+name: Disruptor Proxy CodeQL config
+
+# Generated and vendored trees are excluded: findings in them are not ours to fix, and they
+# drown the real results. `src-tauri/gen` is written by `tauri android init`, and `dist` is
+# build output.
+paths-ignore:
+    - src-tauri/gen
+    - src-tauri/target
+    - dist
+    - node_modules
