@@ -46,10 +46,47 @@ permissions:
     contents: write
 
 jobs:
+    # Fails in seconds if this tag already has a PUBLISHED release, before ~15 minutes of
+    # build time is spent on a run that cannot succeed.
+    #
+    # This repo has immutable releases enabled: once a release is published its assets are
+    # frozen forever. Re-running a release for an already-published tag therefore uploads
+    # nothing and dies with "Cannot upload asset ... to an immutable release" - and worse,
+    # a release published while still empty can never be repaired, which breaks the
+    # updater's `releases/latest/download/latest.json` for everyone. A tag gets exactly one
+    # shot; if it was published early or badly, cut the next patch version.
+    #
+    # A DRAFT for the tag is fine and expected - re-running to replace a bad draft is
+    # exactly the workflow this allows.
+    guard:
+        name: Check the tag is releasable
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Refuse to build for an already-published tag
+                env:
+                    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                    TAG: ${{ github.ref_name }}
+                run: |
+                    state=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
+                        --jq '.draft' 2>/dev/null || echo "none")
+
+                    if [ "$state" = "false" ]; then
+                        echo "::error::Release ${TAG} is already published and its assets are immutable."
+                        echo "::error::Nothing can be added to it. Bump to the next patch version and tag that instead."
+                        exit 1
+                    fi
+
+                    if [ "$state" = "true" ]; then
+                        echo "A draft for ${TAG} already exists; it will be replaced."
+                    else
+                        echo "No release for ${TAG} yet."
+                    fi
+
     # Linux builds on its own runner and hands its .deb to `release` as an artifact. Only
     # that job writes the release.
     linux:
         name: Build Linux (deb)
+        needs: guard
         runs-on: ubuntu-latest
         steps:
             -   uses: actions/checkout@v7
@@ -112,6 +149,7 @@ jobs:
         # attached for testing rather than distribution. continue-on-error keeps a broken or
         # missing Android build from blocking a desktop release; `needs` is still satisfied.
         runs-on: ubuntu-latest
+        needs: guard
         continue-on-error: true
         # `secrets` cannot be referenced from a step `if:`, but `env` can - so surface the
         # keystore secret the signing step gates on here, and test env.* below.
@@ -200,7 +238,7 @@ jobs:
         # draft release on this repo. Blocks on Linux on purpose - a release that silently
         # loses the .deb is worse than one that fails loudly and gets re-run. Android is
         # continue-on-error, so it satisfies `needs` whether or not it produced an APK.
-        needs: [ linux, android ]
+        needs: [ guard, linux, android ]
         runs-on: windows-latest
         steps:
             # fetch-depth: 0 alone is not enough for git-cliff: actions/checkout fetches with
