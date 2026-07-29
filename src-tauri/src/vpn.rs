@@ -6,9 +6,9 @@
 //! TunnelService.kt, which own the VpnService lifecycle.
 //!
 //! Android is the mirror image of desktop: there, the app elevates a core that creates its
-//! own tun device; here, the OS owns the tunnel and hands the fd to Xray (running in-process
-//! via libXray), so nothing is elevated and there is no stop-file protocol - stopping is just
-//! a message to the service. See TunnelService.kt for the fd/in-process details.
+//! own tun device; here, the OS owns the tunnel and hands the fd to Xray, so nothing is
+//! elevated and there is no stop-file protocol - stopping is just a message to the service.
+//! The core itself is spawned by `android_core`, not from here. See TunnelService.kt.
 
 use serde::{Deserialize, Serialize};
 use tauri::plugin::{Builder, PluginHandle, TauriPlugin};

@@ -39,12 +39,23 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
-        // The two ABIs fetch-core installs the core for. The libXray AAR ships libgojni.so
-        // for all four, so without this the APK would also carry ~100 MB of armeabi-v7a and
-        // x86 native code no shipped device uses.
+        // The two ABIs fetch-core installs the core for (see ANDROID_ABIS there). The Rust
+        // lib builds for four; shipping the other two would mean an APK that installs on a
+        // device and then has no libxray.so to run.
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
+    }
+
+    // The Xray core, fetched per ABI by `npm run fetch-core:android`. Kept out of
+    // src/main/jniLibs, which the Tauri gradle plugin owns (it symlinks the Rust lib in).
+    sourceSets.getByName("main").jniLibs.srcDir("xrayLibs")
+
+    packaging {
+        // libxray.so is an executable, not a library: it has to exist as a real file in
+        // nativeLibraryDir for the core to be exec'd, and that only happens when native
+        // libs are extracted at install time rather than left compressed in the APK.
+        jniLibs.useLegacyPackaging = true
     }
     signingConfigs {
         create("release") {
@@ -92,20 +103,7 @@ rust {
     rootDirRel = "../../../"
 }
 
-repositories {
-    // The libXray gomobile AAR is a local artifact fetched by scripts/fetch-core.mjs into
-    // app/libs (gitignored, not committed), so it is resolved from there rather than a
-    // remote repository.
-    flatDir { dirs("libs") }
-}
-
 dependencies {
-    // Xray-core, in-process. On Android a VpnService fd can only reach Xray inside the app's
-    // own process (a spawned binary never inherits it - ProcessBuilder closes it across
-    // exec), so the core runs through libXray's gomobile bindings rather than as an exec'd
-    // libxray.so. TunnelService drives it via LibXray.invoke(...).
-    implementation(":libXray@aar")
-
     implementation("androidx.webkit:webkit:1.14.0")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.activity:activity-ktx:1.10.1")

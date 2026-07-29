@@ -2,20 +2,19 @@ package io.disruptorproxy.client
 
 // The Android VPN tunnel for Disruptor Proxy.
 //
-// Xray runs IN THIS PROCESS, via libXray's gomobile bindings (see app/libs/libXray.aar,
-// fetched by scripts/fetch-core.mjs). That is not a preference but a hard constraint: the
-// tun fd VpnService hands us is only valid inside our own process, and Android's
-// ProcessBuilder closes every fd >= 3 across exec - so a spawned libxray.so binary could
-// never receive it, no matter how XRAY_TUN_FD is passed. Running the core in-process lets
-// Xray's own `tun` inbound read the fd (from the config's `env`) and do the layer-3 work
-// itself, which is why this app no longer needs a tun2socks bridge.
+// The core is the stock Xray-core binary, shipped as libxray.so and run as a child process
+// (see XrayCore / src-tauri/src/android_core.rs). Xray's own `tun` inbound does the layer-3
+// work, reading the descriptor VpnService hands us out of XRAY_TUN_FD, so this app needs no
+// tun2socks bridge. Passing a live fd to a child is the one thing Kotlin cannot do here -
+// ProcessBuilder closes every descriptor above stderr before exec - which is why the spawn
+// happens natively on the Rust side.
 //
-//     VpnService.establish() -> tun fd -> config env xray.tun.fd -> in-process Xray tun inbound
+//     VpnService.establish() -> tun fd -> XRAY_TUN_FD -> Xray tun inbound (child process)
 //
 // Xray's outbound sockets (its connection to the proxy server) must stay OUT of the tunnel
-// they serve, or the connection loops back on itself. VpnService.protect() marks a socket to
-// bypass the VPN; libXray calls back into `protect()` for every outbound socket through the
-// DialerController registered below.
+// they serve, or the connection loops back on itself. VpnService.protect() cannot reach
+// another process's sockets, so the tunnel excludes this package instead - a uid rule, and
+// the core runs under our uid, so it covers the core too. See startTunnel.
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -26,9 +25,8 @@ import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import androidx.core.app.ServiceCompat
-import libXray.DialerController
-import libXray.LibXray
 import org.json.JSONObject
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -44,6 +42,14 @@ class TunnelService : VpnService() {
 
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "vpn"
+
+        /** The core, as packaged by scripts/fetch-core.mjs. An `.so` name is what gets it
+         *  into nativeLibraryDir, the only directory Android lets an app exec from. */
+        private const val CORE_LIB = "libxray.so"
+
+        /** Written under filesDir (app-private) because the core is a separate process and
+         *  reads its config from a path, not from memory. It holds server credentials. */
+        private const val CONFIG_FILE = "tunnel-config.json"
 
         @Volatile
         var running: Boolean = false
@@ -81,11 +87,6 @@ class TunnelService : VpnService() {
 
     private var tun: ParcelFileDescriptor? = null
 
-    // Kept as a field so gomobile's Java-side reference survives for the tunnel's lifetime.
-    // Returns whether the socket was successfully excluded from the VPN; xray-core logs and
-    // proceeds either way, but a false here would mean a routing loop, so it should hold.
-    private val dialerController = DialerController { fd -> protect(fd.toInt()) }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> {
@@ -105,8 +106,9 @@ class TunnelService : VpnService() {
         }
 
         // Route the whole device, but exclude ourselves: Xray's own connection to the server
-        // must not be pulled back into the tunnel it is serving (protect() guards the
-        // individual sockets; this keeps our other traffic out too).
+        // must not be pulled back into the tunnel it is serving. The exclusion is by uid, so
+        // it covers the core's child process as well - which is the only thing keeping that
+        // loop from forming, since protect() cannot reach another process's sockets.
         val builder = Builder()
             .setSession("Disruptor Proxy")
             .setMtu(1500)
@@ -117,7 +119,11 @@ class TunnelService : VpnService() {
         try {
             builder.addDisallowedApplication(packageName)
         } catch (_: Exception) {
-            // Our own package is always installed; ignore.
+            // Our own package is always installed, so this should not be reachable - but a
+            // tunnel without the exclusion would route the core's uplink into itself, so
+            // give up rather than bring up something that cannot work.
+            stopSelf()
+            return
         }
 
         val descriptor = builder.establish()
@@ -138,56 +144,37 @@ class TunnelService : VpnService() {
         }
         ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(), type)
 
-        // libXray asks us to protect each outbound socket it dials, so Xray's uplink bypasses
-        // the tunnel. Registered before the core starts so the very first dial is covered.
-        LibXray.registerDialerController(dialerController)
-
-        val configWithEnv = injectRuntimeEnv(configJson, descriptor.fd)
+        val config = File(filesDir, CONFIG_FILE)
+        config.writeText(configJson)
 
         running = true
 
-        // invoke(runXrayFromJson) returns once the core has started, but loading geo data can
-        // take a moment, so keep it off the service's main thread. A start failure (bad
-        // config, missing geo files) tears the half-open tunnel back down.
+        // start() blocks long enough to see the core reject its config, and loading geo data
+        // can take a moment more, so keep it off the service's main thread. A start failure
+        // (bad config, missing geo files) tears the half-open tunnel back down.
         Thread({
-            val response = LibXray.invoke(runXrayFromJsonRequest(configWithEnv))
-            if (!JSONObject(response).optBoolean("success", false)) {
+            val started = XrayCore.start(
+                File(applicationInfo.nativeLibraryDir, CORE_LIB).absolutePath,
+                config.absolutePath,
+                filesDir.absolutePath,
+                descriptor.fd
+            )
+
+            if (!started) {
                 stopTunnel()
                 stopSelf()
             }
         }, "xray").start()
     }
 
-    /** Adds the two runtime-only values Xray needs into the config root `env` (which
-     *  xray-core applies with os.Setenv at load): the tun fd, known only after establish(),
-     *  and the asset dir where geoip/geosite live. */
-    private fun injectRuntimeEnv(configJson: String, fd: Int): String {
-        val config = JSONObject(configJson)
-        val env = config.optJSONObject("env") ?: JSONObject()
-        env.put("xray.tun.fd", fd.toString())
-        env.put("xray.location.asset", applicationContext.filesDir.absolutePath)
-        config.put("env", env)
-        return config.toString()
-    }
-
-    private fun runXrayFromJsonRequest(configJson: String): String =
-        JSONObject()
-            .put("apiVersion", 1)
-            .put("method", "runXrayFromJson")
-            .put("payload", JSONObject().put("configJSON", configJson))
-            .toString()
-
-    private fun stopXrayRequest(): String =
-        JSONObject()
-            .put("apiVersion", 1)
-            .put("method", "stopXray")
-            .toString()
-
     private fun stopTunnel() {
         if (running) {
-            LibXray.invoke(stopXrayRequest())
+            XrayCore.stop()
         }
         running = false
+
+        // The core is gone, so the config has no reader left; it holds server credentials.
+        File(filesDir, CONFIG_FILE).delete()
 
         try {
             tun?.close()
