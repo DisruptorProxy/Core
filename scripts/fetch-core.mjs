@@ -29,11 +29,21 @@ const XRAY_LIBS = path.join(ROOT, 'src-tauri', 'gen', 'android', 'app', 'xrayLib
 const RELEASES = 'https://github.com/XTLS/Xray-core/releases';
 
 // The ABIs the APK ships, and the release asset that carries the core for each. Kept in
-// step with `abiFilters` in gen/android/app/build.gradle.kts: an ABI with no core here
-// would install fine and then fail to start the tunnel.
+// step with `coreAbis` in gen/android/app/build.gradle.kts, which drives both `abiFilters`
+// and the build-time check: an ABI with no core here would install fine and then fail to
+// start the tunnel.
+//
+// Upstream builds an `android-*` asset for the 64-bit ABIs only. The 32-bit pair falls back
+// to the `linux-*` build of the same release, which works because Xray is pure Go compiled
+// with CGO disabled: the binary is static and talks to the same kernel ABI Android uses. The
+// one behavioural difference - a linux build has no access to Android's system-property DNS
+// - does not reach us, since the generated config gives Xray explicit resolvers and routes
+// every port-53 query into them.
 const ANDROID_ABIS = [
     { abi: 'arm64-v8a', target: 'android-arm64-v8a' },
-    { abi: 'x86_64', target: 'android-amd64' }
+    { abi: 'x86_64', target: 'android-amd64' },
+    { abi: 'armeabi-v7a', target: 'linux-arm32-v7a' },
+    { abi: 'x86', target: 'linux-32' }
 ];
 
 function fail(message)

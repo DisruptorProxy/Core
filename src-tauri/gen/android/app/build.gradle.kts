@@ -35,7 +35,7 @@ val keystoreFile = signingValue("storeFile", "ANDROID_KEYSTORE_PATH")?.let(rootP
 
 // The ABIs `npm run fetch-core:android` installs a core for (ANDROID_ABIS in that script).
 // The APK ships exactly these, and the build fails below if a core for one is missing.
-val coreAbis = listOf("arm64-v8a", "x86_64")
+val coreAbis = listOf("arm64-v8a", "x86_64", "armeabi-v7a", "x86")
 
 android {
     compileSdk = 36
