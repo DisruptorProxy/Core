@@ -33,6 +33,10 @@ fun signingValue(key: String, env: String): String? =
 // keystore.properties, so the file can name it plainly and stay portable.
 val keystoreFile = signingValue("storeFile", "ANDROID_KEYSTORE_PATH")?.let(rootProject::file)
 
+// The ABIs `npm run fetch-core:android` installs a core for (ANDROID_ABIS in that script).
+// The APK ships exactly these, and the build fails below if a core for one is missing.
+val coreAbis = listOf("arm64-v8a", "x86_64")
+
 android {
     compileSdk = 36
     namespace = "io.disruptorproxy.client"
@@ -101,6 +105,37 @@ android {
     dependenciesInfo {
         includeInApk = false
     }
+}
+
+// Without this the missing core is invisible: the APK builds, installs and launches
+// perfectly, and only at connect time does XrayCore.start find no binary to exec - so
+// TunnelService tears the tunnel straight back down and every request goes out
+// unproxied, which reads as "the proxy does nothing" rather than as a build error.
+//
+// It is a task of its own rather than a doFirst on the merge task, because that task
+// goes UP-TO-DATE whenever its source set is unchanged - and a skipped task skips its
+// actions too, so the check would pass on exactly the incremental builds it exists to
+// catch. Resolved to Files here, at configuration time, to stay configuration-cache safe.
+val corePaths = coreAbis.associateWith { file("xrayLibs/$it/libxray.so") }
+
+val verifyXrayCore = tasks.register("verifyXrayCore") {
+    description = "Fails the build unless the Xray core is present for every shipped ABI."
+    outputs.upToDateWhen { false }
+
+    doLast {
+        val missing = corePaths.filterValues { !it.exists() }.keys
+
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "Xray core missing for ${missing.joinToString()}. " +
+                    "Run `npm run fetch-core:android` from the repo root, then build again."
+            )
+        }
+    }
+}
+
+tasks.matching { it.name.matches(Regex("merge.*JniLibFolders")) }.configureEach {
+    dependsOn(verifyXrayCore)
 }
 
 rust {
