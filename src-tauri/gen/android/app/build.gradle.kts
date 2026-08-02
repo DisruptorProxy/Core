@@ -17,8 +17,10 @@ val tauriProperties = Properties().apply {
 // useless without this. Values come from keystore.properties (local, gitignored) or from
 // env vars (CI secrets); when neither is present the release build simply stays unsigned
 // rather than failing, so `tauri android build` still works for a smoke test.
+// Both the properties file and a relative storeFile resolve against gen/android
+// (rootProject), not app/ -- that is where they actually live.
 val keystoreProperties = Properties().apply {
-    val propFile = file("keystore.properties")
+    val propFile = rootProject.file("keystore.properties")
     if (propFile.exists()) {
         propFile.inputStream().use { load(it) }
     }
@@ -27,7 +29,9 @@ val keystoreProperties = Properties().apply {
 fun signingValue(key: String, env: String): String? =
     keystoreProperties.getProperty(key) ?: System.getenv(env)
 
-val keystorePath = signingValue("storeFile", "ANDROID_KEYSTORE_PATH")
+// An absolute path (what CI exports) is taken as-is; a bare filename is resolved next to
+// keystore.properties, so the file can name it plainly and stay portable.
+val keystoreFile = signingValue("storeFile", "ANDROID_KEYSTORE_PATH")?.let(rootProject::file)
 
 android {
     compileSdk = 36
@@ -39,12 +43,6 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
-        // The two ABIs fetch-core installs the core for (see ANDROID_ABIS there). The Rust
-        // lib builds for four; shipping the other two would mean an APK that installs on a
-        // device and then has no libxray.so to run.
-        ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
     }
 
     // The Xray core, fetched per ABI by `npm run fetch-core:android`. Kept out of
@@ -59,8 +57,8 @@ android {
     }
     signingConfigs {
         create("release") {
-            if (keystorePath != null) {
-                storeFile = file(keystorePath)
+            if (keystoreFile != null) {
+                storeFile = keystoreFile
                 storePassword = signingValue("storePassword", "ANDROID_KEYSTORE_PASSWORD")
                 keyAlias = signingValue("keyAlias", "ANDROID_KEY_ALIAS")
                 keyPassword = signingValue("keyPassword", "ANDROID_KEY_PASSWORD")
@@ -80,7 +78,9 @@ android {
             }
         }
         getByName("release") {
-            if (keystorePath != null) {
+            // Attaching a config with no keystore behind it fails the build outright, so an
+            // unconfigured checkout still produces the (unsigned) artifact.
+            if (keystoreFile != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
             isMinifyEnabled = true
@@ -96,6 +96,10 @@ android {
     }
     buildFeatures {
         buildConfig = true
+    }
+
+    dependenciesInfo {
+        includeInApk = false
     }
 }
 
