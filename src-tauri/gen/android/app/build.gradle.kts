@@ -103,6 +103,26 @@ android {
     }
 }
 
+// The ABIs `npm run fetch-core:android` installs a core for (ANDROID_ABIS in that script).
+val coreAbis = listOf("arm64-v8a", "x86_64")
+
+// Without this the missing core is invisible: the APK builds, installs and launches
+// perfectly, and only at connect time does XrayCore.start find no binary to exec - so
+// TunnelService tears the tunnel straight back down and every request goes out
+// unproxied, which reads as "the proxy does nothing" rather than as a build error.
+tasks.matching { it.name.matches(Regex("merge.*JniLibFolders")) }.configureEach {
+    doFirst {
+        val missing = coreAbis.filterNot { file("xrayLibs/$it/libxray.so").exists() }
+
+        if (missing.isNotEmpty()) {
+            throw GradleException(
+                "Xray core missing for ${missing.joinToString()}. " +
+                    "Run `npm run fetch-core:android` from the repo root, then build again."
+            )
+        }
+    }
+}
+
 rust {
     rootDirRel = "../../../"
 }
