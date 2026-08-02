@@ -252,9 +252,6 @@ export const zh: Strings =
 
     ping:
     {
-        tcp: 'TCP 测速',
-        proxy: '代理测速',
-        tcpLabel: 'TCP',
         proxyLabel: '代理'
     },
 

@@ -36,10 +36,6 @@ const PROBE_PASS: &str = "probe";
 /// A slow-but-usable server abroad can take several seconds on a first request, so
 /// this is generous - a probe that exceeds it is a failure, not a latency sample.
 const PROBE_TIMEOUT: Duration = Duration::from_secs(15);
-/// How long a raw TCP reachability probe waits for the handshake before giving up.
-/// Shorter than `PROBE_TIMEOUT`: a bare connect either answers quickly or the host is
-/// unreachable - there is no slow-but-usable middle the way a full proxied request has.
-const TCP_PING_TIMEOUT: Duration = Duration::from_secs(6);
 
 /// The live tunnel core, held per-platform (see `platform::RunningCore`). The lifecycle
 /// (launch/stop/reap) is OS-specific and lives in the `platform` backend; this is just
@@ -309,28 +305,6 @@ async fn probe_ping(user: String, port: u16) -> Result<u64, String> {
         .map_err(|e| format!("Ping request failed: {e}"))?;
 
     Ok(start.elapsed().as_millis() as u64)
-}
-
-/// One raw TCP reachability sample for a server: the time to complete a TCP handshake
-/// to its own `host:port`, with no proxy core involved. Unlike `probe_ping` (which
-/// proves the server actually PROXIES by fetching google through it), this only proves
-/// the endpoint answers and how far away it is - so it is fast, needs no xray, and
-/// works for every protocol, including ones the core cannot connect (tuic/hysteria).
-/// DNS resolution is part of the measured time, matching what other clients call a
-/// "TCP ping". Returns the elapsed milliseconds, or an error on refusal or timeout.
-#[tauri::command]
-async fn tcp_ping(host: String, port: u16) -> Result<u64, String> {
-    let addr = format!("{host}:{port}");
-    let start = Instant::now();
-
-    match tokio::time::timeout(TCP_PING_TIMEOUT, tokio::net::TcpStream::connect(&addr)).await {
-        Ok(Ok(_stream)) => Ok(start.elapsed().as_millis() as u64),
-        Ok(Err(e)) => Err(format!("TCP connect to {addr} failed: {e}")),
-        Err(_) => Err(format!(
-            "TCP connect to {addr} timed out after {}s",
-            TCP_PING_TIMEOUT.as_secs()
-        )),
-    }
 }
 
 /// Tears the prober down when a test finishes or is cancelled. Best-effort and safe
@@ -662,7 +636,6 @@ pub fn run() {
             ping_xray,
             start_probe,
             probe_ping,
-            tcp_ping,
             stop_probe,
             fetch_subscription,
             xray_traffic,

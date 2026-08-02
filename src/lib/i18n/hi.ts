@@ -252,9 +252,6 @@ export const hi: Strings =
 
     ping:
     {
-        tcp: 'TCP पिंग',
-        proxy: 'प्रॉक्सी पिंग',
-        tcpLabel: 'TCP',
         proxyLabel: 'प्रॉक्सी'
     },
 

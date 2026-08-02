@@ -177,7 +177,7 @@ export const useConnection = createStore(() =>
         // proxies quickest, so this ranks by the proxy round-trip, not a bare TCP touch.
         if (ranked.length === 0)
         {
-            await health.test(ids.slice(0, 80), 'proxy');
+            await health.test(ids.slice(0, 80));
             ranked = rank();
         }
 

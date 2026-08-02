@@ -11,7 +11,7 @@ import type { GeoAssets, TunEnvironment } from '../../../lib/xray/config';
 import { isMobilePlatform, usePlatform } from '../../../stores/platform';
 import { useRouting } from '../../../stores/routing';
 
-import type { ConnectionService, ConnectionStatus, PingMode, PingResult, TrafficSample } from './port';
+import type { ConnectionService, ConnectionStatus, PingResult, TrafficSample } from './port';
 
 /** True inside the Tauri desktop webview; false in a plain browser. */
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -130,28 +130,11 @@ export class TauriConnectionService implements ConnectionService
         this.setStatus({ phase: 'idle', config: null, since: 0 });
     }
 
-    public async ping(config: ProxyConfig, _signal: AbortSignal, mode: PingMode): Promise<PingResult>
+    public async ping(config: ProxyConfig, _signal: AbortSignal): Promise<PingResult>
     {
         if (!isTauri())
         {
             return { ok: false, error: NOT_DESKTOP };
-        }
-
-        // A raw TCP handshake to the server's own endpoint needs no core and no
-        // outbound mapper, so it works for EVERY protocol - even the ones `canConnect`
-        // rejects (tuic/hysteria). Only the proxy round-trip below needs the core.
-        if (mode === 'tcp')
-        {
-            try
-            {
-                const latencyMs = await invoke<number>('tcp_ping', { host: config.host, port: config.port });
-
-                return { ok: true, latencyMs };
-            }
-            catch (error)
-            {
-                return { ok: false, error: messageOf(error) };
-            }
         }
 
         if (!canConnect(config.protocol))

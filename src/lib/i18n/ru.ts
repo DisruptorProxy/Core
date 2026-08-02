@@ -252,9 +252,6 @@ export const ru: Strings =
 
     ping:
     {
-        tcp: 'TCP-пинг',
-        proxy: 'Пинг через прокси',
-        tcpLabel: 'TCP',
         proxyLabel: 'Прокси'
     },
 

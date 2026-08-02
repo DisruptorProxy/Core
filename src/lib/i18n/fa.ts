@@ -254,9 +254,6 @@ export const fa: Strings =
 
     ping:
     {
-        tcp: 'پینگ TCP',
-        proxy: 'پینگ پروکسی',
-        tcpLabel: 'TCP',
         proxyLabel: 'پروکسی'
     },
 

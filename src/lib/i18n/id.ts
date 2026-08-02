@@ -252,9 +252,6 @@ export const id: Strings =
 
     ping:
     {
-        tcp: 'Ping TCP',
-        proxy: 'Ping proxy',
-        tcpLabel: 'TCP',
         proxyLabel: 'Proxy'
     },
 

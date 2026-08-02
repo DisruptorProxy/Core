@@ -1,5 +1,3 @@
-import type { PingMode } from '../../features/connection/engine/port';
-
 const DB_NAME = 'disruptor-proxy';
 const DB_VERSION = 1;
 
@@ -8,14 +6,7 @@ export const STORE_HEALTH = 'health';
 export const STORE_SUBSCRIPTIONS = 'subscriptions';
 export const STORE_SETTINGS = 'settings';
 
-/**
- * Latency + reliability for ONE ping mode of a server.
- *
- * A server carries two of these (see `HealthRecord`). A raw TCP handshake and a real
- * proxy round-trip measure different things and land on very different numbers, so
- * they are tracked - and folded (see `foldStats`) - separately, never averaged into
- * one figure that would mean neither.
- */
+/** Latency + reliability for a server, folded over successive probes (see `foldStats`). */
 export interface LatencyStats
 {
     /** Exponentially-weighted mean latency in ms. Absent until the first success. */
@@ -37,19 +28,12 @@ export interface LatencyStats
  * writes 500 records - and if health lived on the config row, every probe would
  * rewrite the whole config (name, credentials, tags) and invalidate every index on
  * it. Splitting them keeps a probe a small write against a small store.
- *
- * The two ping modes are stored side by side rather than as one latency: they are
- * different measurements (see `LatencyStats`), so a server can show both at once.
  */
 export interface HealthRecord
 {
     configId: string;
-    /** Raw TCP-handshake latency to the server's own endpoint. */
-    tcp?: LatencyStats;
     /** Real latency of an HTTP round-trip through the server's outbound. */
     proxy?: LatencyStats;
-    /** The mode measured most recently - what the list row and latency sort read. */
-    lastMode?: PingMode;
 }
 
 type SubscriptionStatus = 'ok' | 'stale' | 'failed' | 'never';

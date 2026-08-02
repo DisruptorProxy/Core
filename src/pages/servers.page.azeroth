@@ -310,16 +310,9 @@ export default component ServersPage()
     <Sheet open={ () => actionsOpen } onClose={ () => actionsOpen = false } title={ t().servers.actions }>
         <div class="flex flex-col gap-1">
             <Show when={ canTest }>
-                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; void health.test(query.visibleIds(), 'tcp'); } }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; void health.test(query.visibleIds()); } }>
                     { icon(Gauge, 'size-5 shrink-0 text-muted') }
-                    <span>{ t().servers.test } · { t().ping.tcp }</span>
-                </button>
-            </Show>
-
-            <Show when={ canTest }>
-                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; void health.test(query.visibleIds(), 'proxy'); } }>
-                    { icon(Gauge, 'size-5 shrink-0 text-muted') }
-                    <span>{ t().servers.test } · { t().ping.proxy }</span>
+                    <span>{ t().servers.test }</span>
                 </button>
             </Show>
 

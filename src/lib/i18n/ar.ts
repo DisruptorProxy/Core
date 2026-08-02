@@ -252,9 +252,6 @@ export const ar: Strings =
 
     ping:
     {
-        tcp: 'اختبار TCP',
-        proxy: 'اختبار عبر الوكيل',
-        tcpLabel: 'TCP',
         proxyLabel: 'الوكيل'
     },
 
