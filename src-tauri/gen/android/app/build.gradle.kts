@@ -47,6 +47,14 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+
+        // Tied to `coreAbis` so the APK can never carry an ABI it has no core for. The Rust
+        // lib builds for every ABI regardless, and an APK holding only that would install
+        // happily and then fail to bring the tunnel up, since XrayCore.start would find no
+        // binary to exec - an "incompatible device" at install time is the honest answer.
+        ndk {
+            abiFilters += coreAbis
+        }
     }
 
     // The Xray core, fetched per ABI by `npm run fetch-core:android`. Kept out of
