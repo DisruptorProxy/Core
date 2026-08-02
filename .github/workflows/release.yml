@@ -290,7 +290,7 @@ jobs:
             # ./release-assets alongside the Windows ones, and the pattern makes a missing
             # android-assets (best-effort job) a non-event instead of a failure.
             -   name: Download the other platforms' artifacts
-                uses: actions/download-artifact@v4
+                uses: actions/download-artifact@v8
                 with:
                     path: release-assets
                     pattern: '*-assets'
