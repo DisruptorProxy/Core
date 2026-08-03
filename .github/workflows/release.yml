@@ -29,11 +29,20 @@ name: Release
 # A draft is invisible to the updater and to anonymous downloads (`releases/latest` only
 # resolves to a PUBLISHED release), so a bad build never reaches anyone until you say so.
 #
-# Required secrets (Settings > Secrets and variables > Actions):
-#   TAURI_SIGNING_PRIVATE_KEY           the updater signing key (base64 of the .key
-#                                        file, exactly as `tauri signer generate` wrote
-#                                        it - do not reformat).
+# Every secret below is OPTIONAL - the workflow degrades instead of failing, so a fork or a
+# repo with nothing configured still cuts a complete draft release. What each one buys:
+#
+#   TAURI_SIGNING_PRIVATE_KEY           base64 of the whole `.key` file `tauri signer
+#                                        generate` wrote, INCLUDING its `untrusted comment:`
+#                                        first line. Without it the installer ships with no
+#                                        .sig and the release has no latest.json, so the
+#                                        auto-updater will not offer it.
 #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password.
+#   ANDROID_KEYSTORE_BASE64             base64 of the release keystore. Without it the APK
+#   ANDROID_KEYSTORE_PASSWORD            is unsigned, and Android refuses to install it.
+#   ANDROID_KEY_ALIAS
+#   ANDROID_KEY_PASSWORD
+#
 # The default GITHUB_TOKEN publishes the release; no cross-repo PAT is involved.
 
 on:
@@ -109,10 +118,9 @@ jobs:
             -   name: Fetch the Linux Xray core
                 run: node scripts/fetch-core.mjs --target linux-64
 
+            # Unsigned on purpose: the .deb is a plain download, never an updater target,
+            # so it needs no key. createUpdaterArtifacts is off by default.
             -   name: Build the .deb
-                env:
-                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
                 run: npm run tauri build -- --bundles deb
 
             -   name: Stage the Linux artifact
@@ -277,13 +285,28 @@ jobs:
                     Write-Host "--- release notes ---"
                     Write-Host $body
 
-            # NSIS only - the MSI is not built. createUpdaterArtifacts in tauri.conf.json is
-            # what produces the .sig beside the installer.
-            -   name: Build and sign the NSIS installer
+            # NSIS only - the MSI is not built.
+            #
+            # createUpdaterArtifacts is FALSE in tauri.conf.json so that a build needs no
+            # secrets at all, and is turned back on here only when the updater key is
+            # actually present. It used to be unconditionally true, which meant every build
+            # - CI, a fork's PR, a fresh clone - died on a missing or malformed key. Without
+            # the key the installer still builds; it just ships without a .sig, and the step
+            # below leaves latest.json out rather than publishing an unusable manifest.
+            -   name: Build the NSIS installer
                 env:
                     TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
                     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-                run: npm run tauri build -- --bundles nsis
+                shell: bash
+                run: |
+                    if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+                        echo "Updater key present - building signed updater artifacts."
+                        npm run tauri build -- --bundles nsis \
+                            --config '{"bundle":{"createUpdaterArtifacts":true}}'
+                    else
+                        echo "::warning::No TAURI_SIGNING_PRIVATE_KEY - installer will ship without a .sig and the release will have no latest.json."
+                        npm run tauri build -- --bundles nsis
+                    fi
 
             # The .deb and .apk, staged by their own jobs. merge-multiple drops them into
             # ./release-assets alongside the Windows ones, and the pattern makes a missing
@@ -311,7 +334,6 @@ jobs:
                     $setup = Get-ChildItem "$bundle/nsis" | Where-Object { $_.Name -like '*-setup.exe' } | Select-Object -First 1
                     $sig   = Get-ChildItem "$bundle/nsis" | Where-Object { $_.Name -like '*-setup.exe.sig' } | Select-Object -First 1
                     if (-not $setup) { throw "NSIS installer not found under $bundle/nsis" }
-                    if (-not $sig)   { throw "Updater signature (.sig) not found - is createUpdaterArtifacts enabled and signing configured?" }
 
                     $out = 'release-assets'
                     New-Item -ItemType Directory -Force -Path $out | Out-Null
@@ -320,26 +342,39 @@ jobs:
                     # mangles spaces in asset names, which would break the updater URL).
                     $exeName = "Disruptor-Proxy_${version}_x64-setup.exe"
                     Copy-Item $setup.FullName (Join-Path $out $exeName)
-                    Copy-Item $sig.FullName   (Join-Path $out "$exeName.sig")
 
                     $notes = if (Test-Path 'release-notes.md') { (Get-Content -Raw 'release-notes.md').Trim() } else { "Disruptor Proxy $version" }
-                    $signature = (Get-Content -Raw $sig.FullName).Trim()
 
-                    # Windows is the only updater platform: the AppImage, which was Linux's
-                    # updater target, is no longer built. The .deb and .apk ship as plain
-                    # downloads - and the Tauri updater has no Android channel anyway.
-                    $manifest = [ordered]@{
-                        version   = $version
-                        notes     = $notes
-                        pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-                        platforms = [ordered]@{
-                            'windows-x86_64' = [ordered]@{
-                                signature = $signature
-                                url       = "https://github.com/$repo/releases/download/$tag/$exeName"
+                    # No .sig means the build ran without the updater key. Publish the
+                    # installer as a plain download rather than failing the release, and
+                    # leave latest.json out - a manifest with no signature would be rejected
+                    # by every client that polls it, which is worse than having none.
+                    if (-not $sig)
+                    {
+                        Write-Host "::warning::No .sig beside the installer - publishing without latest.json, so this release will NOT be offered to the auto-updater."
+                    }
+                    else
+                    {
+                        Copy-Item $sig.FullName (Join-Path $out "$exeName.sig")
+                        $signature = (Get-Content -Raw $sig.FullName).Trim()
+
+                        # Windows is the only updater platform: the AppImage, which was
+                        # Linux's updater target, is no longer built. The .deb and .apk ship
+                        # as plain downloads - and the Tauri updater has no Android channel
+                        # anyway.
+                        $manifest = [ordered]@{
+                            version   = $version
+                            notes     = $notes
+                            pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+                            platforms = [ordered]@{
+                                'windows-x86_64' = [ordered]@{
+                                    signature = $signature
+                                    url       = "https://github.com/$repo/releases/download/$tag/$exeName"
+                                }
                             }
                         }
+                        $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path (Join-Path $out 'latest.json') -Encoding utf8
                     }
-                    $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path (Join-Path $out 'latest.json') -Encoding utf8
 
                     Write-Host "Staged for $repo @ ${tag}:"
                     Get-ChildItem $out | ForEach-Object { Write-Host "  $($_.Name)" }

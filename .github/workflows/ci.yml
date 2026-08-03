@@ -127,13 +127,9 @@ jobs:
             -   name: Fetch the Linux Xray core
                 run: node scripts/fetch-core.mjs --target linux-64
 
-            # createUpdaterArtifacts signs the build, so the updater key is needed even for
-            # a throwaway CI bundle. Secrets are only present on same-repo pushes, which is
-            # exactly where this job runs.
+            # No secrets: createUpdaterArtifacts is off by default, so nothing here is
+            # signed and a fork's PR build works exactly like a same-repo push.
             -   name: Build the .deb + AppImage
-                env:
-                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
                 run: npm run tauri build -- --bundles deb,appimage
 
     windows-build:
@@ -161,9 +157,6 @@ jobs:
             -   run: npm ci
 
             -   name: Build the installer (nsis)
-                env:
-                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
                 run: npm run tauri build -- --bundles nsis
 
     android-build:
