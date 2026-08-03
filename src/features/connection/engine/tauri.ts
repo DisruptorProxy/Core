@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 
 import { getAllConfigs } from '../../../lib/db/repo';
 import type { ProxyConfig } from '../../../lib/proxy/types';
-import { buildConnectConfig, buildMobileConfig, buildPingConfig, canConnect } from '../../../lib/xray/config';
+import { PROBE_SOCKS_PORT, buildConnectConfig, buildMobileConfig, buildPingConfig, canConnect, probeUser } from '../../../lib/xray/config';
 import type { GeoAssets, TunEnvironment } from '../../../lib/xray/config';
 
 import { isMobilePlatform, usePlatform } from '../../../stores/platform';
@@ -172,6 +172,23 @@ export class TauriConnectionService implements ConnectionService
             // xray not running or the stats API is unreachable - nothing has moved.
             return { uplink: 0, downlink: 0 };
         }
+    }
+
+    /**
+     * Asked of the RUNNING core over its probe SOCKS port rather than fetched from the
+     * webview. A webview request would be right on desktop, where the tun captures the
+     * whole device - but wrong on Android, where TunnelService excludes this app's uid
+     * from the VPN, so the page would report the device's real address while connected.
+     * Authenticating as this server's probe user routes the lookup out its outbound.
+     */
+    public async exitIp(config: ProxyConfig): Promise<string>
+    {
+        if (!isTauri())
+        {
+            throw new Error(NOT_DESKTOP);
+        }
+
+        return await invoke<string>('exit_ip', { user: probeUser(config), port: PROBE_SOCKS_PORT });
     }
 }
 

@@ -52,6 +52,10 @@ export interface Strings
         download: string;
         /** Label before the total bytes moved this session, e.g. "Transferred 12.4 MB". */
         transferred: string;
+        /** Label on the box showing the public address the tunnel presents. */
+        exitIp: string;
+        /** Accessible name + tooltip for tapping that box to look the address up again. */
+        refreshIp: string;
     };
 
     servers:

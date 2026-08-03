@@ -46,7 +46,9 @@ export const es: Strings =
         duration: 'Duración',
         upload: 'Subida',
         download: 'Bajada',
-        transferred: 'Transferido'
+        transferred: 'Transferido',
+        exitIp: 'Dirección IP',
+        refreshIp: 'Actualizar dirección IP'
     },
 
     servers:

@@ -55,4 +55,10 @@ export interface ConnectionService
     ping(config: ProxyConfig, signal: AbortSignal): Promise<PingResult>;
     /** Live cumulative traffic of the active connection; zeros when nothing is running. */
     traffic(): Promise<TrafficSample>;
+    /**
+     * The public IP the internet currently sees, looked up THROUGH the given server's
+     * outbound - so while connected it is the server's address, not the device's. Rejects
+     * when nothing is running or the lookup fails.
+     */
+    exitIp(config: ProxyConfig): Promise<string>;
 }

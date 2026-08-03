@@ -46,7 +46,9 @@ export const zh: Strings =
         duration: '时长',
         upload: '上传',
         download: '下载',
-        transferred: '已传输'
+        transferred: '已传输',
+        exitIp: 'IP 地址',
+        refreshIp: '刷新 IP 地址'
     },
 
     servers:

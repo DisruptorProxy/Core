@@ -46,7 +46,9 @@ export const hi: Strings =
         duration: 'अवधि',
         upload: 'अपलोड',
         download: 'डाउनलोड',
-        transferred: 'स्थानांतरित'
+        transferred: 'स्थानांतरित',
+        exitIp: 'IP पता',
+        refreshIp: 'IP पता रिफ़्रेश करें'
     },
 
     servers:

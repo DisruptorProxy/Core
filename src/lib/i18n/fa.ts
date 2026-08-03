@@ -46,7 +46,9 @@ export const fa: Strings =
         duration: 'مدت',
         upload: 'آپلود',
         download: 'دانلود',
-        transferred: 'داده منتقل‌شده'
+        transferred: 'داده منتقل‌شده',
+        exitIp: 'آدرس IP',
+        refreshIp: 'تازه‌سازی آدرس IP'
     },
 
     servers:

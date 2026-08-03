@@ -307,6 +307,57 @@ async fn probe_ping(user: String, port: u16) -> Result<u64, String> {
     Ok(start.elapsed().as_millis() as u64)
 }
 
+/// Where the exit IP is read from. Plain text, one address, no JSON to misparse.
+const EXIT_IP_URL: &str = "https://api.ipify.org";
+
+/// How long to wait for the exit-IP lookup. Shorter than `PROBE_TIMEOUT`: this is a UI
+/// readout the user is watching, not a measurement worth stalling for.
+const EXIT_IP_TIMEOUT: Duration = Duration::from_secs(8);
+
+/// The public IP the internet currently sees for this device, looked up THROUGH the
+/// running core's probe SOCKS inbound rather than directly.
+///
+/// Going through the core is what makes the answer true on every platform. A direct
+/// request would be right on desktop, where the tun pulls in the whole device - but wrong
+/// on Android, where `TunnelService` excludes this app's uid from the VPN, so the webview
+/// and this process both reach the internet off-tunnel and would report the device's real
+/// address while connected. Authenticating as the active server's probe user sends the
+/// lookup out that server's outbound, so what comes back is the address the tunnel
+/// presents.
+///
+/// The response is parsed as an `IpAddr` before being returned: a captive portal or an
+/// error page would otherwise be shown to the user as though it were their address.
+#[tauri::command]
+async fn exit_ip(user: String, port: u16) -> Result<String, String> {
+    let addr = format!("127.0.0.1:{port}");
+
+    wait_for_port(&addr, Duration::from_secs(5)).await?;
+
+    let proxy = reqwest::Proxy::all(format!("socks5://{user}:{PROBE_PASS}@{addr}"))
+        .map_err(|e| format!("Invalid proxy url: {e}"))?;
+
+    let client = reqwest::Client::builder()
+        .proxy(proxy)
+        .timeout(EXIT_IP_TIMEOUT)
+        .build()
+        .map_err(|e| format!("Failed to build http client: {e}"))?;
+
+    let body = client
+        .get(EXIT_IP_URL)
+        .send()
+        .await
+        .map_err(|e| format!("IP lookup failed: {e}"))?
+        .text()
+        .await
+        .map_err(|e| format!("IP lookup returned no body: {e}"))?;
+
+    let ip = body.trim();
+
+    ip.parse::<std::net::IpAddr>()
+        .map(|_| ip.to_string())
+        .map_err(|_| "IP lookup returned something that is not an address".to_string())
+}
+
 /// Tears the prober down when a test finishes or is cancelled. Best-effort and safe
 /// to call when nothing is running.
 #[tauri::command]
@@ -636,6 +687,7 @@ pub fn run() {
             ping_xray,
             start_probe,
             probe_ping,
+            exit_ip,
             stop_probe,
             fetch_subscription,
             xray_traffic,

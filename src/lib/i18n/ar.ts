@@ -46,7 +46,9 @@ export const ar: Strings =
         duration: 'المدة',
         upload: 'رفع',
         download: 'تنزيل',
-        transferred: 'المنقول'
+        transferred: 'المنقول',
+        exitIp: 'عنوان IP',
+        refreshIp: 'تحديث عنوان IP'
     },
 
     servers:
