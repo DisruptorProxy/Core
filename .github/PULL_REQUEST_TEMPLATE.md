@@ -8,7 +8,7 @@
      e.g. "Connected and disconnected 5x on Windows 11 with VLESS+REALITY, watched the
      traffic counters move, confirmed no orphan core process after quitting." -->
 
-- Tested on: <!-- Windows / Linux / macOS / Android, and the version -->
+- Tested on: <!-- Windows / Linux / Android, and the version -->
 
 ## Screenshots
 

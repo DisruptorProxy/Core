@@ -37,7 +37,6 @@ body:
             options:
                 - Windows
                 - Linux
-                - macOS
                 - Android
                 - All of them
 

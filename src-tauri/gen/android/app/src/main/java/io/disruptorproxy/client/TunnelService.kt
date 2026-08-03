@@ -55,14 +55,31 @@ class TunnelService : VpnService() {
         var running: Boolean = false
             private set
 
-        /** Cumulative bytes through the `proxy` outbound since the core started, read from
-         *  Xray's metrics expvar. Zero when no connection is up (the endpoint is closed) -
-         *  the same "no connection" signal the desktop `xray_traffic` gives by failing. */
-        fun uplink(): Long = metric("uplink")
+        /** How often the metrics endpoint is sampled while the tunnel is up. */
+        private const val METRICS_POLL_MS = 1000L
 
-        fun downlink(): Long = metric("downlink")
+        /** Cumulative bytes through the `proxy` outbound since the core started. Zero when no
+         *  connection is up - the same "no connection" signal the desktop `xray_traffic` gives
+         *  by failing.
+         *
+         *  These are plain reads of a cached value, NOT a fetch. The plugin command behind
+         *  them arrives on the Android main thread (Tauri hands the JNI call to wry's MainPipe,
+         *  which the UI looper drains), and any blocking network call there throws
+         *  NetworkOnMainThreadException - which the catch below would have turned into a
+         *  permanent, silent 0. The poller thread does the fetching instead. */
+        fun uplink(): Long = lastUplink
 
-        private fun metric(direction: String): Long =
+        fun downlink(): Long = lastDownlink
+
+        @Volatile
+        private var lastUplink = 0L
+
+        @Volatile
+        private var lastDownlink = 0L
+
+        /** One sample of both counters, or null if the core is not serving metrics yet.
+         *  Both come from a single request so the pair can never be read half-updated. */
+        private fun sample(): Pair<Long, Long>? =
             try {
                 val connection = (URL("http://127.0.0.1:$METRICS_PORT/debug/vars").openConnection() as HttpURLConnection).apply {
                     connectTimeout = 500
@@ -79,13 +96,16 @@ class TunnelService : VpnService() {
                     .optJSONObject("stats")
                     ?.optJSONObject("outbound")
                     ?.optJSONObject("proxy")
-                    ?.optLong(direction, 0L) ?: 0L
+                    ?.let { it.optLong("uplink", 0L) to it.optLong("downlink", 0L) }
             } catch (_: Exception) {
-                0L
+                null
             }
     }
 
     private var tun: ParcelFileDescriptor? = null
+
+    /** Samples the core's metrics off the main thread; see [uplink]. */
+    private var metrics: Thread? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -163,8 +183,34 @@ class TunnelService : VpnService() {
             if (!started) {
                 stopTunnel()
                 stopSelf()
+                return@Thread
             }
+
+            startMetrics()
         }, "xray").start()
+    }
+
+    /** Polls the core's metrics endpoint for as long as the tunnel is up, caching the last
+     *  reading for [uplink]/[downlink] to return without touching the network. Started only
+     *  once the core is up, since until then there is nothing listening on METRICS_PORT. */
+    private fun startMetrics() {
+        metrics = Thread({
+            while (running) {
+                sample()?.let { (up, down) ->
+                    lastUplink = up
+                    lastDownlink = down
+                }
+
+                try {
+                    Thread.sleep(METRICS_POLL_MS)
+                } catch (_: InterruptedException) {
+                    return@Thread
+                }
+            }
+        }, "xray-metrics").apply {
+            isDaemon = true
+            start()
+        }
     }
 
     private fun stopTunnel() {
@@ -172,6 +218,14 @@ class TunnelService : VpnService() {
             XrayCore.stop()
         }
         running = false
+
+        // `running = false` already ends the loop; the interrupt just cuts a sleep short so
+        // the thread does not outlive the tunnel by up to a poll interval. The counters go
+        // back to zero because they are cumulative per core, and the next core starts afresh.
+        metrics?.interrupt()
+        metrics = null
+        lastUplink = 0L
+        lastDownlink = 0L
 
         // The core is gone, so the config has no reader left; it holds server credentials.
         File(filesDir, CONFIG_FILE).delete()

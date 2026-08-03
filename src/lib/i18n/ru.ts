@@ -46,7 +46,9 @@ export const ru: Strings =
         duration: 'Время',
         upload: 'Отдано',
         download: 'Принято',
-        transferred: 'Передано'
+        transferred: 'Передано',
+        exitIp: 'IP-адрес',
+        refreshIp: 'Обновить IP-адрес'
     },
 
     servers:
@@ -252,9 +254,6 @@ export const ru: Strings =
 
     ping:
     {
-        tcp: 'TCP-пинг',
-        proxy: 'Пинг через прокси',
-        tcpLabel: 'TCP',
         proxyLabel: 'Прокси'
     },
 
