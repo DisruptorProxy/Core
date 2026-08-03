@@ -42,14 +42,13 @@ jobs:
     rust:
         name: Rust (rustfmt, clippy)
         # The backend is platform-dispatched (src-tauri/src/platform): the Windows code is
-        # behind cfg(windows) and other targets compile the `unsupported` fallback (Linux
-        # gets its real backend in a later phase). So clippy runs on every desktop OS - a
-        # cross-platform break fails here the moment it lands, not only when someone builds
-        # on that OS.
+        # behind cfg(windows) and other targets compile the unix backend. So clippy runs on
+        # both shipped desktop OSes - a cross-platform break fails here the moment it lands,
+        # not only when someone builds on that OS.
         strategy:
             fail-fast: false
             matrix:
-                os: [ ubuntu-latest, macos-latest, windows-latest ]
+                os: [ ubuntu-latest, windows-latest ]
         runs-on: ${{ matrix.os }}
         steps:
             -   uses: actions/checkout@v7
@@ -82,8 +81,8 @@ jobs:
 
                     # tauri-build also validates that every bundle.resources path exists at
                     # compile time. The Windows core (app-xray.exe + wintun.dll) is committed,
-                    # but the unix core (assets/app-xray, named by tauri.{linux,macos}.conf.json)
-                    # is fetched at build time and absent in this lint-only job - so stub it.
+                    # but the unix core (assets/app-xray, named by tauri.linux.conf.json) is
+                    # fetched at build time and absent in this lint-only job - so stub it.
                     # Only the path's existence is checked, not its contents.
                     mkdir -p src-tauri/assets
                     touch src-tauri/assets/app-xray
@@ -137,52 +136,9 @@ jobs:
                     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
                 run: npm run tauri build -- --bundles deb,appimage
 
-    macos-build:
-        name: macOS build (universal app + dmg)
-        # Heavy; pushes to main only. Proves the macOS app bundles in exactly the shape
-        # release.yml ships - a UNIVERSAL build whose Xray core is two arch binaries fused
-        # with lipo - so that path is exercised on a push instead of first at tag time.
-        # UNSIGNED: code-signing + notarization need a paid Apple Developer account.
-        if: github.event_name == 'push'
-        runs-on: macos-latest
-        steps:
-            -   uses: actions/checkout@v7
-
-            -   uses: actions/setup-node@v7
-                with:
-                    node-version: 24
-                    cache: npm
-
-            -   uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
-                with:
-                    targets: aarch64-apple-darwin,x86_64-apple-darwin
-
-            -   uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
-                with:
-                    workspaces: src-tauri
-
-            -   run: npm ci
-
-            -   name: Fetch and fuse the macOS Xray cores
-                run: |
-                    node scripts/fetch-core.mjs --target macos-arm64-v8a
-                    mv src-tauri/assets/app-xray "$RUNNER_TEMP/app-xray-arm64"
-                    node scripts/fetch-core.mjs --target macos-64
-                    mv src-tauri/assets/app-xray "$RUNNER_TEMP/app-xray-x86_64"
-                    lipo -create "$RUNNER_TEMP/app-xray-arm64" "$RUNNER_TEMP/app-xray-x86_64" \
-                         -output src-tauri/assets/app-xray
-                    chmod +x src-tauri/assets/app-xray
-                    lipo -info src-tauri/assets/app-xray
-
-            -   name: Build the universal .app + .dmg (unsigned)
-                env:
-                    TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-                    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-                run: npm run tauri build -- --target universal-apple-darwin --bundles app,dmg
-
     windows-build:
         name: Windows build (nsis)
-        # Symmetry with the Linux/macOS build jobs: prove the Windows installer bundles on
+        # Symmetry with the Linux build job: prove the Windows installer bundles on
         # every push to main (the rust matrix only compiles). The core (app-xray.exe +
         # wintun.dll) is committed, so no fetch. The signed public release is still cut by
         # release.yml on a tag.

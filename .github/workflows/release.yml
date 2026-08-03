@@ -11,10 +11,9 @@ name: Release
 #   Disruptor-Proxy_<version>_amd64.deb           Linux direct download
 #   Disruptor-Proxy_<version>.apk                 Android direct download
 #   latest.json                                   the updater manifest
-# Nothing else is bundled on purpose: no MSI, no AppImage, no macOS .app/.dmg. Because the
-# AppImage was Linux's only updater target and macOS is gone, latest.json now covers
-# `windows-x86_64` only - .deb and .apk users update by downloading the new file. macOS still
-# builds in ci.yml, proving it bundles.
+# Nothing else is bundled on purpose: no MSI and no AppImage. The AppImage was Linux's only
+# updater target, so latest.json now covers `windows-x86_64` only - .deb and .apk users
+# update by downloading the new file. macOS is not a supported platform.
 #
 # Release notes are generated from Conventional Commits by git-cliff (cliff.toml) and spliced
 # into the release body AND the updater's latest.json "notes". Checkout uses fetch-depth: 0 so
@@ -326,10 +325,9 @@ jobs:
                     $notes = if (Test-Path 'release-notes.md') { (Get-Content -Raw 'release-notes.md').Trim() } else { "Disruptor Proxy $version" }
                     $signature = (Get-Content -Raw $sig.FullName).Trim()
 
-                    # Windows is the only updater platform: the AppImage (Linux's updater
-                    # target) and the macOS .app are no longer built. The .deb and .apk ship
-                    # as plain downloads - and the Tauri updater has no Android channel
-                    # anyway.
+                    # Windows is the only updater platform: the AppImage, which was Linux's
+                    # updater target, is no longer built. The .deb and .apk ship as plain
+                    # downloads - and the Tauri updater has no Android channel anyway.
                     $manifest = [ordered]@{
                         version   = $version
                         notes     = $notes

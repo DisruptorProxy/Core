@@ -28,10 +28,9 @@ Exactly four assets, plus the updater manifest:
 | `Disruptor-Proxy_<version>.apk` | Android, direct download |
 | `latest.json` | The updater manifest |
 
-Nothing else is bundled: no MSI, no AppImage, no macOS `.app`/`.dmg`. macOS still builds
-in `ci.yml`, proving it bundles — it just isn't released. Because the AppImage was Linux's
-only updater target and macOS is gone, `latest.json` covers `windows-x86_64` **only** —
-`.deb` and `.apk` users update by downloading the new file.
+Nothing else is bundled: no MSI and no AppImage. macOS is not a supported platform.
+Because the AppImage was Linux's only updater target, `latest.json` covers
+`windows-x86_64` **only** — `.deb` and `.apk` users update by downloading the new file.
 
 ## Cutting a release
 

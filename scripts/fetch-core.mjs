@@ -61,7 +61,7 @@ function arg(name)
 /** Maps the host to Xray's `<os>-<arch>` desktop asset suffix (Android is opt-in via --target/--android). */
 function hostTarget()
 {
-    const os = { win32: 'windows', linux: 'linux', darwin: 'macos' }[process.platform];
+    const os = { win32: 'windows', linux: 'linux' }[process.platform];
     const arch = { x64: '64', arm64: 'arm64-v8a', ia32: '32' }[process.arch];
 
     if (!os || !arch)
