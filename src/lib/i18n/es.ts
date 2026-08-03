@@ -46,7 +46,9 @@ export const es: Strings =
         duration: 'Duración',
         upload: 'Subida',
         download: 'Bajada',
-        transferred: 'Transferido'
+        transferred: 'Transferido',
+        exitIp: 'Dirección IP',
+        refreshIp: 'Actualizar dirección IP'
     },
 
     servers:
@@ -252,9 +254,6 @@ export const es: Strings =
 
     ping:
     {
-        tcp: 'Ping TCP',
-        proxy: 'Ping proxy',
-        tcpLabel: 'TCP',
         proxyLabel: 'Proxy'
     },
 

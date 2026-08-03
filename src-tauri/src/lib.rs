@@ -36,10 +36,6 @@ const PROBE_PASS: &str = "probe";
 /// A slow-but-usable server abroad can take several seconds on a first request, so
 /// this is generous - a probe that exceeds it is a failure, not a latency sample.
 const PROBE_TIMEOUT: Duration = Duration::from_secs(15);
-/// How long a raw TCP reachability probe waits for the handshake before giving up.
-/// Shorter than `PROBE_TIMEOUT`: a bare connect either answers quickly or the host is
-/// unreachable - there is no slow-but-usable middle the way a full proxied request has.
-const TCP_PING_TIMEOUT: Duration = Duration::from_secs(6);
 
 /// The live tunnel core, held per-platform (see `platform::RunningCore`). The lifecycle
 /// (launch/stop/reap) is OS-specific and lives in the `platform` backend; this is just
@@ -311,26 +307,55 @@ async fn probe_ping(user: String, port: u16) -> Result<u64, String> {
     Ok(start.elapsed().as_millis() as u64)
 }
 
-/// One raw TCP reachability sample for a server: the time to complete a TCP handshake
-/// to its own `host:port`, with no proxy core involved. Unlike `probe_ping` (which
-/// proves the server actually PROXIES by fetching google through it), this only proves
-/// the endpoint answers and how far away it is - so it is fast, needs no xray, and
-/// works for every protocol, including ones the core cannot connect (tuic/hysteria).
-/// DNS resolution is part of the measured time, matching what other clients call a
-/// "TCP ping". Returns the elapsed milliseconds, or an error on refusal or timeout.
-#[tauri::command]
-async fn tcp_ping(host: String, port: u16) -> Result<u64, String> {
-    let addr = format!("{host}:{port}");
-    let start = Instant::now();
+/// Where the exit IP is read from. Plain text, one address, no JSON to misparse.
+const EXIT_IP_URL: &str = "https://api.ipify.org";
 
-    match tokio::time::timeout(TCP_PING_TIMEOUT, tokio::net::TcpStream::connect(&addr)).await {
-        Ok(Ok(_stream)) => Ok(start.elapsed().as_millis() as u64),
-        Ok(Err(e)) => Err(format!("TCP connect to {addr} failed: {e}")),
-        Err(_) => Err(format!(
-            "TCP connect to {addr} timed out after {}s",
-            TCP_PING_TIMEOUT.as_secs()
-        )),
-    }
+/// How long to wait for the exit-IP lookup. Shorter than `PROBE_TIMEOUT`: this is a UI
+/// readout the user is watching, not a measurement worth stalling for.
+const EXIT_IP_TIMEOUT: Duration = Duration::from_secs(8);
+
+/// The public IP the internet currently sees for this device, looked up THROUGH the
+/// running core's probe SOCKS inbound rather than directly.
+///
+/// Going through the core is what makes the answer true on every platform. A direct
+/// request would be right on desktop, where the tun pulls in the whole device - but wrong
+/// on Android, where `TunnelService` excludes this app's uid from the VPN, so the webview
+/// and this process both reach the internet off-tunnel and would report the device's real
+/// address while connected. Authenticating as the active server's probe user sends the
+/// lookup out that server's outbound, so what comes back is the address the tunnel
+/// presents.
+///
+/// The response is parsed as an `IpAddr` before being returned: a captive portal or an
+/// error page would otherwise be shown to the user as though it were their address.
+#[tauri::command]
+async fn exit_ip(user: String, port: u16) -> Result<String, String> {
+    let addr = format!("127.0.0.1:{port}");
+
+    wait_for_port(&addr, Duration::from_secs(5)).await?;
+
+    let proxy = reqwest::Proxy::all(format!("socks5://{user}:{PROBE_PASS}@{addr}"))
+        .map_err(|e| format!("Invalid proxy url: {e}"))?;
+
+    let client = reqwest::Client::builder()
+        .proxy(proxy)
+        .timeout(EXIT_IP_TIMEOUT)
+        .build()
+        .map_err(|e| format!("Failed to build http client: {e}"))?;
+
+    let body = client
+        .get(EXIT_IP_URL)
+        .send()
+        .await
+        .map_err(|e| format!("IP lookup failed: {e}"))?
+        .text()
+        .await
+        .map_err(|e| format!("IP lookup returned no body: {e}"))?;
+
+    let ip = body.trim();
+
+    ip.parse::<std::net::IpAddr>()
+        .map(|_| ip.to_string())
+        .map_err(|_| "IP lookup returned something that is not an address".to_string())
 }
 
 /// Tears the prober down when a test finishes or is cancelled. Best-effort and safe
@@ -662,7 +687,7 @@ pub fn run() {
             ping_xray,
             start_probe,
             probe_ping,
-            tcp_ping,
+            exit_ip,
             stop_probe,
             fetch_subscription,
             xray_traffic,

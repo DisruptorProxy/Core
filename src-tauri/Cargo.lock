@@ -640,7 +640,7 @@ dependencies = [
 
 [[package]]
 name = "disruptor-proxy"
-version = "1.7.1"
+version = "1.7.3"
 dependencies = [
  "jni 0.21.1",
  "libc",
