@@ -5,12 +5,12 @@
 <h1 align="center">DisruptorProxy/Core</h1>
 
 <p align="center">
-  Source of <strong>Disruptor Proxy</strong>, a proxy client for Windows, Linux, macOS, and Android built on
+  Source of <strong>Disruptor Proxy</strong>, a proxy client for Windows, Linux, and Android built on
   <a href="https://github.com/XTLS/Xray-core">Xray-core</a>.
 </p>
 
 <p align="center">
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-0078D6" />
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-0078D6" />
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green" />
 </p>
 
@@ -78,7 +78,7 @@ npm run release -- patch --dry-run    # see every step first, changes nothing
 What that does, and what happens after:
 
 1. Bumps `package.json`, `src-tauri/Cargo.toml`, and syncs `Cargo.lock`'s own entry; commits and tags (`vX.Y.Z`); pushes both.
-2. The pushed tag triggers `.github/workflows/release.yml`: builds and signs, then publishes a **draft** release on this repo - the Windows installer + its `.sig`, the `.deb`, the `.apk`, and the `latest.json` the updater polls. Nothing else is bundled (no MSI, AppImage, or macOS build).
+2. The pushed tag triggers `.github/workflows/release.yml`: builds and signs, then publishes a **draft** release on this repo - the Windows installer + its `.sig`, the `.deb`, the `.apk`, and the `latest.json` the updater polls. Nothing else is bundled (no MSI or AppImage).
 3. Review the draft on GitHub, then publish it manually. A draft is invisible to the updater and to anonymous downloads until you do.
 
 The updater's public key lives in `tauri.conf.json`; the matching private key is a GitHub Actions secret (`TAURI_SIGNING_PRIVATE_KEY`) on this repo, never committed. The release is published by the default `GITHUB_TOKEN`.

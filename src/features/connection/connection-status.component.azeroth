@@ -1,5 +1,7 @@
 import { Show } from 'azerothjs';
 
+import { Globe } from 'lucide';
+
 import { formatBytes } from '../../lib/format/bytes';
 import { formatDuration } from '../../lib/format/duration';
 
@@ -7,10 +9,16 @@ import { useConnection } from '../../stores/connection';
 import { useLocale } from '../../stores/locale';
 
 import { flagIcon } from '../../components/flag';
+import { icon } from '../../components/icon';
 
 const TILE = 'flex flex-col items-center gap-0.5 rounded-xl border border-border bg-surface px-2 py-2.5';
 const TILE_KEY = 'text-[11px] text-muted';
 const TILE_VAL = 'readout text-sm font-semibold text-text';
+
+// A row rather than a tile: the address is long enough that a centred column would wrap
+// on a phone. Interactive because tapping it re-runs the lookup.
+const IP_BOX = 'flex w-full items-center justify-between gap-3 rounded-xl border border-border '
+    + 'bg-surface px-3 py-2.5 text-start hover:bg-elevated press disabled:opacity-60';
 
 /**
  * The live connection readout - the active server's identity and the session's
@@ -39,6 +47,26 @@ export default component ConnectionStatus()
                     { activeConfig().host }:{ activeConfig().port }
                 </span>
             </div>
+
+            <button
+                type="button"
+                class={ IP_BOX }
+                aria-label={ t().status.refreshIp }
+                data-tip={ t().status.refreshIp }
+                disabled={ connection.exitIpLoading() }
+                onClick={ () => void connection.refreshExitIp() }
+            >
+                <span class="flex items-center gap-1.5">
+                    { icon(Globe, connection.exitIpLoading() ? 'size-3.5 text-muted animate-pulse' : 'size-3.5 text-muted') }
+                    <span class={ TILE_KEY }>{ t().status.exitIp }</span>
+                </span>
+
+                <span class="readout text-sm font-semibold text-text" dir="ltr">
+                    { connection.exitIpLoading() && connection.exitIp() === null
+                        ? '…'
+                        : connection.exitIp() ?? '—' }
+                </span>
+            </button>
 
             <div class="grid grid-cols-3 gap-2">
                 <div class={ TILE }>

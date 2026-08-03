@@ -15,17 +15,6 @@ export interface ConnectionStatus
     error?: string;
 }
 
-/**
- * How a server's latency is measured.
- *
- *  - `tcp`   - a raw TCP handshake to the server's own host:port. Fast, needs no
- *              core, and works for every protocol (even ones we cannot proxy); it
- *              proves the endpoint answers and how far away it is, not that it proxies.
- *  - `proxy` - a real HTTP round-trip THROUGH the server's outbound. Slower (a core
- *              carries it) but the honest end-to-end latency: green means it proxies.
- */
-export type PingMode = 'tcp' | 'proxy';
-
 export interface PingResult
 {
     /** Round-trip latency in ms on success. */
@@ -59,10 +48,17 @@ export interface ConnectionService
     disconnect(): Promise<void>;
     status(): Getter<ConnectionStatus>;
     /**
-     * Probes one server in the given mode (`tcp` handshake, or `proxy` round-trip
-     * through the server). `signal` aborts an in-flight probe when a test is cancelled.
+     * Probes one server with a real HTTP round-trip THROUGH its outbound, so a green
+     * result means the server actually proxies rather than merely that its port answers.
+     * `signal` aborts an in-flight probe when a test is cancelled.
      */
-    ping(config: ProxyConfig, signal: AbortSignal, mode: PingMode): Promise<PingResult>;
+    ping(config: ProxyConfig, signal: AbortSignal): Promise<PingResult>;
     /** Live cumulative traffic of the active connection; zeros when nothing is running. */
     traffic(): Promise<TrafficSample>;
+    /**
+     * The public IP the internet currently sees, looked up THROUGH the given server's
+     * outbound - so while connected it is the server's address, not the device's. Rejects
+     * when nothing is running or the lookup fails.
+     */
+    exitIp(config: ProxyConfig): Promise<string>;
 }

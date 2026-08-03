@@ -46,7 +46,9 @@ export const vi: Strings =
         duration: 'Thời lượng',
         upload: 'Tải lên',
         download: 'Tải xuống',
-        transferred: 'Đã truyền'
+        transferred: 'Đã truyền',
+        exitIp: 'Địa chỉ IP',
+        refreshIp: 'Làm mới địa chỉ IP'
     },
 
     servers:
@@ -252,9 +254,6 @@ export const vi: Strings =
 
     ping:
     {
-        tcp: 'Ping TCP',
-        proxy: 'Ping proxy',
-        tcpLabel: 'TCP',
         proxyLabel: 'Proxy'
     },
 

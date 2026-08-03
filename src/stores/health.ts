@@ -5,7 +5,7 @@ import type { HealthRecord, LatencyStats } from '../lib/db/schema';
 import { runPool } from '../lib/health/pool';
 import { foldStats, score } from '../lib/health/score';
 
-import type { PingMode, PingResult } from '../features/connection/engine/port';
+import type { PingResult } from '../features/connection/engine/port';
 import { startProbeSession } from '../features/connection/engine/probe';
 
 interface TestState
@@ -21,56 +21,17 @@ const IDLE: TestState = { running: false, done: 0, total: 0 };
 const CONCURRENCY = 8;
 
 /**
- * The stats a list row and the latency sort read for a server: the mode measured
- * most recently, falling back to whichever mode has any data. Undefined until the
+ * The stats a list row and the latency sort read for a server. Undefined until the
  * server has been tested at all - which the row renders as "untested".
  */
-const statsFor = (record: HealthRecord | undefined): LatencyStats | undefined =>
-{
-    if (record === undefined)
-    {
-        return undefined;
-    }
+const statsFor = (record: HealthRecord | undefined): LatencyStats | undefined => record?.proxy;
 
-    const recent = record.lastMode !== undefined ? record[record.lastMode] : undefined;
-
-    // Prefer the freshest mode, but only where it actually measured something. A failed
-    // sweep leaves stats with no `ewmaMs` at all, and those must not blank out the other
-    // mode's good figure - which would also silently drop the row out of the latency
-    // sort. So fall through to whichever mode does have a number.
-    if (recent?.ewmaMs !== undefined)
-    {
-        return recent;
-    }
-
-    if (record.proxy?.ewmaMs !== undefined)
-    {
-        return record.proxy;
-    }
-
-    if (record.tcp?.ewmaMs !== undefined)
-    {
-        return record.tcp;
-    }
-
-    // Nothing measured yet: hand back the freshest stats so the row still reads as
-    // attempted (success rate, last error) rather than never-tested.
-    return recent ?? record.proxy ?? record.tcp;
-};
-
-/**
- * Folds a probe result into the record's stats for THAT mode, and marks the mode most
- * recent so the row and sort follow the freshest measurement. The other mode's stats
- * are carried through untouched, so a TCP ping never disturbs the proxy figure.
- */
-const applyResult = (record: HealthRecord | undefined, id: string, mode: PingMode, result: PingResult): HealthRecord =>
+/** Folds a probe result into the record's stats. */
+const applyResult = (record: HealthRecord | undefined, id: string, result: PingResult): HealthRecord =>
 {
     const base = record ?? { configId: id };
-    const stats = foldStats(mode === 'tcp' ? base.tcp : base.proxy, result);
 
-    return mode === 'tcp'
-        ? { ...base, configId: id, tcp: stats, lastMode: 'tcp' }
-        : { ...base, configId: id, proxy: stats, lastMode: 'proxy' };
+    return { ...base, configId: id, proxy: foldStats(base.proxy, result) };
 };
 
 /**
@@ -137,10 +98,10 @@ export const useHealth = createStore(() =>
         setPinging(next);
     };
 
-    /** Folds a single probe into a config's health for one mode - the per-config Ping action. */
-    const recordOne = async (id: string, mode: PingMode, result: PingResult): Promise<void> =>
+    /** Folds a single probe into a config's health - the per-config Ping action. */
+    const recordOne = async (id: string, result: PingResult): Promise<void> =>
     {
-        const folded = applyResult(records().get(id), id, mode, result);
+        const folded = applyResult(records().get(id), id, result);
         const next = new Map(records());
 
         next.set(id, folded);
@@ -154,7 +115,7 @@ export const useHealth = createStore(() =>
      * the signal in batches, so a 500-server test does a handful of re-renders, not
      * 500. A prior test is cancelled before a new one starts.
      */
-    const test = async (ids: string[], mode: PingMode): Promise<void> =>
+    const test = async (ids: string[]): Promise<void> =>
     {
         controller?.abort();
         controller = new AbortController();
@@ -202,15 +163,14 @@ export const useHealth = createStore(() =>
 
         const onResult = (id: string, result: PingResult): void =>
         {
-            working.set(id, applyResult(working.get(id), id, mode, result));
+            working.set(id, applyResult(working.get(id), id, result));
             workingPing.delete(id);
             dirty = true;
             pingDirty = true;
         };
 
-        // A proxy test reuses ONE core for the whole set (the live tunnel when
-        // connected, or a single throwaway prober when idle - never a core per
-        // server); a TCP test needs no core at all, just a handshake per server.
+        // The test reuses ONE core for the whole set (the live tunnel when connected,
+        // or a single throwaway prober when idle - never a core per server).
         //
         // Starting the session is INSIDE the try, and the flush timer is cleared in
         // `finally`: a prober that cannot start (missing core, port already bound) or a
@@ -220,7 +180,7 @@ export const useHealth = createStore(() =>
 
         try
         {
-            session = await startProbeSession(configs, mode);
+            session = await startProbeSession(configs);
 
             await runPool(configs, session.probe, CONCURRENCY, {
                 onStart,

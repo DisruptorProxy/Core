@@ -71,14 +71,16 @@ export const canConnect = (protocol: Protocol): boolean => SUPPORTED_PROTOCOLS.h
 
 interface XrayStreamSettings
 {
-    network: string;
-    security: string;
+    /** Absent on the built-in outbounds (freedom/dns), which carry only `sockopt`. */
+    network?: string;
+    security?: string;
     tlsSettings?: Record<string, unknown>;
     realitySettings?: Record<string, unknown>;
     wsSettings?: Record<string, unknown>;
     grpcSettings?: Record<string, unknown>;
     httpSettings?: Record<string, unknown>;
     xhttpSettings?: Record<string, unknown>;
+    sockopt?: Record<string, unknown>;
 }
 
 interface XrayOutbound
@@ -162,6 +164,23 @@ const NETWORK: Record<Transport, string> =
 };
 
 /**
+ * Socket options every outbound that dials carries.
+ *
+ * `tcpNoDelay` turns off Nagle's algorithm, which otherwise holds a small write back
+ * for up to ~40ms waiting to coalesce it with the next one - exactly the wrong trade
+ * for a proxy, whose traffic is mostly small interactive frames (TLS records, DNS
+ * queries, keystrokes) already paying one round-trip to the server. The cost is a few
+ * more packets on the wire.
+ *
+ * `tcpFastOpen` carries the first payload inside the SYN, saving a full round-trip on
+ * every connection after the first to a given server. Both ends and the kernel must
+ * support it; where they do not - or where a middlebox drops the TFO SYN - the stack
+ * falls back to an ordinary handshake, so this is a best-effort win rather than a
+ * requirement.
+ */
+const SOCKOPT: Record<string, unknown> = { tcpNoDelay: true, tcpFastOpen: true };
+
+/**
  * Stream settings shared by every protocol: transport + security. REALITY and TLS
  * are distinct security modes with different setting blocks; ws/grpc/http each
  * carry their own transport block. A fingerprint is defaulted to `chrome` under
@@ -172,7 +191,8 @@ const streamSettings = (config: ProxyConfig): XrayStreamSettings =>
     const stream: XrayStreamSettings =
     {
         network: NETWORK[config.transport],
-        security: config.security === 'none' ? 'none' : config.security
+        security: config.security === 'none' ? 'none' : config.security,
+        sockopt: SOCKOPT
     };
 
     if (config.security === 'reality')
@@ -362,7 +382,8 @@ const routingRulesFrom = (rules: Rule[], geo: GeoAssets = GEO_PRESENT): XrayRout
 /** Xray treats a bare `domain:x` as a subdomain match, so `.ir` and `ir` both mean the `.ir` zone. */
 const normalizeSuffix = (value: string): string => `domain:${ value.replace(/^\./, '') }`;
 
-const DIRECT: XrayOutbound = { tag: 'direct', protocol: 'freedom', settings: {} };
+const DIRECT: XrayOutbound = { tag: 'direct', protocol: 'freedom', settings: {}, streamSettings: { sockopt: SOCKOPT } };
+/** Blackhole discards without ever dialling, so it is the one outbound with no `sockopt`. */
 const BLOCK: XrayOutbound = { tag: 'block', protocol: 'blackhole', settings: {} };
 /**
  * Answers hijacked DNS in-core. Per Xray's `dns` outbound schema
@@ -376,7 +397,8 @@ const DNS_OUT: XrayOutbound =
 {
     tag: 'dns-out',
     protocol: 'dns',
-    settings: { rewriteNetwork: 'udp', rewriteAddress: '1.1.1.1', rewritePort: 53 }
+    settings: { rewriteNetwork: 'udp', rewriteAddress: '1.1.1.1', rewritePort: 53 },
+    streamSettings: { sockopt: SOCKOPT }
 };
 
 /**

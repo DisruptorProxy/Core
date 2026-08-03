@@ -75,6 +75,71 @@ export const useConnection = createStore(() =>
         onCleanup(() => window.clearInterval(timer));
     }, { name: 'connection-traffic' });
 
+    // The public address the tunnel presents. Unlike traffic this is NOT polled - a
+    // lookup is a real request through the proxy, and the answer only changes when the
+    // connection does. It is fetched once per connection and otherwise on demand.
+    const [exitIp, setExitIp] = createSignal<string | null>(null);
+    const [exitIpLoading, setExitIpLoading] = createSignal(false);
+
+    // Guards against a slow lookup from a previous connection landing after a switch and
+    // labelling the new server with the old server's address.
+    let exitIpToken = 0;
+
+    const refreshExitIp = async (): Promise<void> =>
+    {
+        const config = status().config;
+
+        if (status().phase !== 'connected' || config === null)
+        {
+            return;
+        }
+
+        const token = ++exitIpToken;
+
+        setExitIpLoading(true);
+
+        try
+        {
+            const ip = await service.exitIp(config);
+
+            if (token === exitIpToken)
+            {
+                setExitIp(ip);
+            }
+        }
+        catch
+        {
+            // Unreachable core, a server that cannot carry the request, or a body that
+            // was not an address. The card renders the null as a dash rather than an
+            // error - the connection itself is reported by `phase`.
+            if (token === exitIpToken)
+            {
+                setExitIp(null);
+            }
+        }
+        finally
+        {
+            if (token === exitIpToken)
+            {
+                setExitIpLoading(false);
+            }
+        }
+    };
+
+    createEffect(() =>
+    {
+        if (status().phase !== 'connected')
+        {
+            exitIpToken += 1;
+            setExitIp(null);
+            setExitIpLoading(false);
+
+            return;
+        }
+
+        void refreshExitIp();
+    }, { name: 'connection-exit-ip' });
+
     const phase = (): ConnectionPhase => status().phase;
     const activeConfig = (): ProxyConfig | null => status().config;
     const activeId = (): string | null => status().config?.id ?? null;
@@ -177,7 +242,7 @@ export const useConnection = createStore(() =>
         // proxies quickest, so this ranks by the proxy round-trip, not a bare TCP touch.
         if (ranked.length === 0)
         {
-            await health.test(ids.slice(0, 80), 'proxy');
+            await health.test(ids.slice(0, 80));
             ranked = rank();
         }
 
@@ -239,6 +304,9 @@ export const useConnection = createStore(() =>
         isActive,
         duration,
         traffic,
+        exitIp,
+        exitIpLoading,
+        refreshExitIp,
         connect,
         connectToId,
         disconnect,
