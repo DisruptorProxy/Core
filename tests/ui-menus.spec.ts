@@ -5,12 +5,11 @@ import { cleanup, fire, renderTest } from '@azerothjs/testing';
 import FilterMenu from '../src/components/filter-menu.component.azeroth';
 import FilterOptions from '../src/components/filter-options.component.azeroth';
 import type { FilterOption } from '../src/components/filter-options.component.azeroth';
-import PingMenu from '../src/components/ping-menu.component.azeroth';
 
 /** A handler a test supplies only because the prop is required. */
 const noop = (): void => undefined;
 
-// The three dropdowns. FilterOptions is the one carrying real logic - it windows its own
+// The two dropdowns. FilterOptions is the one carrying real logic - it windows its own
 // list and owns a typeahead - so it gets the most attention. What matters across all three
 // is that a menu can always be dismissed and that a disabled action cannot be reached.
 
@@ -200,51 +199,5 @@ describe('FilterMenu', () =>
 
         expect(trigger.getAttribute('aria-expanded')).toBe('true');
         expect(container.querySelector('[role="listbox"]')).not.toBeNull();
-    });
-});
-
-describe('PingMenu', () =>
-{
-    const base = {
-        variant: 'button' as const,
-        label: 'Test',
-        tcpLabel: 'TCP ping',
-        proxyLabel: 'Through proxy',
-        onPick: noop
-    };
-
-    it('opens to offer both ping modes', () =>
-    {
-        const { container } = renderTest(() => PingMenu({ ...base }));
-
-        fire(container.querySelector('button')!, 'click');
-
-        expect(container.textContent).toContain('TCP ping');
-        expect(container.textContent).toContain('Through proxy');
-    });
-
-    it('reports the mode that was picked', () =>
-    {
-        const onPick = vi.fn();
-        const { container } = renderTest(() => PingMenu({ ...base, onPick }));
-
-        fire(container.querySelector('button')!, 'click');
-
-        const item = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('TCP ping'))!;
-
-        fire(item, 'click');
-
-        expect(onPick).toHaveBeenCalledTimes(1);
-    });
-
-    it('disables the proxy mode when there is no proxy to ping through', () =>
-    {
-        const { container } = renderTest(() => PingMenu({ ...base, proxyDisabled: () => true }));
-
-        fire(container.querySelector('button')!, 'click');
-
-        const item = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('Through proxy'))!;
-
-        expect(item.disabled).toBe(true);
     });
 });

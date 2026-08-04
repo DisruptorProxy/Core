@@ -15,14 +15,24 @@
 //! rule - so the exclusion covers the core's sockets and the routing loop never forms.
 //!
 //! Called from Kotlin through `XrayCore` (gen/android/.../XrayCore.kt).
+//!
+//! jni 0.22 split `JNIEnv` into two types, and the split is the reason this file reads the
+//! way it does. `EnvUnowned` is the FFI-safe one and the only thing a native method may
+//! take as a parameter; it carries none of the JNI API. `Env` has the API but is not FFI
+//! safe. `with_env` bridges them: it attaches the thread, hands the closure an `&mut Env`,
+//! and catches any panic before it can unwind across the JNI boundary - which is undefined
+//! behaviour. `resolve` then applies an error policy, here "throw a Java exception and
+//! return the default", so a failure surfaces on the Kotlin side rather than as a silent
+//! `false` that looks like a core that merely refused its config.
 
 use std::process::{Child, Command, Stdio};
 use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
 
+use jni::errors::ThrowRuntimeExAndDefault;
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jint};
-use jni::JNIEnv;
+use jni::{Env, EnvUnowned};
 
 /// A bad config or a missing geo file makes Xray exit almost immediately. Waiting this long
 /// before declaring the core up turns that into a `false` from `start`, so the caller can
@@ -38,8 +48,9 @@ fn core() -> MutexGuard<'static, Option<Child>> {
     CORE.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
-fn read(env: &mut JNIEnv, value: &JString) -> Option<String> {
-    env.get_string(value).ok().map(Into::into)
+/// `Env::get_string` is deprecated in jni 0.22; the chars now come off the `JString` itself.
+fn read(env: &Env, value: &JString) -> Option<String> {
+    value.mutf8_chars(env).ok().map(Into::into)
 }
 
 fn stop_core(slot: &mut Option<Child>) {
@@ -54,69 +65,81 @@ fn stop_core(slot: &mut Option<Child>) {
 ///
 /// The fd stays owned by the caller - only a dup of it is handed on.
 #[no_mangle]
-pub extern "system" fn Java_io_disruptorproxy_client_XrayCore_start(
-    mut env: JNIEnv,
-    _class: JClass,
-    binary: JString,
-    config: JString,
-    asset_dir: JString,
+pub extern "system" fn Java_io_disruptorproxy_client_XrayCore_start<'local>(
+    mut unowned_env: EnvUnowned<'local>,
+    _class: JClass<'local>,
+    binary: JString<'local>,
+    config: JString<'local>,
+    asset_dir: JString<'local>,
     tun_fd: jint,
 ) -> jboolean {
-    let (Some(binary), Some(config), Some(asset_dir)) = (
-        read(&mut env, &binary),
-        read(&mut env, &config),
-        read(&mut env, &asset_dir),
-    ) else {
-        return 0;
-    };
+    unowned_env
+        .with_env(|env| -> jni::errors::Result<jboolean> {
+            let (Some(binary), Some(config), Some(asset_dir)) = (
+                read(env, &binary),
+                read(env, &config),
+                read(env, &asset_dir),
+            ) else {
+                return Ok(false);
+            };
 
-    let mut slot = core();
+            let mut slot = core();
 
-    // A second start with a core already running would orphan the first one.
-    stop_core(&mut slot);
+            // A second start with a core already running would orphan the first one.
+            stop_core(&mut slot);
 
-    // The copy the child inherits: dup() clears FD_CLOEXEC, which is exactly what lets it
-    // through exec. Same number on both sides, so XRAY_TUN_FD can just name it.
-    let fd = unsafe { libc::dup(tun_fd) };
+            // The copy the child inherits: dup() clears FD_CLOEXEC, which is exactly what
+            // lets it through exec. Same number on both sides, so XRAY_TUN_FD can just
+            // name it.
+            let fd = unsafe { libc::dup(tun_fd) };
 
-    if fd < 0 {
-        return 0;
-    }
+            if fd < 0 {
+                return Ok(false);
+            }
 
-    let spawned = Command::new(binary)
-        .arg("run")
-        .arg("-c")
-        .arg(config)
-        .env("XRAY_TUN_FD", fd.to_string())
-        .env("XRAY_LOCATION_ASSET", asset_dir)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn();
+            let spawned = Command::new(binary)
+                .arg("run")
+                .arg("-c")
+                .arg(config)
+                .env("XRAY_TUN_FD", fd.to_string())
+                .env("XRAY_LOCATION_ASSET", asset_dir)
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn();
 
-    // Ours was only ever the template for the child's copy; holding it open would keep the
-    // tun alive past `ParcelFileDescriptor.close()`.
-    unsafe { libc::close(fd) };
+            // Ours was only ever the template for the child's copy; holding it open would
+            // keep the tun alive past `ParcelFileDescriptor.close()`.
+            unsafe { libc::close(fd) };
 
-    let Ok(mut child) = spawned else {
-        return 0;
-    };
+            let Ok(mut child) = spawned else {
+                return Ok(false);
+            };
 
-    std::thread::sleep(STARTUP_GRACE);
+            std::thread::sleep(STARTUP_GRACE);
 
-    // Some(status) means it has already exited - it read the config and refused it.
-    if matches!(child.try_wait(), Ok(Some(_)) | Err(_)) {
-        let _ = child.wait();
-        return 0;
-    }
+            // Some(status) means it has already exited - it read the config and refused it.
+            if matches!(child.try_wait(), Ok(Some(_)) | Err(_)) {
+                let _ = child.wait();
 
-    *slot = Some(child);
+                return Ok(false);
+            }
 
-    1
+            *slot = Some(child);
+
+            Ok(true)
+        })
+        .resolve::<ThrowRuntimeExAndDefault>()
 }
 
 /// Stops the core, if one is running. Safe to call when none is.
+///
+/// Takes no `Env`: killing a child process touches nothing on the Java side, so there is
+/// nothing to attach for and no failure to report back.
 #[no_mangle]
-pub extern "system" fn Java_io_disruptorproxy_client_XrayCore_stop(_env: JNIEnv, _class: JClass) {
+pub extern "system" fn Java_io_disruptorproxy_client_XrayCore_stop(
+    _env: EnvUnowned<'_>,
+    _class: JClass<'_>,
+) {
     stop_core(&mut core());
 }
