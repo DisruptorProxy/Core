@@ -158,227 +158,220 @@ export default component ServersPage()
     { /* A real block root (not `contents`): the route transition animates THIS element,
          and a display:contents box cannot paint a transform or fade. */ }
     <div class="h-full">
-        <div class="flex h-full min-h-0">
-            <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col pb-14 md:pb-0">
-                <header class="glass-bar relative z-30 shrink-0 border-b border-border">
-                    <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-4">
-                        <div class="flex min-w-0 flex-col gap-0.5">
-                            <h1 class="text-lg font-semibold tracking-tight text-text">{ t().servers.title }</h1>
+    <div class="flex h-full min-h-0">
+    <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col pb-14 md:pb-0">
+        <header class="glass-bar relative z-30 shrink-0 border-b border-border">
+            <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-4">
+                <div class="flex min-w-0 flex-col gap-0.5">
+                    <h1 class="text-lg font-semibold tracking-tight text-text">{ t().servers.title }</h1>
 
-                            <Show
-                                when={ health.testState().running }
-                                fallback={ () =>
+                    <Show
+                        when={ health.testState().running }
+                        fallback={ () =>
                             <p class="readout text-sm text-muted">{ t().servers.countLabel(query.visibleIds().length) }</p>
                         }
-                            >
-                                <p class="readout text-sm text-accent">
+                    >
+                        <p class="readout text-sm text-accent">
                             { t().servers.testing(health.testState().done, health.testState().total) }
-                                </p>
-                            </Show>
-                        </div>
+                        </p>
+                    </Show>
+                </div>
 
                 { /* Import earns its own button: it is how servers first get here, so it must
                      not be buried a tap deep. Everything else stays behind the one drawer
                      trigger (bottom sheet on phones, centred card on wide) - roomy, labelled
                      targets rather than five cryptic glyphs fighting for space beside the
                      title. A live test shows its progress in the subtitle above. */ }
-                        <Show when={ !selection.active() }>
-                            <div class="flex shrink-0 items-center gap-2">
-                                <button
-                                    type="button"
-                                    class={ ICON_BTN }
-                                    aria-label={ t().importing.openAction }
-                                    data-tip={ t().importing.openAction }
-                                    onClick={ () => importOpen = true }
-                                >
+                <Show when={ !selection.active() }>
+                    <div class="flex shrink-0 items-center gap-2">
+                        <button
+                            type="button"
+                            class={ ICON_BTN }
+                            aria-label={ t().importing.openAction }
+                            data-tip={ t().importing.openAction }
+                            onClick={ () => importOpen = true }
+                        >
                             { icon(Download, 'size-4') }
-                                </button>
+                        </button>
 
-                                <button
-                                    type="button"
-                                    class={ `${ ICON_BTN } relative` }
-                                    aria-label={ t().servers.actions }
-                                    data-tip={ t().servers.actions }
-                                    onClick={ () => actionsOpen = true }
-                                >
+                        <button
+                            type="button"
+                            class={ `${ ICON_BTN } relative` }
+                            aria-label={ t().servers.actions }
+                            data-tip={ t().servers.actions }
+                            onClick={ () => actionsOpen = true }
+                        >
                             { icon(SlidersHorizontal, 'size-4') }
 
-                                    <Show when={ isTesting }>
-                                        <span class="absolute end-1.5 top-1.5 size-2 animate-pulse rounded-full bg-accent" aria-hidden="true"></span>
-                                    </Show>
-                                </button>
-                            </div>
-                        </Show>
+                            <Show when={ isTesting }>
+                                <span class="absolute end-1.5 top-1.5 size-2 animate-pulse rounded-full bg-accent" aria-hidden="true"></span>
+                            </Show>
+                        </button>
                     </div>
-                </header>
+                </Show>
+            </div>
+        </header>
 
         { /* Body laid out like the Connect screen: a centred max-w-3xl column with generous
              padding, the filter bar and any notices floating above the list rather than as
              full-bleed bordered strips, and the list itself contained in a glass card - the
              same raised surface Connect uses for its status card. */ }
-                <Show when={ hasServers }>
-                    <div class="mx-auto w-full max-w-3xl shrink-0 px-5 pt-5">
-                        <FiltersBar />
-                    </div>
-                </Show>
+        <Show when={ hasServers }>
+            <div class="mx-auto w-full max-w-3xl shrink-0 px-5 pt-5">
+                <FiltersBar />
+            </div>
+        </Show>
 
-                <Show when={ subscriptions.error() }>
-                    <div class="mx-auto w-full max-w-3xl shrink-0 px-5 pt-5">
-                        <p class="rounded-xl border border-poor/40 bg-poor/5 px-3 py-2 text-sm text-poor">{ subscriptions.error() }</p>
-                    </div>
-                </Show>
+        <Show when={ subscriptions.error() }>
+            <div class="mx-auto w-full max-w-3xl shrink-0 px-5 pt-5">
+                <p class="rounded-xl border border-poor/40 bg-poor/5 px-3 py-2 text-sm text-poor">{ subscriptions.error() }</p>
+            </div>
+        </Show>
 
         { /* The card wraps its content instead of filling the column: collapse every group
              and it shrinks to the handful of headers left, rather than leaving a tall pane of
              empty glass under them. `max-h-full` keeps it inside the viewport, and the list
              inside scrolls once the content is taller than that. */ }
-                <Show when={ hasList }>
-                    <div class="min-h-0 flex-1">
-                        <div class="mx-auto h-full w-full max-w-3xl px-5 py-5">
-                            <div class="glass flex max-h-full flex-col overflow-hidden rounded-2xl">
-                                <Show
-                                    when={ query.visibleItems().length > 0 }
-                                    fallback={
-                                        <div class="flex items-center justify-center px-8 py-12 text-center text-sm text-muted">
-                                            { t().servers.noMatches }
-                                        </div>
-                                    }
-                                >
-                                    <ConfigList onEditSub={ openEditSub } onDeleteSub={ (sub) => deleteTarget = sub } />
-                                </Show>
-                            </div>
-                        </div>
+        <Show when={ hasList }>
+            <div class="min-h-0 flex-1">
+                <div class="mx-auto h-full w-full max-w-3xl px-5 py-5">
+                    <div class="glass flex max-h-full flex-col overflow-hidden rounded-2xl">
+                        <Show
+                            when={ query.visibleItems().length > 0 }
+                            fallback={
+                                <div class="flex items-center justify-center px-8 py-12 text-center text-sm text-muted">
+                                    { t().servers.noMatches }
+                                </div>
+                            }
+                        >
+                            <ConfigList onEditSub={ openEditSub } onDeleteSub={ (sub) => deleteTarget = sub } />
+                        </Show>
                     </div>
-                </Show>
+                </div>
+            </div>
+        </Show>
 
-                <Show when={ !hasList }>
-                    <div class="flex flex-1 flex-col items-center gap-6 overflow-y-auto px-5 py-10">
-                        <EmptyState glyph={ Server } title={ t().servers.empty } hint={ t().servers.emptyAction } />
+        <Show when={ !hasList }>
+            <div class="flex flex-1 flex-col items-center gap-6 overflow-y-auto px-5 py-10">
+                <EmptyState glyph={ Server } title={ t().servers.empty } hint={ t().servers.emptyAction } />
 
-                        <div class="flex w-full max-w-xs flex-col gap-3">
-                            <Button label={ t().subscriptions.add } leading={ Rss } block={ true } onPress={ () => openAddSub() } />
-                            <Button label={ t().importing.openAction } leading={ Download } variant="ghost" block={ true } onPress={ () => importOpen = true } />
-                        </div>
-                    </div>
-                </Show>
-            </section>
+                <div class="flex w-full max-w-xs flex-col gap-3">
+                    <Button label={ t().subscriptions.add } leading={ Rss } block={ true } onPress={ () => openAddSub() } />
+                    <Button label={ t().importing.openAction } leading={ Download } variant="ghost" block={ true } onPress={ () => importOpen = true } />
+                </div>
+            </div>
+        </Show>
+    </section>
 
     { /* The panel is not a permanent fixture: with no server open it holds nothing worth
          320px, so it collapses to zero and the list takes the whole width. Picking a server
          slides it back out. The inner column keeps its full width throughout, so the content
          slides rather than reflowing mid-animation. */ }
-            <Show when={ viewport.isWide() }>
-                <aside
-                    class={ () => `flex h-full min-h-0 shrink-0 overflow-hidden transition-[width] duration-300 ${ panelOpen ? 'w-80 border-s border-border' : 'w-0' }` }
-                    aria-hidden={ () => panelOpen ? 'false' : 'true' }
-                >
-                    <div class="flex h-full min-h-0 w-80 shrink-0 flex-col">
-                        <Show when={ liveVisible }>
-                            <div class="shrink-0 border-b border-border px-4 py-4">
-                                <div class="mb-3 flex items-center justify-center gap-2">
-                                    <span class={ () => `size-1.5 rounded-full ${ liveSettled ? 'bg-good' : 'animate-pulse bg-accent' }` }></span>
-                                    <span class={ () => `text-xs font-semibold ${ liveSettled ? 'text-good' : 'text-accent' }` }>{ liveLabel() }</span>
-                                </div>
+    <Show when={ viewport.isWide() }>
+        <aside
+            class={ () => `flex h-full min-h-0 shrink-0 overflow-hidden transition-[width] duration-300 ${ panelOpen ? 'w-80 border-s border-border' : 'w-0' }` }
+            aria-hidden={ () => panelOpen ? 'false' : 'true' }
+        >
+        <div class="flex h-full min-h-0 w-80 shrink-0 flex-col">
+            <Show when={ liveVisible }>
+                <div class="shrink-0 border-b border-border px-4 py-4">
+                    <div class="mb-3 flex items-center justify-center gap-2">
+                        <span class={ () => `size-1.5 rounded-full ${ liveSettled ? 'bg-good' : 'animate-pulse bg-accent' }` }></span>
+                        <span class={ () => `text-xs font-semibold ${ liveSettled ? 'text-good' : 'text-accent' }` }>{ liveLabel() }</span>
+                    </div>
 
-                                <ConnectionStatus />
-                            </div>
-                        </Show>
+                    <ConnectionStatus />
+                </div>
+            </Show>
 
             { /* The panel closes from here: now that it collapses away, a chosen server
                  needs a way back to the full-width list. */ }
-                        <Show when={ detail.openId() }>
-                            <div class="glass-bar flex shrink-0 items-center gap-2 border-b border-border px-4 py-4">
-                                <span class="min-w-0 flex-1 truncate text-sm font-semibold text-text">{ detail.config()?.name ?? '' }</span>
+            <Show when={ detail.openId() }>
+                <div class="glass-bar flex shrink-0 items-center gap-2 border-b border-border px-4 py-4">
+                    <span class="min-w-0 flex-1 truncate text-sm font-semibold text-text">{ detail.config()?.name ?? '' }</span>
 
-                                <button
-                                    type="button"
-                                    class="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-elevated hover:text-text press"
-                                    aria-label={ t().common.dismiss }
-                                    data-tip={ t().common.dismiss }
-                                    onClick={ () => detail.close() }
-                                >
+                    <button
+                        type="button"
+                        class="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-elevated hover:text-text press"
+                        aria-label={ t().common.dismiss }
+                        data-tip={ t().common.dismiss }
+                        onClick={ () => detail.close() }
+                    >
                         { icon(X, 'size-4') }
-                                </button>
-                            </div>
-                        </Show>
+                    </button>
+                </div>
+            </Show>
 
-                        <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-                            <ConfigDetail />
-                        </div>
-                    </div>
-                </aside>
+            <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+                <ConfigDetail />
+            </div>
+        </div>
+        </aside>
+    </Show>
+    </div>
+
+    <Transition when={ selection.active() } name="g-bulkbar" duration={ 320 }>
+        <BulkBar visibleIds={ query.visibleIds } />
+    </Transition>
+
+    <Sheet open={ () => actionsOpen } onClose={ () => actionsOpen = false } title={ t().servers.actions }>
+        <div class="flex flex-col gap-1">
+            <Show when={ canTest }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; void health.test(query.visibleIds()); } }>
+                    { icon(Gauge, 'size-5 shrink-0 text-muted') }
+                    <span>{ t().servers.test }</span>
+                </button>
+            </Show>
+
+            <Show when={ isTesting }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; health.cancel(); } }>
+                    { icon(CircleStop, 'size-5 shrink-0 text-poor') }
+                    <span class="text-poor">{ t().servers.stop }</span>
+                </button>
+            </Show>
+
+            <Show when={ hasServers }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; selection.enter(); } }>
+                    { icon(ListChecks, 'size-5 shrink-0 text-muted') }
+                    <span>{ t().servers.select }</span>
+                </button>
+            </Show>
+
+            <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; openAddSub(); } }>
+                { icon(Rss, 'size-5 shrink-0 text-muted') }
+                <span>{ t().subscriptions.add }</span>
+            </button>
+
+            <Show when={ hasList }>
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; toggleAll(); } }>
+                    <Show when={ allCollapsed() } fallback={ () => icon(ChevronsDownUp, 'size-5 shrink-0 text-muted') }>
+                        { icon(ChevronsUpDown, 'size-5 shrink-0 text-muted') }
+                    </Show>
+                    <span>{ () => allCollapsed() ? t().servers.expandAll : t().servers.collapseAll }</span>
+                </button>
             </Show>
         </div>
+    </Sheet>
 
-        <Transition when={ selection.active() } name="g-bulkbar" duration={ 320 }>
-            <BulkBar visibleIds={ query.visibleIds } />
-        </Transition>
+    <ImportSheet open={ () => importOpen } onClose={ () => importOpen = false } />
 
-        <Sheet open={ () => actionsOpen } onClose={ () => actionsOpen = false } title={ t().servers.actions }>
-            <div class="flex flex-col gap-1">
-                <Show when={ canTest }>
-                    <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; void health.test(query.visibleIds(), 'tcp'); } }>
-                    { icon(Gauge, 'size-5 shrink-0 text-muted') }
-                        <span>{ t().servers.test } · { t().ping.tcp }</span>
-                    </button>
-                </Show>
+    <SubscriptionEditor
+        open={ () => editorOpen }
+        initial={ () => editing }
+        onClose={ () => editorOpen = false }
+        onSubmit={ (url, name, intervalMin) => void submitSub(url, name, intervalMin) }
+    />
 
-                <Show when={ canTest }>
-                    <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; void health.test(query.visibleIds(), 'proxy'); } }>
-                    { icon(Gauge, 'size-5 shrink-0 text-muted') }
-                        <span>{ t().servers.test } · { t().ping.proxy }</span>
-                    </button>
-                </Show>
+    <DeleteDialog
+        sub={ () => deleteTarget }
+        onClose={ () => deleteTarget = null }
+        onConfirm={ (keepConfigs) => void confirmDelete(keepConfigs) }
+    />
 
-                <Show when={ isTesting }>
-                    <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; health.cancel(); } }>
-                    { icon(CircleStop, 'size-5 shrink-0 text-poor') }
-                        <span class="text-poor">{ t().servers.stop }</span>
-                    </button>
-                </Show>
-
-                <Show when={ hasServers }>
-                    <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; selection.enter(); } }>
-                    { icon(ListChecks, 'size-5 shrink-0 text-muted') }
-                        <span>{ t().servers.select }</span>
-                    </button>
-                </Show>
-
-                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; openAddSub(); } }>
-                { icon(Rss, 'size-5 shrink-0 text-muted') }
-                    <span>{ t().subscriptions.add }</span>
-                </button>
-
-                <Show when={ hasList }>
-                    <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; toggleAll(); } }>
-                        <Show when={ allCollapsed() } fallback={ () => icon(ChevronsDownUp, 'size-5 shrink-0 text-muted') }>
-                        { icon(ChevronsUpDown, 'size-5 shrink-0 text-muted') }
-                        </Show>
-                        <span>{ () => allCollapsed() ? t().servers.expandAll : t().servers.collapseAll }</span>
-                    </button>
-                </Show>
-            </div>
+    <Show when={ !viewport.isWide() }>
+        <Sheet open={ () => detail.openId() !== null } onClose={ () => detail.close() } title={ detail.config()?.name ?? '' }>
+            <ConfigDetail />
         </Sheet>
-
-        <ImportSheet open={ () => importOpen } onClose={ () => importOpen = false } />
-
-        <SubscriptionEditor
-            open={ () => editorOpen }
-            initial={ () => editing }
-            onClose={ () => editorOpen = false }
-            onSubmit={ (url, name, intervalMin) => void submitSub(url, name, intervalMin) }
-    />
-
-        <DeleteDialog
-            sub={ () => deleteTarget }
-            onClose={ () => deleteTarget = null }
-            onConfirm={ (keepConfigs) => void confirmDelete(keepConfigs) }
-    />
-
-        <Show when={ !viewport.isWide() }>
-            <Sheet open={ () => detail.openId() !== null } onClose={ () => detail.close() } title={ detail.config()?.name ?? '' }>
-                <ConfigDetail />
-            </Sheet>
-        </Show>
+    </Show>
     </div>
 }

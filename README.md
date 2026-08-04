@@ -5,13 +5,13 @@
 <h1 align="center">DisruptorProxy/Core</h1>
 
 <p align="center">
-  Source of <strong>Disruptor Proxy</strong>, a proxy client for Windows, Linux, macOS, and Android built on
+  Source of <strong>Disruptor Proxy</strong>, a proxy client for Windows, Linux, and Android built on
   <a href="https://github.com/XTLS/Xray-core">Xray-core</a>.
 </p>
 
 <p align="center">
   <a href="https://github.com/DisruptorProxy/Core/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/DisruptorProxy/Core/actions/workflows/ci.yml/badge.svg" /></a>
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-0078D6" />
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-0078D6" />
   <a href="https://github.com/AzerothJS/AzerothJS"><img alt="Built with AzerothJS" src="https://img.shields.io/badge/built%20with-AzerothJS-5fb3e8" /></a>
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green" />
 </p>
@@ -148,11 +148,12 @@ What that produces and what it depends on:
 - **Updates are signed.** The updater's public key lives in `tauri.conf.json` and the matching
   private key is a GitHub Actions secret (`TAURI_SIGNING_PRIVATE_KEY`), never committed. The client
   polls `latest.json` on this repo's latest release.
-- **What is NOT built**: no MSI, and the macOS build is **unsigned and un-notarized** - code signing
-  needs a paid Apple Developer account. iOS is scaffolded but not wired: it needs `tauri ios init`,
-  a Packet Tunnel extension, and an xcframework core. See `docs/CROSS-PLATFORM.md`.
-- CI proves the Linux, macOS and Windows bundles on every push to main, and assembles the Android
-  APK best-effort. The signed public release is cut by the tag-triggered `release.yml`.
+- **What is NOT built**: no MSI, no AppImage, and **no macOS build** - signing and notarizing one
+  needs a paid Apple Developer account, so it was dropped rather than shipped unsigned. iOS is
+  scaffolded but not wired: it needs `tauri ios init`, a Packet Tunnel extension, and an
+  xcframework core. See `docs/CROSS-PLATFORM.md`.
+- CI proves the Linux and Windows bundles on every push to main, and assembles the Android APK
+  best-effort. The signed public release is cut by the tag-triggered `release.yml`.
 
 ### Windows SmartScreen and antivirus
 
@@ -192,7 +193,7 @@ npm run release -- patch --dry-run    # see every step first, changes nothing
    tags (`vX.Y.Z`); pushes both.
 2. The pushed tag triggers `.github/workflows/release.yml`: builds and signs, then publishes a
    **draft** release - the Windows installer + its `.sig`, the `.deb`, the `.apk`, and the
-   `latest.json` the updater polls.
+   `latest.json` the updater polls. Nothing else is bundled (no MSI, no AppImage).
 3. Review the draft on GitHub, then publish it manually. A draft is invisible to the updater and to
    anonymous downloads until you do.
 

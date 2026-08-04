@@ -46,7 +46,9 @@ export const id: Strings =
         duration: 'Durasi',
         upload: 'Unggah',
         download: 'Unduh',
-        transferred: 'Ditransfer'
+        transferred: 'Ditransfer',
+        exitIp: 'Alamat IP',
+        refreshIp: 'Segarkan alamat IP'
     },
 
     servers:
@@ -254,9 +256,6 @@ export const id: Strings =
 
     ping:
     {
-        tcp: 'Ping TCP',
-        proxy: 'Ping proxy',
-        tcpLabel: 'TCP',
         proxyLabel: 'Proxy'
     },
 

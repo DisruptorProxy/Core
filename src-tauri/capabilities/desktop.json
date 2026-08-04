@@ -4,8 +4,7 @@
     "description": "Desktop-only window chrome: the custom titlebar's window controls, the tray and its menu, the compact/expanded window modes, and the in-app updater. Mobile has none of these, so this capability is scoped away from android/iOS.",
     "platforms": [
         "windows",
-        "linux",
-        "macOS"
+        "linux"
     ],
     "windows": [
         "main"

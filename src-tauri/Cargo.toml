@@ -1,6 +1,6 @@
 [package]
 name = "disruptor-proxy"
-version = "1.7.1"
+version = "1.7.3"
 edition = "2021"
 
 [lib]
@@ -32,7 +32,7 @@ rustls = { version = "0.23", default-features = false, features = [ "ring" ] }
 # hand it (see src/android_core.rs). `jni` matches the version tauri already builds against;
 # `libc` is only here for dup/close on the fd.
 [target.'cfg(target_os = "android")'.dependencies]
-jni = "0.21"
+jni = "0.22"
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]

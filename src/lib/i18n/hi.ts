@@ -46,7 +46,9 @@ export const hi: Strings =
         duration: 'अवधि',
         upload: 'अपलोड',
         download: 'डाउनलोड',
-        transferred: 'स्थानांतरित'
+        transferred: 'स्थानांतरित',
+        exitIp: 'IP पता',
+        refreshIp: 'IP पता रिफ़्रेश करें'
     },
 
     servers:
@@ -254,9 +256,6 @@ export const hi: Strings =
 
     ping:
     {
-        tcp: 'TCP पिंग',
-        proxy: 'प्रॉक्सी पिंग',
-        tcpLabel: 'TCP',
         proxyLabel: 'प्रॉक्सी'
     },
 

@@ -1,6 +1,6 @@
 import { Show } from 'azerothjs';
 
-import { Copy, Power, Server, Star, Trash2 } from 'lucide';
+import { Activity, Copy, Power, Server, Star, Trash2 } from 'lucide';
 
 import { canConnect } from '../../lib/xray/config';
 
@@ -12,9 +12,13 @@ import Button from '../../components/button.component.azeroth';
 import Card from '../../components/card.component.azeroth';
 import { flagIcon } from '../../components/flag';
 import { icon } from '../../components/icon';
-import PingMenu from '../../components/ping-menu.component.azeroth';
 
 import LatencyCell from './latency-cell.component.azeroth';
+
+// Matches the other small controls in the detail cards: shorter than the 44px
+// primary Button, which would tower over the card heading it sits beside.
+const PING_BUTTON = 'flex min-h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 '
+    + 'text-xs font-medium text-muted hover:bg-elevated disabled:pointer-events-none disabled:opacity-40';
 
 const FIELD = 'flex items-center justify-between gap-3 border-b border-border py-2 last:border-0';
 const KEY = 'text-xs text-muted';
@@ -89,23 +93,20 @@ export default component ConfigDetail()
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-medium text-muted">{ t().detail.health }</span>
 
-                    <PingMenu
-                        variant="button"
-                        label={ t().detail.ping }
-                        text={ () => detail.pinging() ? t().detail.pinging : t().detail.ping }
-                        busy={ () => detail.pinging() }
-                        disabled={ () => detail.pinging() }
-                        proxyDisabled={ () => !canConnect(config().protocol) }
-                        tcpLabel={ t().ping.tcp }
-                        proxyLabel={ t().ping.proxy }
-                        onPick={ (mode) => void detail.pingNow(mode) }
-                    />
+                    <button
+                        type="button"
+                        class={ PING_BUTTON }
+                        aria-label={ t().detail.ping }
+                        data-tip={ t().detail.ping }
+                        disabled={ detail.pinging() || !canConnect(config().protocol) }
+                        onClick={ () => void detail.pingNow() }
+                    >
+                        { icon(Activity, detail.pinging() ? 'size-3.5 animate-pulse' : 'size-3.5') }
+                        <span>{ detail.pinging() ? t().detail.pinging : t().detail.ping }</span>
+                    </button>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
-                    <LatencyCell label={ t().ping.tcpLabel } stats={ () => detail.record()?.tcp } untested={ t().detail.untested } successLabel={ t().detail.successRate } />
-                    <LatencyCell label={ t().ping.proxyLabel } stats={ () => detail.record()?.proxy } untested={ t().detail.untested } successLabel={ t().detail.successRate } />
-                </div>
+                <LatencyCell label={ t().ping.proxyLabel } stats={ () => detail.record()?.proxy } untested={ t().detail.untested } successLabel={ t().detail.successRate } />
             </Card>
 
             <Show when={ !canConnect(config().protocol) }>

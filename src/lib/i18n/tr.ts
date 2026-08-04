@@ -46,7 +46,9 @@ export const tr: Strings =
         duration: 'Süre',
         upload: 'Yükleme',
         download: 'İndirme',
-        transferred: 'Aktarılan'
+        transferred: 'Aktarılan',
+        exitIp: 'IP adresi',
+        refreshIp: 'IP adresini yenile'
     },
 
     servers:
@@ -254,9 +256,6 @@ export const tr: Strings =
 
     ping:
     {
-        tcp: 'TCP ping',
-        proxy: 'Proxy ping',
-        tcpLabel: 'TCP',
         proxyLabel: 'Proxy'
     },
 

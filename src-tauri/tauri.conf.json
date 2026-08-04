@@ -43,7 +43,7 @@
             "icons/icon.png",
             "icons/icon.ico"
         ],
-        "createUpdaterArtifacts": true,
+        "createUpdaterArtifacts": false,
         "windows":
         {
             "nsis":
