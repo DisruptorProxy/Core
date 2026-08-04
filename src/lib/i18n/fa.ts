@@ -261,10 +261,41 @@ export const fa: Strings =
         proxyLabel: 'پروکسی'
     },
 
+    editor:
+    {
+        addTitle: 'افزودن سرور',
+        tabForm: 'فرم',
+        tabJson: 'JSON',
+        jsonPlaceholder: 'یک سرور را به شکل JSON بچسبانید (outbound سینگ‌باکس یا پروفایل کامل).',
+        jsonInvalid: 'در این JSON سروری نیست.',
+        editTitle: 'ویرایش سرور',
+        duplicate: 'تکثیر',
+        name: 'نام',
+        namePlaceholder: 'سرور من',
+        address: 'نشانی',
+        port: 'درگاه',
+        uuid: 'شناسه',
+        password: 'گذرواژه',
+        method: 'رمزنگاری',
+        sni: 'SNI',
+        path: 'مسیر',
+        hostHeader: 'سرآیند میزبان',
+        flow: 'جریان',
+        publicKey: 'کلید عمومی',
+        shortId: 'شناسه کوتاه',
+        alpn: 'ALPN',
+        fingerprint: 'اثر انگشت',
+        allowInsecure: 'نادیده گرفتن گواهی',
+        allowInsecureHint: 'فقط اگر ارائه‌دهنده گفته است. سروری جعلی هم پذیرفته می‌شود.',
+        advanced: 'پیشرفته',
+        save: 'ذخیره',
+        invalid: 'نشانی و درگاه را وارد کنید.'
+    },
     common:
     {
         close: 'تمام',
         dismiss: 'بستن',
+        actionFailed: 'انجام نشد. چیزی تغییر نکرد.',
         serverNotFound: 'سرور پیدا نشد. احتمالاً حذف شده.'
     }
 };

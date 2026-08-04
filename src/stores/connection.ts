@@ -12,7 +12,7 @@ import { useToast } from './toast';
 import type { Rule } from '../lib/routing/types';
 
 import type { ConnectionPhase, TrafficSample } from '../features/connection/engine/port';
-import { service } from '../features/connection/engine/service';
+import { engine } from '../features/connection/engine/service';
 
 /** How often the live traffic counters are polled from the core while connected. */
 const TRAFFIC_POLL_MS = 2000;
@@ -31,7 +31,7 @@ const NO_TRAFFIC: TrafficSample = { uplink: 0, downlink: 0 };
 export const useConnection = createStore(() =>
 {
     const health = useHealth();
-    const status = service.status();
+    const status = engine().status();
 
     // A ticking clock while connected, so the status card shows a live duration.
     const [now, setNow] = createSignal(Date.now());
@@ -66,7 +66,7 @@ export const useConnection = createStore(() =>
             return;
         }
 
-        const poll = (): void => void service.traffic().then(setTraffic);
+        const poll = (): void => void engine().traffic().then(setTraffic);
 
         poll();
 
@@ -100,7 +100,7 @@ export const useConnection = createStore(() =>
 
         try
         {
-            const ip = await service.exitIp(config);
+            const ip = await engine().exitIp(config);
 
             if (token === exitIpToken)
             {
@@ -178,7 +178,7 @@ export const useConnection = createStore(() =>
 
         try
         {
-            await service.disconnect();
+            await engine().disconnect();
         }
         catch
         {
@@ -188,7 +188,7 @@ export const useConnection = createStore(() =>
 
         try
         {
-            await service.connect(config);
+            await engine().connect(config);
         }
         catch
         {
@@ -204,7 +204,11 @@ export const useConnection = createStore(() =>
 
     const connectToId = async (id: string): Promise<void> =>
     {
-        const config = await getConfig(id);
+        // Every caller is `void connectToId(...)`, so a rejection here has no owner. A
+        // storage read that FAILS and a server that is not THERE are the same thing from
+        // the user's side - the config cannot be reached - so both report the same way
+        // rather than one of them vanishing into an unhandled rejection.
+        const config = await getConfig(id).catch(() => undefined);
 
         if (config !== undefined)
         {
@@ -219,7 +223,7 @@ export const useConnection = createStore(() =>
         toast.error(t().common.serverNotFound);
     };
 
-    const disconnect = (): Promise<void> => service.disconnect();
+    const disconnect = (): Promise<void> => engine().disconnect();
 
     /**
      * Connects to the healthiest server among `ids` (usually the current filter).

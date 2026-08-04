@@ -11,7 +11,7 @@ import { useSubscriptions } from './subscriptions';
 import { useToast } from './toast';
 import { useViewport } from './viewport';
 
-import { service } from '../features/connection/engine/service';
+import { engine } from '../features/connection/engine/service';
 
 /**
  * The open server's full detail, and every action on it. This is a store rather
@@ -114,7 +114,7 @@ export const useDetail = createStore(() =>
         setPinging(true);
         health.markPinging(current.id);
 
-        const result = await service.ping(current, new AbortController().signal);
+        const result = await engine().ping(current, new AbortController().signal);
 
         await health.recordOne(current.id, result);
         health.clearPinging(current.id);

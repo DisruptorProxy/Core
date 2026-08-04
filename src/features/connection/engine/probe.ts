@@ -4,7 +4,7 @@ import type { ProxyConfig } from '../../../lib/proxy/types';
 import { PROBER_SOCKS_PORT, PROBE_SOCKS_PORT, buildProbeConfig, canConnect, probeUser } from '../../../lib/xray/config';
 
 import type { PingResult } from './port';
-import { service } from './service';
+import { engine } from './service';
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -104,7 +104,7 @@ export const startProbeSession = async (configs: ProxyConfig[]): Promise<ProbeSe
 
     // Connected: reuse the running tunnel core, which already holds every server's
     // probe user on its own port. Nothing to start, nothing to stop.
-    if (service.status()().phase === 'connected')
+    if (engine().status()().phase === 'connected')
     {
         return { probe: probeVia(PROBE_SOCKS_PORT), stop: async (): Promise<void> =>
         {} };

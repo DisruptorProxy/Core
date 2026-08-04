@@ -259,10 +259,41 @@ export const es: Strings =
         proxyLabel: 'Proxy'
     },
 
+    editor:
+    {
+        addTitle: 'Añadir servidor',
+        tabForm: 'Formulario',
+        tabJson: 'JSON',
+        jsonPlaceholder: 'Pega un servidor como objeto JSON (outbound de sing-box o un perfil completo).',
+        jsonInvalid: 'Ese JSON no contiene ningún servidor.',
+        editTitle: 'Editar servidor',
+        duplicate: 'Duplicar',
+        name: 'Nombre',
+        namePlaceholder: 'Mi servidor',
+        address: 'Dirección',
+        port: 'Puerto',
+        uuid: 'UUID',
+        password: 'Contraseña',
+        method: 'Cifrado',
+        sni: 'SNI',
+        path: 'Ruta',
+        hostHeader: 'Cabecera Host',
+        flow: 'Flow',
+        publicKey: 'Clave pública',
+        shortId: 'Short ID',
+        alpn: 'ALPN',
+        fingerprint: 'Huella',
+        allowInsecure: 'Omitir la comprobación del certificado',
+        allowInsecureHint: 'Solo si tu proveedor lo indica. Deja pasar a un servidor impostor.',
+        advanced: 'Avanzado',
+        save: 'Guardar',
+        invalid: 'Indica una dirección y un puerto.'
+    },
     common:
     {
         close: 'Hecho',
         dismiss: 'Descartar',
+        actionFailed: 'No funcionó. No se cambió nada.',
         serverNotFound: 'Servidor no encontrado. Puede que se haya eliminado.'
     }
 };

@@ -259,10 +259,41 @@ export const zh: Strings =
         proxyLabel: '代理'
     },
 
+    editor:
+    {
+        addTitle: '添加服务器',
+        tabForm: '表单',
+        tabJson: 'JSON',
+        jsonPlaceholder: '粘贴一个 JSON 格式的服务器（sing-box outbound 或完整配置）。',
+        jsonInvalid: '该 JSON 中没有服务器。',
+        editTitle: '编辑服务器',
+        duplicate: '复制',
+        name: '名称',
+        namePlaceholder: '我的服务器',
+        address: '地址',
+        port: '端口',
+        uuid: 'UUID',
+        password: '密码',
+        method: '加密',
+        sni: 'SNI',
+        path: '路径',
+        hostHeader: '主机头',
+        flow: 'Flow',
+        publicKey: '公钥',
+        shortId: 'Short ID',
+        alpn: 'ALPN',
+        fingerprint: '指纹',
+        allowInsecure: '跳过证书验证',
+        allowInsecureHint: '仅在服务商要求时使用，它会放行伪造的服务器。',
+        advanced: '高级',
+        save: '保存',
+        invalid: '请填写地址和端口。'
+    },
     common:
     {
         close: '完成',
         dismiss: '关闭',
+        actionFailed: '操作失败，没有任何更改。',
         serverNotFound: '找不到服务器，可能已被删除。'
     }
 };

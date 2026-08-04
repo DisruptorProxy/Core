@@ -1,0 +1,437 @@
+import { Show, combine, pattern, required } from 'azerothjs';
+
+import type { ProxyConfig } from '../../lib/proxy/types';
+import { decodeSubscription } from '../../lib/subs/decode';
+
+import { useLocale } from '../../stores/locale';
+
+import Button from '../../components/button.component.azeroth';
+import Sheet from '../../components/sheet.component.azeroth';
+
+interface ConfigEditorProps
+{
+    open: () => boolean;
+    /** The server being edited, or null to add a new one. */
+    initial: () => ProxyConfig | null;
+    onClose: () => void;
+    onSubmit: (result: EditorResult) => void;
+}
+
+/**
+ * A server can arrive two ways here: typed field by field, or pasted as JSON. The page
+ * turns the first into a link; the second already IS one by the time it leaves.
+ */
+export type EditorResult =
+    | { kind: 'form'; values: EditorValues }
+    | { kind: 'uri'; uri: string };
+
+export interface EditorValues
+{
+    protocol: string;
+    name: string;
+    host: string;
+    port: string;
+    credential: string;
+    method: string;
+    transport: string;
+    security: string;
+    sni: string;
+    path: string;
+    hostHeader: string;
+    flow: string;
+    publicKey: string;
+    shortId: string;
+    alpn: string;
+    tlsFingerprint: string;
+    allowInsecure: boolean;
+}
+
+/** Only what `build-uri.ts` can serialise - offering a protocol it cannot write is a trap. */
+const PROTOCOLS = ['vless', 'vmess', 'trojan', 'shadowsocks', 'hysteria2', 'tuic'];
+
+/** hysteria2 and tuic are QUIC-only; the rest carry a real transport choice. */
+const TRANSPORTS = ['tcp', 'ws', 'grpc', 'http', 'httpupgrade', 'xhttp'];
+const SECURITIES = ['none', 'tls', 'reality'];
+
+const FIELD = 'min-h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-text outline-none focus:border-accent';
+const LABEL = 'text-xs font-medium text-muted';
+const ROW = 'flex flex-col gap-1.5';
+const CHIP = 'rounded-lg border px-2.5 py-1 text-xs font-medium press';
+
+const fixedTransport = (protocol: string): boolean => protocol === 'hysteria2' || protocol === 'tuic' || protocol === 'shadowsocks';
+
+/**
+ * Add or edit a server by hand, the way v2rayN and NekoRay do - for a provider who sent
+ * credentials in a message rather than a link, and for fixing one wrong field without
+ * deleting and re-importing.
+ *
+ * Fields follow the PROTOCOL and TRANSPORT chosen: a shadowsocks server has an encryption
+ * method and no SNI, REALITY needs a public key and short id, and a path belongs to ws and
+ * grpc but not tcp. Showing all twenty at once is what makes NekoRay's dialog forbidding;
+ * showing the wrong six is worse, so the set is derived rather than fixed.
+ */
+export default component ConfigEditor(props: ConfigEditorProps)
+{
+    const { t } = useLocale();
+
+    state advanced = false;
+
+    form server =
+    {
+        protocol: 'vless',
+        name: '',
+        host: '',
+        port: '443',
+        credential: '',
+        method: 'aes-256-gcm',
+        transport: 'tcp',
+        security: 'tls',
+        sni: '',
+        path: '',
+        hostHeader: '',
+        flow: '',
+        publicKey: '',
+        shortId: '',
+        alpn: '',
+        tlsFingerprint: '',
+        allowInsecure: false
+    } with
+    {
+        validate:
+        {
+            // The same rules the import path enforces, so a typed server and a pasted one
+            // are refused for the same reasons. A host with a space or a scheme in it is
+            // the single most common paste mistake.
+            host: combine(required(''), pattern(/^[^\s/:]+$/, '')),
+            port: combine(required(''), pattern(/^\d{1,5}$/, ''))
+        },
+        onSubmit: (values) => props.onSubmit({ kind: 'form', values: { ...values } })
+    };
+
+    state mode = 'form' as 'form' | 'json';
+    state json = '';
+    state jsonError = '';
+
+    /**
+     * Reads one server out of pasted JSON, reusing the SAME decoder the import sheet uses
+     * for sing-box profiles - so a profile that imports in bulk also works here, and there
+     * is one JSON reader rather than two that can disagree. A bare outbound object is
+     * wrapped, since that is what a user copies out of someone else's config.
+     */
+    const submitJson = (): void =>
+    {
+        const text = json.trim();
+
+        let body = text;
+
+        if (text.startsWith('{') && !text.includes('"outbounds"'))
+        {
+            body = `{"outbounds":[${ text }]}`;
+        }
+
+        const decoded = decodeSubscription(body);
+        const first = decoded.body.split('\n').map((line) => line.trim()).find((line) => line !== '');
+
+        if (first === undefined)
+        {
+            jsonError = decoded.unsupported ?? t().editor.jsonInvalid;
+
+            return;
+        }
+
+        jsonError = '';
+        props.onSubmit({ kind: 'uri', uri: first });
+    };
+
+    // Seeded on OPEN only: `initial()` is read untracked, so the underlying config
+    // changing while the sheet is open can never wipe an edit in progress. Same rule the
+    // rule editor and subscription editor follow.
+    effect (props.open())
+    {
+        if (!props.open())
+        {
+            return;
+        }
+
+        const config = props.initial();
+
+        advanced = false;
+        server.reset();
+
+        if (config === null)
+        {
+            return;
+        }
+
+        server.setValue('protocol', config.protocol);
+        server.setValue('name', config.name);
+        server.setValue('host', config.host);
+        server.setValue('port', String(config.port));
+        server.setValue('credential', config.credential);
+        server.setValue('method', config.method ?? 'aes-256-gcm');
+        server.setValue('transport', config.transport);
+        server.setValue('security', config.security);
+        server.setValue('sni', config.sni ?? '');
+        server.setValue('path', config.path ?? '');
+        server.setValue('hostHeader', config.hostHeader ?? '');
+        server.setValue('flow', config.flow ?? '');
+        server.setValue('publicKey', config.publicKey ?? '');
+        server.setValue('shortId', config.shortId ?? '');
+        server.setValue('alpn', config.alpn ?? '');
+        server.setValue('tlsFingerprint', config.tlsFingerprint ?? '');
+        server.setValue('allowInsecure', config.allowInsecure);
+    }
+
+    // `isValid()` is true before any validator has run - they fire on change and on submit -
+    // so a form nobody has touched reports valid and Save would build `vless://@:443`. The
+    // required fields are checked directly so the button is honest from the first render.
+    derived canSave = server.isValid()
+        && server.values().host.trim() !== ''
+        && server.values().port.trim() !== '';
+
+    derived isShadowsocks = server.values().protocol === 'shadowsocks';
+    derived isReality = server.values().security === 'reality';
+    derived hasTransport = !fixedTransport(server.values().protocol);
+    derived carriesPath = hasTransport && server.values().transport !== 'tcp';
+    // Two different questions. hysteria2 and tuic are ALWAYS TLS - the parser hardcodes it -
+    // so offering them none/reality is a choice that does nothing. They still take an SNI.
+    // Shadowsocks encrypts at the protocol layer and takes neither.
+    derived carriesSecurityChoice = server.values().protocol === 'vless'
+        || server.values().protocol === 'vmess'
+        || server.values().protocol === 'trojan';
+
+    derived carriesTls = server.values().protocol !== 'shadowsocks';
+
+    /** vless calls it a UUID, everything else a password - the field is the same one. */
+    derived credentialLabel = server.values().protocol === 'vless' || server.values().protocol === 'vmess' || server.values().protocol === 'tuic'
+        ? t().editor.uuid
+        : t().editor.password;
+
+    <Sheet
+        open={ props.open }
+        onClose={ props.onClose }
+        title={ props.initial() === null ? t().editor.addTitle : t().editor.editTitle }
+    >
+        <form onSubmit={ server.handleSubmit }>
+            { /* Editing an existing server is always the form: its fields are already
+                 known, and a JSON box would be a worse way to change one of them. */ }
+            <Show when={ props.initial() === null }>
+                <div class="mb-3 flex gap-1.5" role="tablist">
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={ mode === 'form' ? 'true' : 'false' }
+                        class={ () => `${ CHIP } flex-1 ${ mode === 'form' ? 'border-accent bg-accent text-accent-ink' : 'border-border text-text hover:bg-elevated' }` }
+                        onClick={ () => mode = 'form' }
+                    >
+                        { t().editor.tabForm }
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={ mode === 'json' ? 'true' : 'false' }
+                        class={ () => `${ CHIP } flex-1 ${ mode === 'json' ? 'border-accent bg-accent text-accent-ink' : 'border-border text-text hover:bg-elevated' }` }
+                        onClick={ () => mode = 'json' }
+                    >
+                        { t().editor.tabJson }
+                    </button>
+                </div>
+            </Show>
+
+            <Show when={ mode === 'json' && props.initial() === null }>
+                <div class="flex flex-col gap-2">
+                    <textarea
+                        class="min-h-40 w-full resize-y rounded-xl border border-border bg-surface px-3 py-2 font-mono text-xs text-text outline-none placeholder:text-faint focus:border-accent"
+                        dir="ltr"
+                        spellcheck={ false }
+                        placeholder={ t().editor.jsonPlaceholder }
+                        bind:value={ json }
+                    ></textarea>
+
+                    <Show when={ jsonError !== '' }>
+                        <p class="text-xs text-poor">{ jsonError }</p>
+                    </Show>
+
+                    <div class="flex gap-2">
+                        <Button label={ t().common.close } variant="ghost" block={ true } onPress={ props.onClose } />
+                        <Button label={ t().editor.save } block={ true } disabled={ json.trim() === '' } onPress={ submitJson } />
+                    </div>
+                </div>
+            </Show>
+
+            <Show when={ mode === 'form' || props.initial() !== null }>
+                <div class="flex max-h-[60vh] flex-col gap-3 overflow-y-auto">
+                    <div class={ ROW }>
+                        <span class={ LABEL }>{ t().detail.protocol }</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            <For each={ PROTOCOLS } key={ (id) => id }>
+                        { (id) =>
+                            <button
+                                type="button"
+                                aria-pressed={ server.values().protocol === id ? 'true' : 'false' }
+                                class={ () => `${ CHIP } uppercase ${ server.values().protocol === id
+                                    ? 'border-accent bg-accent text-accent-ink'
+                                    : 'border-border text-text hover:bg-elevated' }` }
+                                onClick={ () => server.setValue('protocol', id) }
+                            >
+                                { id }
+                            </button>
+                        }
+                            </For>
+                        </div>
+                    </div>
+
+                    <div class={ ROW }>
+                        <span class={ LABEL }>{ t().editor.name }</span>
+                        <input class={ FIELD } placeholder={ t().editor.namePlaceholder } bind:value={ server.name } />
+                    </div>
+
+                    <div class="grid grid-cols-[1fr_auto] gap-2">
+                        <div class={ ROW }>
+                            <span class={ LABEL }>{ t().editor.address }</span>
+                            <input class={ FIELD } dir="ltr" autocapitalize="off" autocorrect="off" spellcheck={ false } bind:value={ server.host } />
+                        </div>
+                        <div class={ ROW }>
+                            <span class={ LABEL }>{ t().editor.port }</span>
+                            <input class={ `${ FIELD } w-24` } dir="ltr" inputmode="numeric" bind:value={ server.port } />
+                        </div>
+                    </div>
+
+                    <div class={ ROW }>
+                        <span class={ LABEL }>{ credentialLabel }</span>
+                        <input class={ FIELD } dir="ltr" autocapitalize="off" autocorrect="off" spellcheck={ false } bind:value={ server.credential } />
+                    </div>
+
+                    <Show when={ isShadowsocks }>
+                        <div class={ ROW }>
+                            <span class={ LABEL }>{ t().editor.method }</span>
+                            <input class={ FIELD } dir="ltr" bind:value={ server.method } />
+                        </div>
+                    </Show>
+
+                    <Show when={ hasTransport }>
+                        <div class={ ROW }>
+                            <span class={ LABEL }>{ t().detail.transport }</span>
+                            <div class="flex flex-wrap gap-1.5">
+                                <For each={ TRANSPORTS } key={ (id) => id }>
+                            { (id) =>
+                                <button
+                                    type="button"
+                                    aria-pressed={ server.values().transport === id ? 'true' : 'false' }
+                                    class={ () => `${ CHIP } ${ server.values().transport === id
+                                        ? 'border-accent bg-accent text-accent-ink'
+                                        : 'border-border text-text hover:bg-elevated' }` }
+                                    onClick={ () => server.setValue('transport', id) }
+                                >
+                                    { id }
+                                </button>
+                            }
+                                </For>
+                            </div>
+                        </div>
+                    </Show>
+
+                    <Show when={ carriesSecurityChoice }>
+                        <div class={ ROW }>
+                            <span class={ LABEL }>{ t().detail.security }</span>
+                            <div class="flex flex-wrap gap-1.5">
+                                <For each={ SECURITIES } key={ (id) => id }>
+                            { (id) =>
+                                <button
+                                    type="button"
+                                    aria-pressed={ server.values().security === id ? 'true' : 'false' }
+                                    class={ () => `${ CHIP } ${ server.values().security === id
+                                        ? 'border-accent bg-accent text-accent-ink'
+                                        : 'border-border text-text hover:bg-elevated' }` }
+                                    onClick={ () => server.setValue('security', id) }
+                                >
+                                    { id }
+                                </button>
+                            }
+                                </For>
+                            </div>
+                        </div>
+                    </Show>
+
+                    <Show when={ carriesPath }>
+                        <div class={ ROW }>
+                            <span class={ LABEL }>{ t().editor.path }</span>
+                            <input class={ FIELD } dir="ltr" bind:value={ server.path } />
+                        </div>
+                    </Show>
+
+                    <Show when={ carriesTls }>
+                        <div class={ ROW }>
+                            <span class={ LABEL }>{ t().editor.sni }</span>
+                            <input class={ FIELD } dir="ltr" autocapitalize="off" spellcheck={ false } bind:value={ server.sni } />
+                        </div>
+                    </Show>
+
+                { /* REALITY is not an option among others: it changes how the server is
+                     reached, and without these two it cannot connect at all. */ }
+                    <Show when={ isReality }>
+                        <div class={ ROW }>
+                            <span class={ LABEL }>{ t().editor.publicKey }</span>
+                            <input class={ FIELD } dir="ltr" bind:value={ server.publicKey } />
+                        </div>
+                        <div class={ ROW }>
+                            <span class={ LABEL }>{ t().editor.shortId }</span>
+                            <input class={ FIELD } dir="ltr" bind:value={ server.shortId } />
+                        </div>
+                    </Show>
+
+                    <button
+                        type="button"
+                        class="self-start text-xs font-medium text-accent press"
+                        aria-expanded={ advanced ? 'true' : 'false' }
+                        onClick={ () => advanced = !advanced }
+                    >
+                    { t().editor.advanced }
+                    </button>
+
+                    <Show when={ advanced }>
+                        <Show when={ carriesPath }>
+                            <div class={ ROW }>
+                                <span class={ LABEL }>{ t().editor.hostHeader }</span>
+                                <input class={ FIELD } dir="ltr" bind:value={ server.hostHeader } />
+                            </div>
+                        </Show>
+
+                        <Show when={ carriesTls }>
+                            <div class={ ROW }>
+                                <span class={ LABEL }>{ t().editor.alpn }</span>
+                                <input class={ FIELD } dir="ltr" bind:value={ server.alpn } />
+                            </div>
+                            <div class={ ROW }>
+                                <span class={ LABEL }>{ t().editor.fingerprint }</span>
+                                <input class={ FIELD } dir="ltr" bind:value={ server.tlsFingerprint } />
+                            </div>
+                        </Show>
+
+                        <Show when={ server.values().protocol === 'vless' }>
+                            <div class={ ROW }>
+                                <span class={ LABEL }>{ t().editor.flow }</span>
+                                <input class={ FIELD } dir="ltr" bind:value={ server.flow } />
+                            </div>
+                        </Show>
+
+                        <Show when={ carriesTls }>
+                            <label class="flex items-start gap-2.5 rounded-xl border border-border p-2.5">
+                                <input type="checkbox" class="mt-0.5 size-4 shrink-0" bind:checked={ server.allowInsecure } />
+                                <span class="flex flex-col gap-0.5">
+                                    <span class="text-sm text-text">{ t().editor.allowInsecure }</span>
+                                    <span class="text-[11px] leading-snug text-faint">{ t().editor.allowInsecureHint }</span>
+                                </span>
+                            </label>
+                        </Show>
+                    </Show>
+                </div>
+
+                <div class="mt-4 flex gap-2">
+                    <Button label={ t().common.close } variant="ghost" block={ true } onPress={ props.onClose } />
+                    <Button label={ t().editor.save } block={ true } disabled={ !canSave } onPress={ () => server.handleSubmit(new Event('submit')) } />
+                </div>
+            </Show>
+        </form>
+    </Sheet>
+}

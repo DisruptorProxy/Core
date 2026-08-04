@@ -33,9 +33,20 @@ export default component BulkBar(props: BulkBarProps)
         const ids = [...selection.selected()];
 
         selection.clear();
-        await configs.remove(ids);
-        // The bar has already closed, so the toast is the only confirmation.
-        toast.success(t().servers.deletedLabel(ids.length));
+
+        // The bar has already closed, so the toast is the only confirmation - and the only
+        // report of a failure. Unhandled, a storage error left the user looking at a list
+        // that still held everything they just asked to delete, with nothing said.
+        try
+        {
+            await configs.remove(ids);
+            toast.success(t().servers.deletedLabel(ids.length));
+        }
+        catch (error)
+        {
+            console.error('[disruptor-proxy] bulk delete failed:', error);
+            toast.error(t().common.actionFailed);
+        }
     };
 
     <div class="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-border bg-elevated/95 backdrop-blur md:bottom-0">

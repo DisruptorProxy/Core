@@ -1,4 +1,4 @@
-import { Show } from 'azerothjs';
+import { Show, createRef, onCleanup } from 'azerothjs';
 
 import { Search } from 'lucide';
 
@@ -28,6 +28,24 @@ export default component FiltersBar()
     const { t } = useLocale();
     const query = useServerQuery();
     const subscriptions = useSubscriptions();
+
+    const searchRef = createRef<HTMLDivElement>();
+
+    // Ctrl/Cmd+F focuses the search, the one shortcut a list of 8000 rows really wants.
+    // The key is already swallowed in production (src/main.ts blocks the native find bar),
+    // so this gives it a purpose instead of leaving it dead. Escape hands focus back, so
+    // the keyboard is never parked in the field.
+    const onShortcut = (event: KeyboardEvent): void =>
+    {
+        if ((event.ctrlKey || event.metaKey) && (event.key === 'f' || event.key === 'F'))
+        {
+            event.preventDefault();
+            searchRef.current?.querySelector('input')?.focus();
+        }
+    };
+
+    document.addEventListener('keydown', onShortcut);
+    onCleanup(() => document.removeEventListener('keydown', onShortcut));
 
     const sortOptions = (): FilterOption[] =>
     [
@@ -87,13 +105,17 @@ export default component FiltersBar()
     };
 
     <div class="flex flex-col gap-3">
-        <Input
-            type="search"
-            leading={ Search }
-            placeholder={ t().servers.searchPlaceholder }
-            value={ query.query() }
-            onInput={ (value) => query.setQuery(value) }
-        />
+        { /* The ref lands on a wrapper, not the Input: the field is a component, and
+             reaching for its element is not part of its contract. */ }
+        <div ref={ searchRef }>
+            <Input
+                type="search"
+                leading={ Search }
+                placeholder={ t().servers.searchPlaceholder }
+                value={ query.query() }
+                onInput={ (value) => query.setQuery(value) }
+            />
+        </div>
 
         <div class="flex flex-wrap gap-2">
             <button

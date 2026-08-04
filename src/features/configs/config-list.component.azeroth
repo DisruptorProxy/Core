@@ -81,11 +81,20 @@ export default component ConfigList(props: ConfigListProps)
     const health = useHealth();
     const { t } = useLocale();
 
-    const tap = (id: string): void =>
+    const tap = (id: string, range?: boolean): void =>
     {
         if (selection.active())
         {
-            selection.toggle(id);
+            // Shift-click ticks the whole run since the last one, in the order the list is
+            // showing - the desktop expectation for any list with a bulk delete behind it.
+            if (range === true)
+            {
+                selection.extendTo(id, query.visibleIds());
+            }
+            else
+            {
+                selection.toggle(id);
+            }
 
             return;
         }
@@ -111,7 +120,7 @@ export default component ConfigList(props: ConfigListProps)
                 isOpen: () => detail.openId() === id,
                 latency: () => health.latencyOf(id),
                 isPinging: () => health.isPinging(id),
-                onTap: () => tap(id),
+                onTap: (range) => tap(id, range),
                 onHold: () => selection.begin(id)
             });
     };

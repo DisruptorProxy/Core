@@ -24,7 +24,8 @@ interface ConfigRowProps
     /** Reactive: true while a probe for this row is in flight - shown in place of the value. */
     isPinging: () => boolean;
     /** Tap: toggles selection in select mode, otherwise opens the row. */
-    onTap: () => void;
+    /** `range` is true for a shift-click: extend from the last ticked row to this one. */
+    onTap: (range?: boolean) => void;
     /** Long-press / right-click: enter select mode with this row ticked. */
     onHold: () => void;
 }
@@ -138,8 +139,8 @@ export default component ConfigRow(props: ConfigRowProps)
         role="button"
         tabindex="0"
         aria-pressed={ () => props.selectMode() ? (props.isSelected() ? 'true' : 'false') : undefined }
-        onClick={ () => props.onTap() }
-        onKeyDown={ (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); props.onTap(); } } }
+        onClick={ (event) => props.onTap(event.shiftKey) }
+        onKeyDown={ (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); props.onTap(event.shiftKey); } } }
         onPointerDown={ (event) => startHold(event) }
         onPointerMove={ (event) => moveHold(event) }
         onPointerUp={ () => cancelHold() }

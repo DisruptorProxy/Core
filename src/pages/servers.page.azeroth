@@ -1,8 +1,11 @@
 import { Show, Transition } from 'azerothjs';
 
-import { ChevronsDownUp, ChevronsUpDown, CircleStop, Download, Gauge, ListChecks, Rss, Server, SlidersHorizontal, X } from 'lucide';
+import { ChevronsDownUp, ChevronsUpDown, CircleStop, Download, Gauge, ListChecks, Plus, Rss, Server, SlidersHorizontal, X } from 'lucide';
 
 import type { SubscriptionRecord } from '../lib/db/schema';
+import { buildUri } from '../lib/proxy/build-uri';
+import type { ProxyConfig } from '../lib/proxy/types';
+import { ParseFailure } from '../lib/proxy/uri';
 
 import { useConfigs } from '../stores/configs';
 import { useConnection } from '../stores/connection';
@@ -13,6 +16,7 @@ import { useLocale } from '../stores/locale';
 import { useServerQuery } from '../stores/query';
 import { useSelection } from '../stores/selection';
 import { useSubscriptions } from '../stores/subscriptions';
+import { useToast } from '../stores/toast';
 import { useViewport } from '../stores/viewport';
 
 import Button from '../components/button.component.azeroth';
@@ -22,6 +26,8 @@ import Sheet from '../components/sheet.component.azeroth';
 
 import BulkBar from '../features/configs/bulk-bar.component.azeroth';
 import ConfigDetail from '../features/configs/config-detail.component.azeroth';
+import ConfigEditor from '../features/configs/config-editor.component.azeroth';
+import type { EditorResult } from '../features/configs/config-editor.component.azeroth';
 import ConfigList from '../features/configs/config-list.component.azeroth';
 import FiltersBar from '../features/configs/filters-bar.component.azeroth';
 import ConnectionStatus from '../features/connection/connection-status.component.azeroth';
@@ -57,12 +63,75 @@ export default component ServersPage()
     const subscriptions = useSubscriptions();
     const groups = useGroups();
     const viewport = useViewport();
+    const configs = useConfigs();
+    const toast = useToast();
 
     state importOpen = false;
     state actionsOpen = false;
     state editorOpen = false;
     state editing = null as SubscriptionRecord | null;
     state deleteTarget = null as SubscriptionRecord | null;
+    state editorOpenManual = false;
+    state editorTarget = null as ProxyConfig | null;
+    state editorReplace = null as ProxyConfig | null;
+
+    /**
+     * Builds the link from the form and hands it to the parser, so a typed server takes the
+     * exact path a pasted one does. `editorTarget` is passed as the id to replace: an
+     * endpoint edit legitimately produces a different server, so the old row goes.
+     */
+    const submitManual = async (result: EditorResult): Promise<void> =>
+    {
+        editorOpenManual = false;
+
+        // JSON arrives already as a link; the form has to be built into one first.
+        if (result.kind === 'uri')
+        {
+            const saved = await configs.saveManual(result.uri, editorReplace?.id);
+
+            if (saved instanceof ParseFailure)
+            {
+                toast.error(saved.message);
+            }
+
+            return;
+        }
+
+        const values = result.values;
+
+        const draft = {
+            ...values,
+            port: Number(values.port),
+            name: values.name.trim() === '' ? values.host : values.name,
+            rawUri: '',
+            id: '',
+            tags: [],
+            favorite: false,
+            addedAt: Date.now()
+        } as unknown as ProxyConfig;
+
+        const saved = await configs.saveManual(buildUri(draft), editorReplace?.id);
+
+        // No success toast: the row appearing in the list and the sheet closing already say
+        // it worked. A failure has no such signal, so that one speaks.
+        if (saved instanceof ParseFailure)
+        {
+            toast.error(saved.message);
+        }
+    };
+
+    /**
+     * Opens the editor on an existing server. A DUPLICATE passes no replace target and
+     * clears the name, so saving adds a second server instead of consuming the first -
+     * which is the whole point of trying a variant.
+     */
+    const openManualEditor = (config: ProxyConfig, duplicate: boolean): void =>
+    {
+        detail.close();
+        editorTarget = duplicate ? { ...config, name: '' } as ProxyConfig : config;
+        editorReplace = duplicate ? null : config;
+        editorOpenManual = true;
+    };
 
     derived hasServers = rows().length > 0;
     // The grouped list appears whenever there is anything to organise - servers, or even a
@@ -303,7 +372,7 @@ export default component ServersPage()
                         </Show>
 
                         <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-                            <ConfigDetail />
+                            <ConfigDetail onEdit={ openManualEditor } />
                         </div>
                     </div>
                 </aside>
@@ -313,6 +382,13 @@ export default component ServersPage()
         <Transition when={ selection.active() } name="g-bulkbar" duration={ 320 }>
             <BulkBar visibleIds={ query.visibleIds } />
         </Transition>
+
+        <ConfigEditor
+            open={ () => editorOpenManual }
+            initial={ () => editorTarget }
+            onClose={ () => editorOpenManual = false }
+            onSubmit={ (result) => void submitManual(result) }
+        />
 
         <Sheet open={ () => actionsOpen } onClose={ () => actionsOpen = false } title={ t().servers.actions }>
             <div class="flex flex-col gap-1">
@@ -336,6 +412,13 @@ export default component ServersPage()
                         <span>{ t().servers.select }</span>
                     </button>
                 </Show>
+
+                { /* Sits beside "add a subscription", not inside Import: typing a server
+                     is creating one, not importing something that already exists. */ }
+                <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; editorTarget = null; editorOpenManual = true; } }>
+                { icon(Plus, 'size-5 shrink-0 text-muted') }
+                    <span>{ t().editor.addTitle }</span>
+                </button>
 
                 <button type="button" class={ DRAWER_ROW } onClick={ () => { actionsOpen = false; openAddSub(); } }>
                 { icon(Rss, 'size-5 shrink-0 text-muted') }
@@ -370,7 +453,7 @@ export default component ServersPage()
 
         <Show when={ !viewport.isWide() }>
             <Sheet open={ () => detail.openId() !== null } onClose={ () => detail.close() } title={ detail.config()?.name ?? '' }>
-                <ConfigDetail />
+                <ConfigDetail onEdit={ openManualEditor } />
             </Sheet>
         </Show>
     </div>

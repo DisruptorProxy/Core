@@ -274,10 +274,41 @@ export interface Strings
         proxyLabel: string;
     };
 
+    editor:
+    {
+        addTitle: string;
+        tabForm: string;
+        tabJson: string;
+        jsonPlaceholder: string;
+        jsonInvalid: string;
+        editTitle: string;
+        duplicate: string;
+        name: string;
+        namePlaceholder: string;
+        address: string;
+        port: string;
+        uuid: string;
+        password: string;
+        method: string;
+        sni: string;
+        path: string;
+        hostHeader: string;
+        flow: string;
+        publicKey: string;
+        shortId: string;
+        alpn: string;
+        fingerprint: string;
+        allowInsecure: string;
+        allowInsecureHint: string;
+        advanced: string;
+        save: string;
+        invalid: string;
+    };
     common:
     {
         close: string;
         dismiss: string;
+        actionFailed: string;
         /** Shown when a connect-by-id call finds no server in the database. */
         serverNotFound: string;
     };

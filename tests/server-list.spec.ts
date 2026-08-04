@@ -142,6 +142,32 @@ describe('FiltersBar', () =>
 
         expect(container.textContent?.toLowerCase()).toContain('sort');
     });
+
+    it('focuses the search on Ctrl+F, which is otherwise a dead key in this app', () =>
+    {
+        const { container } = renderTest(() => FiltersBar());
+        const search = container.querySelector('input')!;
+
+        document.body.appendChild(container);
+        expect(document.activeElement).not.toBe(search);
+
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, bubbles: true }));
+
+        expect(document.activeElement).toBe(search);
+    });
+
+    it('drops its document listener on teardown, so a remounted bar does not stack them', () =>
+    {
+        const before = renderTest(() => FiltersBar());
+
+        document.body.appendChild(before.container);
+        cleanup();
+
+        // After teardown the handler must be gone: firing the shortcut may not reach into
+        // a disposed component and focus an element that is no longer on the page.
+        expect(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', ctrlKey: true })))
+            .not.toThrow();
+    });
 });
 
 describe('SubscriptionUsage', () =>

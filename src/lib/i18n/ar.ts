@@ -259,10 +259,41 @@ export const ar: Strings =
         proxyLabel: 'الوكيل'
     },
 
+    editor:
+    {
+        addTitle: 'إضافة خادم',
+        tabForm: 'نموذج',
+        tabJson: 'JSON',
+        jsonPlaceholder: 'الصق خادمًا واحدًا بصيغة JSON (outbound الخاص بـ sing-box أو ملف كامل).',
+        jsonInvalid: 'لا يوجد خادم في هذا JSON.',
+        editTitle: 'تعديل الخادم',
+        duplicate: 'تكرار',
+        name: 'الاسم',
+        namePlaceholder: 'خادمي',
+        address: 'العنوان',
+        port: 'المنفذ',
+        uuid: 'المعرّف',
+        password: 'كلمة المرور',
+        method: 'التشفير',
+        sni: 'SNI',
+        path: 'المسار',
+        hostHeader: 'ترويسة المضيف',
+        flow: 'التدفق',
+        publicKey: 'المفتاح العام',
+        shortId: 'المعرّف القصير',
+        alpn: 'ALPN',
+        fingerprint: 'البصمة',
+        allowInsecure: 'تخطي فحص الشهادة',
+        allowInsecureHint: 'فقط إذا طلب مزوّدك ذلك. يسمح بمرور خادم منتحل.',
+        advanced: 'متقدم',
+        save: 'حفظ',
+        invalid: 'أدخل العنوان والمنفذ.'
+    },
     common:
     {
         close: 'تم',
         dismiss: 'إخفاء',
+        actionFailed: 'لم ينجح ذلك. لم يتغيّر شيء.',
         serverNotFound: 'الخادم غير موجود. ربما تم حذفه.'
     }
 };

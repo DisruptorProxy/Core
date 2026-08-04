@@ -259,10 +259,41 @@ export const vi: Strings =
         proxyLabel: 'Proxy'
     },
 
+    editor:
+    {
+        addTitle: 'Thêm máy chủ',
+        tabForm: 'Biểu mẫu',
+        tabJson: 'JSON',
+        jsonPlaceholder: 'Dán một máy chủ dạng JSON (outbound sing-box hoặc hồ sơ đầy đủ).',
+        jsonInvalid: 'JSON này không có máy chủ nào.',
+        editTitle: 'Sửa máy chủ',
+        duplicate: 'Nhân bản',
+        name: 'Tên',
+        namePlaceholder: 'Máy chủ của tôi',
+        address: 'Địa chỉ',
+        port: 'Cổng',
+        uuid: 'UUID',
+        password: 'Mật khẩu',
+        method: 'Mã hoá',
+        sni: 'SNI',
+        path: 'Đường dẫn',
+        hostHeader: 'Host header',
+        flow: 'Flow',
+        publicKey: 'Khoá công khai',
+        shortId: 'Short ID',
+        alpn: 'ALPN',
+        fingerprint: 'Vân tay',
+        allowInsecure: 'Bỏ qua kiểm tra chứng chỉ',
+        allowInsecureHint: 'Chỉ khi nhà cung cấp yêu cầu. Nó cho phép máy chủ giả mạo đi qua.',
+        advanced: 'Nâng cao',
+        save: 'Lưu',
+        invalid: 'Hãy nhập địa chỉ và cổng.'
+    },
     common:
     {
         close: 'Xong',
         dismiss: 'Bỏ qua',
+        actionFailed: 'Không thành công. Không có gì thay đổi.',
         serverNotFound: 'Không tìm thấy máy chủ. Có thể nó đã bị xóa.'
     }
 };

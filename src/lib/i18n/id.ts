@@ -259,10 +259,41 @@ export const id: Strings =
         proxyLabel: 'Proxy'
     },
 
+    editor:
+    {
+        addTitle: 'Tambah server',
+        tabForm: 'Formulir',
+        tabJson: 'JSON',
+        jsonPlaceholder: 'Tempel satu server sebagai JSON (outbound sing-box atau profil lengkap).',
+        jsonInvalid: 'JSON itu tidak berisi server.',
+        editTitle: 'Edit server',
+        duplicate: 'Duplikat',
+        name: 'Nama',
+        namePlaceholder: 'Server saya',
+        address: 'Alamat',
+        port: 'Porta',
+        uuid: 'UUID',
+        password: 'Kata sandi',
+        method: 'Enkripsi',
+        sni: 'SNI',
+        path: 'Jalur',
+        hostHeader: 'Header Host',
+        flow: 'Flow',
+        publicKey: 'Kunci publik',
+        shortId: 'Short ID',
+        alpn: 'ALPN',
+        fingerprint: 'Sidik jari',
+        allowInsecure: 'Lewati pemeriksaan sertifikat',
+        allowInsecureHint: 'Hanya jika penyedia Anda meminta. Server palsu pun akan lolos.',
+        advanced: 'Lanjutan',
+        save: 'Simpan',
+        invalid: 'Isi alamat dan porta.'
+    },
     common:
     {
         close: 'Selesai',
         dismiss: 'Tutup',
+        actionFailed: 'Gagal. Tidak ada yang berubah.',
         serverNotFound: 'Server tidak ditemukan. Mungkin sudah dihapus.'
     }
 };

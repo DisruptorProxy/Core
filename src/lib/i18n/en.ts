@@ -259,10 +259,41 @@ export const en: Strings =
         proxyLabel: 'Proxy'
     },
 
+    editor:
+    {
+        addTitle: 'Add a server',
+        tabForm: 'Form',
+        tabJson: 'JSON',
+        jsonPlaceholder: 'Paste one server as a JSON object (sing-box outbound or a full profile).',
+        jsonInvalid: 'That JSON has no server in it.',
+        editTitle: 'Edit server',
+        duplicate: 'Duplicate',
+        name: 'Name',
+        namePlaceholder: 'My server',
+        address: 'Address',
+        port: 'Port',
+        uuid: 'UUID',
+        password: 'Password',
+        method: 'Encryption',
+        sni: 'SNI',
+        path: 'Path',
+        hostHeader: 'Host header',
+        flow: 'Flow',
+        publicKey: 'Public key',
+        shortId: 'Short id',
+        alpn: 'ALPN',
+        fingerprint: 'Fingerprint',
+        allowInsecure: 'Skip certificate check',
+        allowInsecureHint: 'Only if your provider says so. It lets an impostor server pass.',
+        advanced: 'Advanced',
+        save: 'Save',
+        invalid: 'Fill in an address and a port.'
+    },
     common:
     {
         close: 'Done',
         dismiss: 'Dismiss',
+        actionFailed: 'That did not work. Nothing was changed.',
         serverNotFound: 'Server not found. It may have been deleted.'
     }
 };

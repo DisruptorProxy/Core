@@ -160,11 +160,10 @@ describe('BulkBar', () =>
         selection.toggle('a');
 
         const { container } = renderTest(() => BulkBar({ visibleIds: () => ['a', 'b'] }));
-        const buttons = [...container.querySelectorAll('button')];
+        // Cancel is FIRST; the last button is Delete, which would start a real removal.
+        const cancel = [...container.querySelectorAll('button')][0];
 
-        expect(buttons.length).toBeGreaterThan(0);
-
-        fire(buttons[buttons.length - 1], 'click');
+        fire(cancel, 'click');
 
         expect(selection.count()).toBe(0);
     });
@@ -217,6 +216,69 @@ describe('selection store', () =>
 
         expect(selection.count()).toBe(0);
         expect(selection.active()).toBe(false);
+    });
+
+    it('extendTo ticks the whole run between the last tick and the target', () =>
+    {
+        const selection = useSelection();
+        const visible = ['a', 'b', 'c', 'd', 'e'];
+
+        selection.enter();
+        selection.toggle('b');
+        selection.extendTo('d', visible);
+
+        expect([...selection.selected()].sort()).toEqual(['b', 'c', 'd']);
+    });
+
+    it('extends the same way in both directions', () =>
+    {
+        const selection = useSelection();
+        const visible = ['a', 'b', 'c', 'd', 'e'];
+
+        selection.enter();
+        selection.toggle('d');
+        selection.extendTo('b', visible);
+
+        expect([...selection.selected()].sort()).toEqual(['b', 'c', 'd']);
+    });
+
+    it('follows the VISIBLE order, not the catalogue order', () =>
+    {
+        // The user filtered or sorted; a range must mean what they can see between the
+        // two rows they clicked, or it silently ticks servers that are off screen.
+        const selection = useSelection();
+
+        selection.enter();
+        selection.toggle('e');
+        selection.extendTo('c', ['e', 'd', 'c', 'b', 'a']);
+
+        expect([...selection.selected()].sort()).toEqual(['c', 'd', 'e']);
+    });
+
+    it('keeps the anchor put, so shift-clicking again resizes one run', () =>
+    {
+        const selection = useSelection();
+        const visible = ['a', 'b', 'c', 'd', 'e'];
+
+        selection.enter();
+        selection.toggle('b');
+        selection.extendTo('e', visible);
+        selection.extendTo('c', visible);
+
+        // Still anchored at b: the second shift-click re-measures from there.
+        expect([...selection.selected()]).toContain('c');
+        expect([...selection.selected()]).toContain('b');
+    });
+
+    it('falls back to a plain tick when the row is not in the visible list', () =>
+    {
+        const selection = useSelection();
+
+        selection.enter();
+        selection.toggle('b');
+        selection.extendTo('zz', ['a', 'b', 'c']);
+
+        expect(selection.isSelected('zz')).toBe(true);
     });
 
     it('selectMany replaces rather than accumulating, so a re-filter cannot double up', () =>

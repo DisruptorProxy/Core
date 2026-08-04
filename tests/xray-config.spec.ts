@@ -112,6 +112,30 @@ describe('buildConnectConfig', () =>
         expect(JSON.stringify(built.inbounds)).toContain(connectable[0].id);
     });
 
+    it('gives every DIALLING outbound the socket options, and the blackhole none', () =>
+    {
+        // tcpNoDelay and tcpFastOpen are a silent win: forget them on a new outbound and
+        // nothing breaks, traffic is just slower for reasons no one can see. `block`
+        // discards without ever dialling, so it is the one that must NOT carry them.
+        const built = buildConnectConfig(VLESS, RULES, ALL, TUN);
+
+        for (const outbound of built.outbounds as unknown as Record<string, Record<string, unknown>>[])
+        {
+            const sockopt = (outbound.streamSettings as Record<string, unknown> | undefined)?.sockopt;
+
+            if (outbound.protocol === 'blackhole')
+            {
+                expect(sockopt, 'the blackhole never dials').toBeUndefined();
+                continue;
+            }
+
+            expect(sockopt, `${ String(outbound.tag) } dials and must set socket options`).toEqual({
+                tcpNoDelay: true,
+                tcpFastOpen: true
+            });
+        }
+    });
+
     it('emits no duplicate outbound tags', () =>
     {
         const built = buildConnectConfig(VLESS, RULES, ALL, TUN);

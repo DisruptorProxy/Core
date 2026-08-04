@@ -259,10 +259,41 @@ export const tr: Strings =
         proxyLabel: 'Proxy'
     },
 
+    editor:
+    {
+        addTitle: 'Sunucu ekle',
+        tabForm: 'Form',
+        tabJson: 'JSON',
+        jsonPlaceholder: 'Bir sunucuyu JSON olarak yapıştırın (sing-box outbound veya tam profil).',
+        jsonInvalid: 'Bu JSON içinde sunucu yok.',
+        editTitle: 'Sunucuyu düzenle',
+        duplicate: 'Çoğalt',
+        name: 'Ad',
+        namePlaceholder: 'Sunucum',
+        address: 'Adres',
+        port: 'Bağlantı noktası',
+        uuid: 'UUID',
+        password: 'Parola',
+        method: 'Şifreleme',
+        sni: 'SNI',
+        path: 'Yol',
+        hostHeader: 'Host başlığı',
+        flow: 'Flow',
+        publicKey: 'Genel anahtar',
+        shortId: 'Short ID',
+        alpn: 'ALPN',
+        fingerprint: 'Parmak izi',
+        allowInsecure: 'Sertifika denetimini atla',
+        allowInsecureHint: 'Yalnızca sağlayıcınız söylerse. Sahte bir sunucunun geçmesine izin verir.',
+        advanced: 'Gelişmiş',
+        save: 'Kaydet',
+        invalid: 'Adres ve bağlantı noktası girin.'
+    },
     common:
     {
         close: 'Bitti',
         dismiss: 'Kapat',
+        actionFailed: 'Bu işlem başarısız oldu. Hiçbir şey değişmedi.',
         serverNotFound: 'Sunucu bulunamadı. Silinmiş olabilir.'
     }
 };

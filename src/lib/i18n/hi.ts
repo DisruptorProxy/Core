@@ -259,10 +259,41 @@ export const hi: Strings =
         proxyLabel: 'प्रॉक्सी'
     },
 
+    editor:
+    {
+        addTitle: 'सर्वर जोड़ें',
+        tabForm: 'फ़ॉर्म',
+        tabJson: 'JSON',
+        jsonPlaceholder: 'एक सर्वर को JSON के रूप में चिपकाएँ (sing-box outbound या पूरा प्रोफ़ाइल)।',
+        jsonInvalid: 'इस JSON में कोई सर्वर नहीं है।',
+        editTitle: 'सर्वर संपादित करें',
+        duplicate: 'प्रतिलिपि',
+        name: 'नाम',
+        namePlaceholder: 'मेरा सर्वर',
+        address: 'पता',
+        port: 'पोर्ट',
+        uuid: 'UUID',
+        password: 'पासवर्ड',
+        method: 'एन्क्रिप्शन',
+        sni: 'SNI',
+        path: 'पथ',
+        hostHeader: 'होस्ट हेडर',
+        flow: 'Flow',
+        publicKey: 'सार्वजनिक कुंजी',
+        shortId: 'Short ID',
+        alpn: 'ALPN',
+        fingerprint: 'फ़िंगरप्रिंट',
+        allowInsecure: 'प्रमाणपत्र जाँच छोड़ें',
+        allowInsecureHint: 'केवल तभी जब आपका प्रदाता कहे। यह नकली सर्वर को भी जाने देता है।',
+        advanced: 'उन्नत',
+        save: 'सहेजें',
+        invalid: 'पता और पोर्ट भरें।'
+    },
     common:
     {
         close: 'हो गया',
         dismiss: 'हटाएँ',
+        actionFailed: 'यह काम नहीं आया। कुछ भी नहीं बदला।',
         serverNotFound: 'सर्वर नहीं मिला। शायद हटा दिया गया है।'
     }
 };

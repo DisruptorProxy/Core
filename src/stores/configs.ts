@@ -1,7 +1,10 @@
 import { createMemo, createSignal, createStore } from 'azerothjs';
 
-import { deleteConfigs, loadRows, setFavorite } from '../lib/db/repo';
+import { deleteConfigs, loadRows, putConfigs, setFavorite } from '../lib/db/repo';
 import type { ConfigRow } from '../lib/db/repo';
+import { parseUri } from '../lib/proxy/parse';
+import type { ProxyConfig } from '../lib/proxy/types';
+import { ParseFailure } from '../lib/proxy/uri';
 
 import type { ImportReport, ImportRequest, WorkerResponse } from '../workers/parse-worker';
 import { bootstrap } from './bootstrap';
@@ -59,6 +62,40 @@ export const useConfigs = createStore(() =>
     {
         await deleteConfigs(ids);
         await refresh();
+    };
+
+    /**
+     * Saves one hand-written server and reloads the index.
+     *
+     * The link goes through `parseUri`, the SAME path an imported one takes, rather than
+     * assembling a ProxyConfig here: that is what makes a typed server and a pasted server
+     * identical objects, gives the editor the parser's own validation for free, and lets
+     * `fingerprint` assign the id so a server typed by hand dedups against the same server
+     * arriving later in a subscription.
+     *
+     * `replaceId` is the config being edited. It is removed AFTER the new one lands, and
+     * only when the id actually changed - editing an endpoint field legitimately produces a
+     * different server, while a rename keeps the id and simply overwrites in place.
+     */
+    const saveManual = async (uri: string, replaceId?: string): Promise<ProxyConfig | ParseFailure> =>
+    {
+        const parsed = parseUri(uri);
+
+        if (parsed instanceof ParseFailure)
+        {
+            return parsed;
+        }
+
+        await putConfigs([parsed]);
+
+        if (replaceId !== undefined && replaceId !== parsed.id)
+        {
+            await deleteConfigs([replaceId]);
+        }
+
+        await refresh();
+
+        return parsed;
     };
 
     /** Flips a config's favorite flag and reloads so the row and filter update. */
@@ -142,6 +179,7 @@ export const useConfigs = createStore(() =>
         refresh,
         remove,
         toggleFavorite,
+        saveManual,
         importText
     };
 });

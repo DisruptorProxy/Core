@@ -1,7 +1,8 @@
 import { Show } from 'azerothjs';
 
-import { Activity, Copy, Power, Server, Star, Trash2 } from 'lucide';
+import { Activity, Copy, CopyPlus, Pencil, Power, Server, Star, Trash2 } from 'lucide';
 
+import type { ProxyConfig } from '../../lib/proxy/types';
 import { canConnect } from '../../lib/xray/config';
 
 import { useConnection } from '../../stores/connection';
@@ -31,7 +32,13 @@ const VAL = 'readout truncate text-sm text-text';
  * When no server is selected (only reachable in the always-present wide panel) it
  * shows an empty state; a still-loading selection renders nothing (no flash).
  */
-export default component ConfigDetail()
+interface ConfigDetailProps
+{
+    /** Opens the editor on this server; `duplicate` seeds a copy instead of replacing it. */
+    onEdit: (config: ProxyConfig, duplicate: boolean) => void;
+}
+
+export default component ConfigDetail(props: ConfigDetailProps)
 {
     const { t } = useLocale();
     const detail = useDetail();
@@ -162,6 +169,26 @@ export default component ConfigDetail()
                 >
                     { icon(Copy, 'size-[18px]') }
                     { detail.copied() ? t().detail.copied : t().detail.copyLink }
+                </button>
+
+                <button
+                    type="button"
+                    class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-text hover:bg-elevated press"
+                    onClick={ () => props.onEdit(config(), false) }
+                >
+                    { icon(Pencil, 'size-[18px]') }
+                    { t().editor.editTitle }
+                </button>
+
+                { /* Duplicate opens the editor on a COPY, so trying a variant of a working
+                     server never risks the working one. */ }
+                <button
+                    type="button"
+                    class="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium text-text hover:bg-elevated press"
+                    onClick={ () => props.onEdit(config(), true) }
+                >
+                    { icon(CopyPlus, 'size-[18px]') }
+                    { t().editor.duplicate }
                 </button>
 
                 <button

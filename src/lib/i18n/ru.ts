@@ -259,10 +259,41 @@ export const ru: Strings =
         proxyLabel: 'Прокси'
     },
 
+    editor:
+    {
+        addTitle: 'Добавить сервер',
+        tabForm: 'Форма',
+        tabJson: 'JSON',
+        jsonPlaceholder: 'Вставьте один сервер в формате JSON (outbound sing-box или полный профиль).',
+        jsonInvalid: 'В этом JSON нет сервера.',
+        editTitle: 'Изменить сервер',
+        duplicate: 'Дублировать',
+        name: 'Название',
+        namePlaceholder: 'Мой сервер',
+        address: 'Адрес',
+        port: 'Порт',
+        uuid: 'UUID',
+        password: 'Пароль',
+        method: 'Шифрование',
+        sni: 'SNI',
+        path: 'Путь',
+        hostHeader: 'Заголовок Host',
+        flow: 'Flow',
+        publicKey: 'Открытый ключ',
+        shortId: 'Short ID',
+        alpn: 'ALPN',
+        fingerprint: 'Отпечаток',
+        allowInsecure: 'Пропустить проверку сертификата',
+        allowInsecureHint: 'Только если так велит провайдер. Это пропустит поддельный сервер.',
+        advanced: 'Дополнительно',
+        save: 'Сохранить',
+        invalid: 'Укажите адрес и порт.'
+    },
     common:
     {
         close: 'Готово',
         dismiss: 'Скрыть',
+        actionFailed: 'Не удалось. Ничего не изменилось.',
         serverNotFound: 'Сервер не найден. Возможно, он был удалён.'
     }
 };
