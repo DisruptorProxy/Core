@@ -276,8 +276,12 @@ else
 }
 
 log('\nPushing to GitHub');
-act('git', ['push', 'origin', 'HEAD']);
-act('git', ['push', 'origin', tag]);
+
+// One atomic push, not two. As separate commands a tag rejected by a branch/tag ruleset
+// leaves the version bump PUBLIC with no tag and no release, and the next run then tries
+// to bump on top of a version that was never released. --atomic makes the pair
+// all-or-nothing, so a rejection leaves nothing behind to unpick.
+act('git', ['push', '--atomic', 'origin', 'HEAD', `refs/tags/${ tag }`]);
 
 log(`\nDone: ${ released }`);
 log('CI is now building, signing, and publishing a draft release on this repo.');
