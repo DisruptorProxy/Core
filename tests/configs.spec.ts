@@ -1,12 +1,14 @@
-import { afterEach, describe, expect, it } from 'vitest';
-
 import { cleanup, fire, renderTest } from '@azerothjs/testing';
 
+import { afterEach, describe, expect, it } from 'vitest';
+
 import type { LatencyStats } from '../src/lib/db/schema';
+
+import { useSelection } from '../src/stores/selection';
+
 import BulkBar from '../src/features/configs/bulk-bar.component.azeroth';
 import ImportReport from '../src/features/configs/import-report.component.azeroth';
 import LatencyCell from '../src/features/configs/latency-cell.component.azeroth';
-import { useSelection } from '../src/stores/selection';
 
 // The server-list feature components. These are the ones that report NUMBERS to the user -
 // latency, how many were imported, how many are selected - and a number that is wrong or

@@ -2,6 +2,7 @@ import { createSignal, createStore } from 'azerothjs';
 
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+
 import { bootstrap } from './bootstrap';
 
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;

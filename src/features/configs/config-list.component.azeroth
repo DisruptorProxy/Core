@@ -1,5 +1,6 @@
 import type { SubscriptionRecord } from '../../lib/db/schema';
-import type { ListItem } from '../../stores/query';
+
+import VirtualList from '../../components/virtual-list.component.azeroth';
 
 import { useConfigs } from '../../stores/configs';
 import { useConnection } from '../../stores/connection';
@@ -7,9 +8,8 @@ import { useDetail } from '../../stores/detail';
 import { useHealth } from '../../stores/health';
 import { useLocale } from '../../stores/locale';
 import { useServerQuery } from '../../stores/query';
+import type { ListItem } from '../../stores/query';
 import { useSelection } from '../../stores/selection';
-
-import VirtualList from '../../components/virtual-list.component.azeroth';
 
 import ConfigRow from './config-row.component.azeroth';
 import GroupHeader from './group-header.component.azeroth';

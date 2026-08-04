@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest';
-
 import { cleanup, fire, renderTest } from '@azerothjs/testing';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import Tooltip from '../src/components/tooltip.component.azeroth';
 

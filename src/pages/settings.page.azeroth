@@ -2,12 +2,6 @@ import { For, Show } from 'azerothjs';
 
 import { Check, Globe, Info, Languages, ShieldCheck, SwatchBook } from 'lucide';
 
-import { useGeo } from '../stores/geo';
-import { LOCALES, LOCALE_COUNTRY, LOCALE_LABELS, useLocale } from '../stores/locale';
-import { useTheme } from '../stores/theme';
-import type { ThemePreference } from '../stores/theme';
-import { useVersion } from '../stores/version';
-
 import Button from '../components/button.component.azeroth';
 import Card from '../components/card.component.azeroth';
 import { flagIcon } from '../components/flag';
@@ -16,6 +10,12 @@ import Screen from '../components/screen.component.azeroth';
 import SectionHeading from '../components/section-heading.component.azeroth';
 import Segmented from '../components/segmented.component.azeroth';
 import type { SegmentedOption } from '../components/segmented.component.azeroth';
+
+import { useGeo } from '../stores/geo';
+import { LOCALES, LOCALE_COUNTRY, LOCALE_LABELS, useLocale } from '../stores/locale';
+import { useTheme } from '../stores/theme';
+import type { ThemePreference } from '../stores/theme';
+import { useVersion } from '../stores/version';
 
 /**
  * Settings: appearance, language, geo data, and About. Theme and language change every

@@ -1,6 +1,6 @@
-import type { ProxyConfig } from '../proxy/types';
-
 import type { PingResult } from '../../features/connection/engine/port';
+
+import type { ProxyConfig } from '../proxy/types';
 
 /** Probes one server. Bulk testing passes a light TCP probe; the caller chooses. */
 type Probe = (config: ProxyConfig, signal: AbortSignal) => Promise<PingResult>;

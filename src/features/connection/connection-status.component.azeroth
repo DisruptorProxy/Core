@@ -5,12 +5,12 @@ import { Globe } from 'lucide';
 import { formatBytes } from '../../lib/format/bytes';
 import { formatDuration } from '../../lib/format/duration';
 
-import { useConnection } from '../../stores/connection';
-import { useLocale } from '../../stores/locale';
-
 import { flagIcon } from '../../components/flag';
 import { icon } from '../../components/icon';
 import Tooltip from '../../components/tooltip.component.azeroth';
+
+import { useConnection } from '../../stores/connection';
+import { useLocale } from '../../stores/locale';
 
 const TILE = 'flex flex-col items-center gap-0.5 rounded-xl border border-border bg-surface px-2 py-2.5';
 const TILE_KEY = 'text-[11px] text-muted';

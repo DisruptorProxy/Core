@@ -3,6 +3,8 @@ import { createEffect, createSignal, createStore } from 'azerothjs';
 import { getConfig } from '../lib/db/repo';
 import type { ProxyConfig } from '../lib/proxy/types';
 
+import { engine } from '../features/connection/engine/service';
+
 import { useConfigs } from './configs';
 import { useConnection } from './connection';
 import { useHealth } from './health';
@@ -10,8 +12,6 @@ import { useLocale } from './locale';
 import { useSubscriptions } from './subscriptions';
 import { useToast } from './toast';
 import { useViewport } from './viewport';
-
-import { engine } from '../features/connection/engine/service';
 
 /**
  * The open server's full detail, and every action on it. This is a store rather

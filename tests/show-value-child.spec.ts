@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
-
 import { createSignal } from 'azerothjs';
 import { cleanup, renderTest } from '@azerothjs/testing';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import ShowHost from './fixtures/show-host.component.azeroth';
 

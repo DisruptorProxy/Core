@@ -4,20 +4,20 @@ import { Power, Repeat, Wifi, WifiOff, Zap } from 'lucide';
 
 import { humanizeError } from '../lib/health/humanize-error';
 
+import Button from '../components/button.component.azeroth';
+import Card from '../components/card.component.azeroth';
+import { icon } from '../components/icon';
+import SectionHeading from '../components/section-heading.component.azeroth';
+
 import { useConfigs } from '../stores/configs';
 import { useConnection } from '../stores/connection';
 import { useHealth } from '../stores/health';
 import { useLocale } from '../stores/locale';
 import { useViewport } from '../stores/viewport';
 
-import Button from '../components/button.component.azeroth';
-import Card from '../components/card.component.azeroth';
-import { icon } from '../components/icon';
-import SectionHeading from '../components/section-heading.component.azeroth';
-
-import type { ConnectionPhase } from '../features/connection/engine/port';
 import CandidateList from '../features/connection/candidate-list.component.azeroth';
 import ConnectionStatus from '../features/connection/connection-status.component.azeroth';
+import type { ConnectionPhase } from '../features/connection/engine/port';
 
 /** How many switch-server candidates to surface - enough to matter, not a full list. */
 const CANDIDATE_LIMIT = 6;

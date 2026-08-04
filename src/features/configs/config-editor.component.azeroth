@@ -3,10 +3,10 @@ import { Show, combine, pattern, required } from 'azerothjs';
 import type { ProxyConfig } from '../../lib/proxy/types';
 import { decodeSubscription } from '../../lib/subs/decode';
 
-import { useLocale } from '../../stores/locale';
-
 import Button from '../../components/button.component.azeroth';
 import Sheet from '../../components/sheet.component.azeroth';
+
+import { useLocale } from '../../stores/locale';
 
 interface ConfigEditorProps
 {

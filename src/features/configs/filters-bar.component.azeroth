@@ -4,13 +4,13 @@ import { Search } from 'lucide';
 
 import type { SortKey } from '../../lib/search/filter';
 
-import { useLocale } from '../../stores/locale';
-import { useServerQuery } from '../../stores/query';
-import { useSubscriptions } from '../../stores/subscriptions';
-
 import FilterMenu from '../../components/filter-menu.component.azeroth';
 import type { FilterOption } from '../../components/filter-options.component.azeroth';
 import Input from '../../components/input.component.azeroth';
+
+import { useLocale } from '../../stores/locale';
+import { useServerQuery } from '../../stores/query';
+import { useSubscriptions } from '../../stores/subscriptions';
 
 const CHIP = 'shrink-0 rounded-full border px-3 py-1 text-xs font-medium press';
 

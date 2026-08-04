@@ -2,17 +2,16 @@ import { createEffect, createSelector, createSignal, createStore, onCleanup } fr
 
 import { getConfig, getConfigsByIds } from '../lib/db/repo';
 import type { ProxyConfig } from '../lib/proxy/types';
-import { canConnect } from '../lib/xray/config';
-
-import { useRouting } from './routing';
-import { useHealth } from './health';
-import { useLocale } from './locale';
-import { useToast } from './toast';
-
 import type { Rule } from '../lib/routing/types';
+import { canConnect } from '../lib/xray/config';
 
 import type { ConnectionPhase, TrafficSample } from '../features/connection/engine/port';
 import { engine } from '../features/connection/engine/service';
+
+import { useHealth } from './health';
+import { useLocale } from './locale';
+import { useRouting } from './routing';
+import { useToast } from './toast';
 
 /** How often the live traffic counters are polled from the core while connected. */
 const TRAFFIC_POLL_MS = 2000;

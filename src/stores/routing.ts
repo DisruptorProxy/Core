@@ -4,6 +4,7 @@ import { getSetting, putSetting } from '../lib/db/repo';
 import { PRESET_RULES, countryRules } from '../lib/routing/presets';
 import { newRuleId } from '../lib/routing/types';
 import type { CountryMode, ProfileId, Rule, RoutingProfile } from '../lib/routing/types';
+
 import { bootstrap } from './bootstrap';
 
 const STORAGE_KEY = 'routing.profile';

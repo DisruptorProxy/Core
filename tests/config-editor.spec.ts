@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { cleanup, fire, renderTest } from '@azerothjs/testing';
 
-import ConfigEditor from '../src/features/configs/config-editor.component.azeroth';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type { ProxyConfig } from '../src/lib/proxy/types';
+
+import ConfigEditor from '../src/features/configs/config-editor.component.azeroth';
 
 /** A handler a test supplies only because the prop is required. */
 const noop = (): void => undefined;

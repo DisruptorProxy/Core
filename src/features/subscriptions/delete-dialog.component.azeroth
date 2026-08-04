@@ -2,10 +2,10 @@ import { Show } from 'azerothjs';
 
 import type { SubscriptionRecord } from '../../lib/db/schema';
 
-import { useLocale } from '../../stores/locale';
-
 import Button from '../../components/button.component.azeroth';
 import Sheet from '../../components/sheet.component.azeroth';
+
+import { useLocale } from '../../stores/locale';
 
 interface DeleteDialogProps
 {

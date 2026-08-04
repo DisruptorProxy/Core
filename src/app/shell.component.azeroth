@@ -1,12 +1,12 @@
 import { ErrorBoundary, Routes, Show } from 'azerothjs';
 
+import Button from '../components/button.component.azeroth';
+import ToastHost from '../components/toast-host.component.azeroth';
+
 import { useLocale } from '../stores/locale';
 import { usePlatform } from '../stores/platform';
 import { useSubscriptions } from '../stores/subscriptions';
 import { useTheme } from '../stores/theme';
-
-import Button from '../components/button.component.azeroth';
-import ToastHost from '../components/toast-host.component.azeroth';
 
 import { router } from './router';
 import SideRail from './side-rail.component.azeroth';

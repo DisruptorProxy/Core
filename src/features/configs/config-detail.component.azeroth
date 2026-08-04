@@ -5,15 +5,15 @@ import { Activity, Copy, CopyPlus, Pencil, Power, Server, Star, Trash2 } from 'l
 import type { ProxyConfig } from '../../lib/proxy/types';
 import { canConnect } from '../../lib/xray/config';
 
-import { useConnection } from '../../stores/connection';
-import { useDetail } from '../../stores/detail';
-import { useLocale } from '../../stores/locale';
-
 import Button from '../../components/button.component.azeroth';
 import Card from '../../components/card.component.azeroth';
 import { flagIcon } from '../../components/flag';
 import { icon } from '../../components/icon';
 import Tooltip from '../../components/tooltip.component.azeroth';
+
+import { useConnection } from '../../stores/connection';
+import { useDetail } from '../../stores/detail';
+import { useLocale } from '../../stores/locale';
 
 import LatencyCell from './latency-cell.component.azeroth';
 

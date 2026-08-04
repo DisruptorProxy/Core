@@ -8,9 +8,9 @@ import { hi } from '../lib/i18n/hi';
 import { id } from '../lib/i18n/id';
 import { ru } from '../lib/i18n/ru';
 import { tr } from '../lib/i18n/tr';
+import type { Strings } from '../lib/i18n/types';
 import { vi } from '../lib/i18n/vi';
 import { zh } from '../lib/i18n/zh';
-import type { Strings } from '../lib/i18n/types';
 
 export type Locale = 'en' | 'fa' | 'ar' | 'zh' | 'ru' | 'tr' | 'hi' | 'es' | 'vi' | 'id';
 type Direction = 'ltr' | 'rtl';

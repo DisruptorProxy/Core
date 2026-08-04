@@ -1,11 +1,10 @@
 import { For, Link, useRoute } from 'azerothjs';
 
-import { useLocale } from '../stores/locale';
-
 import { icon } from '../components/icon';
 
-import logoUrl from '../assets/logo-icon.png';
+import { useLocale } from '../stores/locale';
 
+import logoUrl from '../assets/logo-icon.png';
 import { NAV_ITEMS } from './nav';
 import { router } from './router';
 

@@ -3,10 +3,10 @@ import { Show } from 'azerothjs';
 import type { SubscriptionRecord, SubscriptionUserinfo } from '../../lib/db/schema';
 import { formatBytes } from '../../lib/format/bytes';
 
+import { relativeTime } from '../../components/relative-time';
+
 import { useLocale } from '../../stores/locale';
 import { useSubscriptions } from '../../stores/subscriptions';
-
-import { relativeTime } from '../../components/relative-time';
 
 interface SubscriptionUsageProps
 {

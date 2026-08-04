@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest';
-
 import { cleanup, renderTest } from '@azerothjs/testing';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import HomePage from '../src/pages/home.page.azeroth';
 import RoutingPage from '../src/pages/routing.page.azeroth';

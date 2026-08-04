@@ -1,6 +1,6 @@
-import type { LatencyStats } from '../db/schema';
-
 import type { PingResult } from '../../features/connection/engine/port';
+
+import type { LatencyStats } from '../db/schema';
 
 /** How much of the EWMA the newest sample takes. Higher = reacts faster, noisier. */
 const ALPHA = 0.4;

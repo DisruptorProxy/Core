@@ -1,8 +1,8 @@
 import { For, Show } from 'azerothjs';
 
-import type { ImportReport as Report } from '../../workers/parse-worker';
-
 import { useLocale } from '../../stores/locale';
+
+import type { ImportReport as Report } from '../../workers/parse-worker';
 
 interface ImportReportProps
 {

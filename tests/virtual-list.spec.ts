@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
-
 import { createSignal } from 'azerothjs';
 import { cleanup, renderTest } from '@azerothjs/testing';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import VirtualList from '../src/components/virtual-list.component.azeroth';
 

@@ -1,10 +1,11 @@
+import { createSignal } from 'azerothjs';
+
 import { describe, expect, it } from 'vitest';
 
-import { createSignal } from 'azerothjs';
+import type { ProxyConfig } from '../src/lib/proxy/types';
 
 import type { ConnectionService, ConnectionStatus, PingResult, TrafficSample } from '../src/features/connection/engine/port';
 import { setEngine } from '../src/features/connection/engine/service';
-import type { ProxyConfig } from '../src/lib/proxy/types';
 
 import { row } from './fixtures/data';
 

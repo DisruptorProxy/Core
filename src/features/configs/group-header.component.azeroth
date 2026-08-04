@@ -4,15 +4,15 @@ import { ChevronRight, Pencil, RefreshCw, Server, Trash2 } from 'lucide';
 
 import type { SubscriptionRecord } from '../../lib/db/schema';
 
-import { STANDALONE_KEY, useGroups } from '../../stores/groups';
-import { useConnection } from '../../stores/connection';
-import { useLocale } from '../../stores/locale';
-import { useServerQuery } from '../../stores/query';
-import { useSubscriptions } from '../../stores/subscriptions';
-
 import { icon } from '../../components/icon';
 import { isStale } from '../../components/relative-time';
 import Tooltip from '../../components/tooltip.component.azeroth';
+
+import { useConnection } from '../../stores/connection';
+import { STANDALONE_KEY, useGroups } from '../../stores/groups';
+import { useLocale } from '../../stores/locale';
+import { useServerQuery } from '../../stores/query';
+import { useSubscriptions } from '../../stores/subscriptions';
 
 interface GroupHeaderProps
 {

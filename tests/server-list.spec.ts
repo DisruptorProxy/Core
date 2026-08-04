@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { cleanup, fire, renderTest } from '@azerothjs/testing';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import ConfigRow from '../src/features/configs/config-row.component.azeroth';
 import FiltersBar from '../src/features/configs/filters-bar.component.azeroth';

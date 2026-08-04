@@ -1,8 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { cleanup, fire, renderTest } from '@azerothjs/testing';
 
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type { ConfigRow } from '../src/lib/db/repo';
+
 import CandidateList from '../src/features/connection/candidate-list.component.azeroth';
 import ConnectionStatus from '../src/features/connection/connection-status.component.azeroth';
 

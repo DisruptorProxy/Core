@@ -7,15 +7,16 @@ import { describeRule } from '../lib/routing/describe';
 import { BYPASS_COUNTRIES, PRESET_IDS } from '../lib/routing/presets';
 import type { CountryMode, ProfileId, Rule, RuleAction } from '../lib/routing/types';
 
-import { useLocale } from '../stores/locale';
-import { useRouting } from '../stores/routing';
-
 import { flagIcon } from '../components/flag';
 import { icon } from '../components/icon';
 import Screen from '../components/screen.component.azeroth';
 import SectionHeading from '../components/section-heading.component.azeroth';
 import Segmented from '../components/segmented.component.azeroth';
 import type { SegmentedOption } from '../components/segmented.component.azeroth';
+import Tooltip from '../components/tooltip.component.azeroth';
+
+import { useLocale } from '../stores/locale';
+import { useRouting } from '../stores/routing';
 
 const COUNTRIES: string[] = [...BYPASS_COUNTRIES];
 
@@ -233,19 +234,30 @@ export default component RoutingPage()
                                 </span>
 
                                 <Show when={ !describeRule(rule, t()).isFinal }>
+                                    { /* Four icon-only actions in a row, two of them a mirrored
+                                         chevron pair: without a tooltip the only way to tell
+                                         them apart is the glyph. */ }
                                     <div class="flex shrink-0 items-center">
-                                        <button type="button" class={ ICON_BTN } aria-label={ t().routing.moveUp } onClick={ () => routing.move(rule.id, -1) }>
-                                            { icon(ChevronUp, 'size-4') }
-                                        </button>
-                                        <button type="button" class={ ICON_BTN } aria-label={ t().routing.moveDown } onClick={ () => routing.move(rule.id, 1) }>
-                                            { icon(ChevronDown, 'size-4') }
-                                        </button>
-                                        <button type="button" class={ ICON_BTN } aria-label={ t().routing.editRule } onClick={ () => openEdit(rule) }>
-                                            { icon(Pencil, 'size-4') }
-                                        </button>
-                                        <button type="button" class={ ICON_BTN } aria-label={ t().routing.delete } onClick={ () => routing.removeRule(rule.id) }>
-                                            { icon(Trash2, 'size-4') }
-                                        </button>
+                                        <Tooltip label={ t().routing.moveUp }>
+                                            <button type="button" class={ ICON_BTN } aria-label={ t().routing.moveUp } onClick={ () => routing.move(rule.id, -1) }>
+                                                { icon(ChevronUp, 'size-4') }
+                                            </button>
+                                        </Tooltip>
+                                        <Tooltip label={ t().routing.moveDown }>
+                                            <button type="button" class={ ICON_BTN } aria-label={ t().routing.moveDown } onClick={ () => routing.move(rule.id, 1) }>
+                                                { icon(ChevronDown, 'size-4') }
+                                            </button>
+                                        </Tooltip>
+                                        <Tooltip label={ t().routing.editRule }>
+                                            <button type="button" class={ ICON_BTN } aria-label={ t().routing.editRule } onClick={ () => openEdit(rule) }>
+                                                { icon(Pencil, 'size-4') }
+                                            </button>
+                                        </Tooltip>
+                                        <Tooltip label={ t().routing.delete }>
+                                            <button type="button" class={ ICON_BTN } aria-label={ t().routing.delete } onClick={ () => routing.removeRule(rule.id) }>
+                                                { icon(Trash2, 'size-4') }
+                                            </button>
+                                        </Tooltip>
                                     </div>
                                 </Show>
                             </li>

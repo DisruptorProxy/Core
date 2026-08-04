@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { cleanup, fire, renderTest } from '@azerothjs/testing';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import FilterMenu from '../src/components/filter-menu.component.azeroth';
 import FilterOptions from '../src/components/filter-options.component.azeroth';

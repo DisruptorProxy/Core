@@ -3,9 +3,9 @@ import { For, Show } from 'azerothjs';
 import type { ConfigRow } from '../../lib/db/repo';
 import { bucketFor } from '../../lib/health/score';
 
-import { useHealth } from '../../stores/health';
-
 import { flagIcon } from '../../components/flag';
+
+import { useHealth } from '../../stores/health';
 
 interface CandidateListProps
 {

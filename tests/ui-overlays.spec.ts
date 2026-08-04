@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { createSignal } from 'azerothjs';
 import { cleanup, fire, renderTest } from '@azerothjs/testing';
 
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import Sheet from '../src/components/sheet.component.azeroth';
 import ToastHost from '../src/components/toast-host.component.azeroth';
+
 import { useToast } from '../src/stores/toast';
 
 /** A handler a test supplies only because the prop is required. */

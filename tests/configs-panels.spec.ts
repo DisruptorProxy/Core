@@ -1,11 +1,12 @@
+import { cleanup, renderTest } from '@azerothjs/testing';
+
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { cleanup, renderTest } from '@azerothjs/testing';
+import { STANDALONE_KEY } from '../src/stores/groups';
 
 import ConfigDetail from '../src/features/configs/config-detail.component.azeroth';
 import ConfigList from '../src/features/configs/config-list.component.azeroth';
 import GroupHeader from '../src/features/configs/group-header.component.azeroth';
-import { STANDALONE_KEY } from '../src/stores/groups';
 import ImportSheet from '../src/features/import/import-sheet.component.azeroth';
 
 /** A handler a test supplies only because the prop is required. */

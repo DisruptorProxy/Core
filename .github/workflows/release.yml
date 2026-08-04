@@ -289,24 +289,32 @@ jobs:
             #
             # createUpdaterArtifacts is FALSE in tauri.conf.json so that a build needs no
             # secrets at all, and is turned back on here only when the updater key is
-            # actually present. It used to be unconditionally true, which meant every build
-            # - CI, a fork's PR, a fresh clone - died on a missing or malformed key. Without
-            # the key the installer still builds; it just ships without a .sig, and the step
-            # below leaves latest.json out rather than publishing an unusable manifest.
+            # actually present. It is false in tauri.conf.json so that ordinary builds - CI, a
+            # fork's PR, a fresh clone - do not die on a missing or malformed key.
+            #
+            # A RELEASE is the one case where the key is not optional, and this step now fails
+            # without it rather than warning. v1.7.3 was published from the old warn-and-carry-on
+            # path: it carries an .exe, a .deb and an .apk but no latest.json, so the updater
+            # endpoint 404s for every client that has it installed. A release nobody can update
+            # from is worse than a release that did not happen, and a workflow annotation is
+            # evidently too quiet to prevent it.
             -   name: Build the NSIS installer
                 env:
                     TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
                     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
                 shell: bash
                 run: |
-                    if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
-                        echo "Updater key present - building signed updater artifacts."
-                        npm run tauri build -- --bundles nsis \
-                            --config '{"bundle":{"createUpdaterArtifacts":true}}'
-                    else
-                        echo "::warning::No TAURI_SIGNING_PRIVATE_KEY - installer will ship without a .sig and the release will have no latest.json."
-                        npm run tauri build -- --bundles nsis
+                    if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+                        echo "::error::TAURI_SIGNING_PRIVATE_KEY is not set. Without it Tauri emits no"
+                        echo "::error::latest.json, so every installed client's update check 404s - including"
+                        echo "::error::the ones already out there. v1.7.3 shipped this way and could not be"
+                        echo "::error::updated from. Set the secret (base64 of the WHOLE .key file) and re-run."
+                        exit 1
                     fi
+
+                    echo "Updater key present - building signed updater artifacts."
+                    npm run tauri build -- --bundles nsis \
+                        --config '{"bundle":{"createUpdaterArtifacts":true}}'
 
             # The .deb and .apk, staged by their own jobs. merge-multiple drops them into
             # ./release-assets alongside the Windows ones, and the pattern makes a missing

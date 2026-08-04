@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
 import { cleanup, fire, renderTest } from '@azerothjs/testing';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { SubscriptionRecord } from '../src/lib/db/schema';
 import type { Rule } from '../src/lib/routing/types';
+
 import RuleEditor from '../src/features/routing/rule-editor.component.azeroth';
 import DeleteDialog from '../src/features/subscriptions/delete-dialog.component.azeroth';
 import SubscriptionEditor from '../src/features/subscriptions/subscription-editor.component.azeroth';

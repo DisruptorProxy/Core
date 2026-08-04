@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fire, renderTest } from '@azerothjs/testing';
 
 import { Server, Zap } from 'lucide';
-import { cleanup, fire, renderTest } from '@azerothjs/testing';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import Button from '../src/components/button.component.azeroth';
 import Card from '../src/components/card.component.azeroth';

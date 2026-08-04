@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest';
-
 import { cleanup, renderTest } from '@azerothjs/testing';
+
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { NAV_ITEMS } from '../src/app/nav';
 import Shell from '../src/app/shell.component.azeroth';
