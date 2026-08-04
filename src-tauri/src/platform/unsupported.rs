@@ -43,6 +43,11 @@ pub fn run_core(
     Err("Connecting is not supported on this platform yet.".to_string())
 }
 
+/// Never running - no live core backend exists on this target yet.
+pub fn core_running(_state: &XrayProcess) -> bool {
+    false
+}
+
 pub fn end_core(_state: &XrayProcess) -> Result<String, String> {
     // Idempotent, like the real backends: nothing running is success.
     Ok("Stopped xray".to_string())

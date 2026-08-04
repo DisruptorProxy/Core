@@ -3,7 +3,7 @@ import type { Getter } from 'azerothjs';
 
 import { invoke } from '@tauri-apps/api/core';
 
-import { getAllConfigs } from '../../../lib/db/repo';
+import { getAllConfigs, getConfig } from '../../../lib/db/repo';
 import type { ProxyConfig } from '../../../lib/proxy/types';
 import { PROBE_SOCKS_PORT, buildConnectConfig, buildMobileConfig, buildPingConfig, canConnect, probeUser } from '../../../lib/xray/config';
 import type { GeoAssets, TunEnvironment } from '../../../lib/xray/config';
@@ -17,6 +17,74 @@ import type { ConnectionService, ConnectionStatus, PingResult, TrafficSample } f
 const isTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
 const NOT_DESKTOP = 'Connecting is only available in the Disruptor Proxy desktop app.';
+
+/**
+ * Which server the live core was started with, and when.
+ *
+ * Rust knows a core is running but not which catalogue entry it belongs to, and the
+ * signal that knew dies with the page. localStorage is the only store that survives a
+ * reload synchronously, so the note is left here and read back by `resume`. It is a
+ * HINT, never proof: nothing is restored unless Rust confirms the core is still alive.
+ */
+const ACTIVE_KEY = 'connection.active';
+
+interface ActiveNote
+{
+    id: string;
+    since: number;
+}
+
+const remember = (note: ActiveNote): void =>
+{
+    try
+    {
+        localStorage.setItem(ACTIVE_KEY, JSON.stringify(note));
+    }
+    catch
+    {
+        // A full or blocked store costs a resumed session, never the connection itself.
+    }
+};
+
+const forget = (): void =>
+{
+    try
+    {
+        localStorage.removeItem(ACTIVE_KEY);
+    }
+    catch
+    {
+        // Same: the note is an optimisation, so failing to clear it is not an error.
+    }
+};
+
+const remembered = (): ActiveNote | null =>
+{
+    try
+    {
+        const raw = localStorage.getItem(ACTIVE_KEY);
+
+        if (raw === null)
+        {
+            return null;
+        }
+
+        const parsed: unknown = JSON.parse(raw);
+
+        if (typeof parsed !== 'object' || parsed === null)
+        {
+            return null;
+        }
+
+        const { id, since } = parsed as Partial<ActiveNote>;
+
+        return typeof id === 'string' && typeof since === 'number' ? { id, since } : null;
+    }
+    catch
+    {
+        return null;
+    }
+};
 
 /**
  * The real engine. Generates an Xray config from the server + active routing
@@ -45,6 +113,48 @@ export class TauriConnectionService implements ConnectionService
     public status(): Getter<ConnectionStatus>
     {
         return this.statusSignal;
+    }
+
+    public async resume(): Promise<void>
+    {
+        if (!isTauri())
+        {
+            return;
+        }
+
+        const note = remembered();
+
+        if (note === null)
+        {
+            return;
+        }
+
+        // Rust owns the child, so its answer is the ONLY truth about whether traffic is
+        // still flowing. Trusting the note alone would paint a connection over a tunnel
+        // that died while the page was gone.
+        const running = await invoke<boolean>('xray_status').catch(() => false);
+
+        if (!running)
+        {
+            forget();
+
+            return;
+        }
+
+        const config = await getConfig(note.id).catch(() => undefined);
+
+        if (config === undefined)
+        {
+            // The core is up but its server is no longer in the catalogue, so nothing
+            // can name it and no UI could offer a disconnect. Tear the orphan down so
+            // the app and the machine agree; `end_xray` is idempotent.
+            forget();
+            await this.disconnect();
+
+            return;
+        }
+
+        this.setStatus({ phase: 'connected', config, since: note.since });
     }
 
     public async connect(config: ProxyConfig): Promise<void>
@@ -99,10 +209,14 @@ export class TauriConnectionService implements ConnectionService
                 await invoke<string>('run_xray', { configPath });
             }
 
-            this.setStatus({ phase: 'connected', config, since: Date.now() });
+            const since = Date.now();
+
+            remember({ id: config.id, since });
+            this.setStatus({ phase: 'connected', config, since });
         }
         catch (error)
         {
+            forget();
             this.setStatus({ phase: 'error', config, since: 0, error: messageOf(error) });
         }
     }
@@ -127,6 +241,7 @@ export class TauriConnectionService implements ConnectionService
             return;
         }
 
+        forget();
         this.setStatus({ phase: 'idle', config: null, since: 0 });
     }
 

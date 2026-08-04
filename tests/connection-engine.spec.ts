@@ -37,6 +37,10 @@ const fakeEngine = (): FakeEngine =>
         calls,
         releaseExitIp: (ip) => pending?.(ip),
         status: () => get,
+        resume: async () =>
+        {
+            calls.push('resume');
+        },
         connect: async (config: ProxyConfig) =>
         {
             calls.push(`connect:${ config.id }`);

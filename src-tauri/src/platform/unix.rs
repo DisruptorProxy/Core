@@ -270,6 +270,16 @@ fn reap_if_exited(process: &mut Option<RunningCore>) {
     }
 }
 
+/// Whether a live core is still running right now. The webview can be torn down and
+/// rebuilt under a running tunnel that keeps carrying traffic, so the frontend asks
+/// here on boot rather than assuming it starts disconnected.
+pub fn core_running(_state: &XrayProcess) -> bool {
+    // By name, not by the handle in `XrayProcess`: the core is launched through an
+    // elevation helper that can exit while the core survives it, so the handle reports
+    // "stopped" over a live tunnel. This is the check `force_kill_core` verifies with.
+    is_core_running()
+}
+
 /// Reads whatever the core wrote to its stdout/stderr logs, for surfacing a startup
 /// failure to the user.
 fn read_logs(artifacts: &RunArtifacts) -> String {

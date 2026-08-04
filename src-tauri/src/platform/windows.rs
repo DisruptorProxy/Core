@@ -293,6 +293,19 @@ fn reap_if_exited(process: &mut Option<RunningCore>) {
     }
 }
 
+/// Whether a live core is still running right now.
+///
+/// The webview can be torn down and rebuilt under a running tunnel - a reload, a
+/// renderer crash, devtools - while the tunnel keeps carrying traffic. The frontend
+/// therefore cannot assume it starts disconnected; it asks here instead.
+pub fn core_running(_state: &XrayProcess) -> bool {
+    // Deliberately NOT the handle in `XrayProcess`. That handle is the elevated
+    // PowerShell wrapper, which can exit while the core it launched keeps running - so
+    // it reports "stopped" over a live tunnel. Enumerating by name is what
+    // `force_kill_core` already verifies with, and it needs no elevation.
+    is_core_running()
+}
+
 /// Launches the live tunnel core elevated, self-healing any orphan first. Returns a
 /// human-readable status string, or an error carrying the core's own stderr when it
 /// rejects the config / fails to open the TUN adapter.

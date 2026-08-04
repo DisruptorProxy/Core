@@ -32,6 +32,12 @@ export const useConnection = createStore(() =>
     const health = useHealth();
     const status = engine().status();
 
+    // The tunnel outlives the webview, so a reload lands here with a live connection and
+    // an empty status signal. Ask the engine what is actually running before the UI has
+    // a chance to render a "Not connected" that is simply false. Every effect below
+    // gates on `phase`, so the clock, traffic poll and exit-IP lookup rewire themselves.
+    void engine().resume();
+
     // A ticking clock while connected, so the status card shows a live duration.
     const [now, setNow] = createSignal(Date.now());
 
@@ -281,11 +287,17 @@ export const useConnection = createStore(() =>
      * noise that follows as the engine cycles through disconnect → reconnect.
      */
     const routing = useRouting();
-    let savedRules: Rule[] = routing.rules();
+
+    // Compared by VALUE, not identity. The routing store hydrates from IndexedDB after
+    // boot and hands back an equal-but-new array; against a resumed connection that
+    // identity change alone would bounce a working tunnel on every refresh.
+    const rulesSignature = (rules: Rule[]): string => JSON.stringify(rules);
+
+    let savedRules: string = rulesSignature(routing.rules());
 
     createEffect(() =>
     {
-        const currentRules = routing.rules();
+        const currentRules = rulesSignature(routing.rules());
         const config = status().config;
 
         if (config !== null && status().phase === 'connected' && currentRules !== savedRules)

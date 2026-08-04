@@ -107,6 +107,16 @@ fn end_xray(state: State<XrayProcess>) -> Result<String, String> {
     platform::end_core(state.inner())
 }
 
+/// Whether the live tunnel is up, asked by a webview that has just (re)loaded.
+///
+/// The tunnel outlives the webview: this process owns the core, so a reload leaves the
+/// UI amnesiac about a connection that is still carrying the user's traffic. The
+/// frontend seeds its status from this instead of assuming `idle`.
+#[tauri::command]
+fn xray_status(state: State<XrayProcess>) -> bool {
+    platform::core_running(state.inner())
+}
+
 async fn wait_for_port(addr: &str, timeout: Duration) -> Result<(), String> {
     let deadline = Instant::now() + timeout;
 
@@ -684,6 +694,7 @@ pub fn run() {
             create_xray_config,
             run_xray,
             end_xray,
+            xray_status,
             ping_xray,
             start_probe,
             probe_ping,

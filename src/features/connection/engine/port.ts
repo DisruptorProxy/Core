@@ -48,6 +48,13 @@ export interface ConnectionService
     disconnect(): Promise<void>;
     status(): Getter<ConnectionStatus>;
     /**
+     * Re-syncs `status` with whatever is ACTUALLY running, for a webview that has just
+     * loaded. The tunnel outlives the page - a reload, a renderer crash, a devtools
+     * detach - so a fresh frontend cannot assume it starts disconnected without lying
+     * about a connection that is still carrying traffic. Safe to call when nothing runs.
+     */
+    resume(): Promise<void>;
+    /**
      * Probes one server with a real HTTP round-trip THROUGH its outbound, so a green
      * result means the server actually proxies rather than merely that its port answers.
      * `signal` aborts an in-flight probe when a test is cancelled.
