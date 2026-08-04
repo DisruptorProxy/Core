@@ -18,6 +18,3 @@ export const row = (id: string, over: Partial<ConfigRow> = {}): ConfigRow => ({
     haystack: `demo ${ id }`,
     ...over
 });
-
-export const rows = (n: number, over: Partial<ConfigRow> = {}): ConfigRow[] =>
-    Array.from({ length: n }, (_, i) => row(`r${ i }`, over));
