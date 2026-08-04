@@ -284,12 +284,12 @@ export default component FilterOptions(props: FilterOptionsProps)
                     <For each={ visible() } key={ (option) => option.value }>
                         { (option, index) =>
                             <div
-                                id={ `${ props.id }-opt-${ first() + index() }` }
-                                class={ `${ OPTION } ${ first() + index() === active ? 'bg-elevated' : '' }` }
+                                id={ `${ props.id }-opt-${ first() + index }` }
+                                class={ `${ OPTION } ${ first() + index === active ? 'bg-elevated' : '' }` }
                                 role="option"
                                 aria-selected={ props.selected(option.value) ? 'true' : 'false' }
                                 onClick={ () => props.onChoose(option.value) }
-                                onPointerMove={ () => active = first() + index() }
+                                onPointerMove={ () => active = first() + index }
                             >
                                 <span class={ props.selected(option.value) ? 'truncate font-medium text-accent' : 'truncate text-text' }>
                                     { option.label }

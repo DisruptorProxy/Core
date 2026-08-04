@@ -3,7 +3,6 @@ import { Match, Show, Switch } from 'azerothjs';
 import { Power, Repeat, Wifi, WifiOff, Zap } from 'lucide';
 
 import { humanizeError } from '../lib/health/humanize-error';
-import { bucketFor } from '../lib/health/score';
 
 import { useConfigs } from '../stores/configs';
 import { useConnection } from '../stores/connection';
@@ -13,20 +12,12 @@ import { useViewport } from '../stores/viewport';
 
 import Button from '../components/button.component.azeroth';
 import Card from '../components/card.component.azeroth';
-import { flagIcon } from '../components/flag';
 import { icon } from '../components/icon';
 import SectionHeading from '../components/section-heading.component.azeroth';
 
 import type { ConnectionPhase } from '../features/connection/engine/port';
+import CandidateList from '../features/connection/candidate-list.component.azeroth';
 import ConnectionStatus from '../features/connection/connection-status.component.azeroth';
-
-const LATENCY_TONE: Record<string, string> =
-{
-    good: 'text-good',
-    fair: 'text-fair',
-    poor: 'text-poor',
-    unknown: 'text-faint'
-};
 
 /** How many switch-server candidates to surface - enough to matter, not a full list. */
 const CANDIDATE_LIMIT = 6;
@@ -89,64 +80,64 @@ export default component HomePage()
     const connectTo = (id: string): void => void connection.connectToId(id);
 
     <div class="h-full">
-    <div class="flex h-full min-h-0 flex-col md:flex-row">
-        <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-y-auto pb-14 md:pb-0">
-            <header class="glass-bar shrink-0 border-b border-border">
-                <div class="mx-auto flex w-full max-w-3xl items-center gap-2 px-5 py-4">
-                    <span
-                        class={ () => `size-2 shrink-0 rounded-full ${
+        <div class="flex h-full min-h-0 flex-col md:flex-row">
+            <section class="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-y-auto pb-14 md:pb-0">
+                <header class="glass-bar shrink-0 border-b border-border">
+                    <div class="mx-auto flex w-full max-w-3xl items-center gap-2 px-5 py-4">
+                        <span
+                            class={ () => `size-2 shrink-0 rounded-full ${
                             gatePhase() === 'connected' ? 'bg-good'
                                 : gatePhase() === 'error' ? 'bg-poor'
                                     : isBusy() || gatePhase() === 'connecting' ? 'animate-pulse bg-accent' : 'bg-faint'
                         }` }
                     ></span>
-                    <h1 class="text-lg font-semibold tracking-tight text-text">{ statusText() }</h1>
-                </div>
-            </header>
+                        <h1 class="text-lg font-semibold tracking-tight text-text">{ statusText() }</h1>
+                    </div>
+                </header>
 
-            <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-5 py-6">
-                <Switch>
-                    <Match when={ gatePhase() === 'connected' }>
-                        <Card class="flex flex-col gap-4 p-4">
-                            <ConnectionStatus />
-                        </Card>
+                <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-5 py-6">
+                    <Switch>
+                        <Match when={ gatePhase() === 'connected' }>
+                            <Card class="flex flex-col gap-4 p-4">
+                                <ConnectionStatus />
+                            </Card>
 
-                        <Button
-                            label={ t().home.disconnect }
-                            leading={ Power }
-                            variant="danger"
-                            block={ true }
-                            onPress={ () => void connection.disconnect() }
+                            <Button
+                                label={ t().home.disconnect }
+                                leading={ Power }
+                                variant="danger"
+                                block={ true }
+                                onPress={ () => void connection.disconnect() }
                         />
-                    </Match>
+                        </Match>
 
-                    <Match when={ gatePhase() === 'connecting' || isBusy() }>
-                        <Card class="flex flex-col items-center gap-2 p-8 text-center">
+                        <Match when={ gatePhase() === 'connecting' || isBusy() }>
+                            <Card class="flex flex-col items-center gap-2 p-8 text-center">
                             { icon(Wifi, 'size-8 animate-pulse text-accent') }
-                            <p class="text-sm font-medium text-accent">{ statusText() }</p>
-                        </Card>
+                                <p class="text-sm font-medium text-accent">{ statusText() }</p>
+                            </Card>
 
-                        <Button
-                            label={ statusText() }
-                            leading={ Power }
-                            variant="primary"
-                            block={ true }
-                            disabled={ true }
-                            onPress={ () => {} }
+                            <Button
+                                label={ statusText() }
+                                leading={ Power }
+                                variant="primary"
+                                block={ true }
+                                disabled={ true }
+                                onPress={ () => {} }
                         />
-                    </Match>
+                        </Match>
 
-                    <Match when={ gatePhase() === 'error' }>
-                        <div class="rounded-2xl border border-poor/40 bg-poor/5 p-4 text-center">
-                            <p class="text-sm font-medium text-poor">{ humanizeError(connection.error()).title }</p>
-                            <p class="mt-1 text-xs leading-relaxed text-muted">{ humanizeError(connection.error()).fix }</p>
-                        </div>
+                        <Match when={ gatePhase() === 'error' }>
+                            <div class="rounded-2xl border border-poor/40 bg-poor/5 p-4 text-center">
+                                <p class="text-sm font-medium text-poor">{ humanizeError(connection.error()).title }</p>
+                                <p class="mt-1 text-xs leading-relaxed text-muted">{ humanizeError(connection.error()).fix }</p>
+                            </div>
 
-                        <Button
-                            label={ t().app.crashRetry }
-                            leading={ Power }
-                            block={ true }
-                            onPress={ () => {
+                            <Button
+                                label={ t().app.crashRetry }
+                                leading={ Power }
+                                block={ true }
+                                onPress={ () => {
                                 const failed = connection.activeConfig();
 
                                 if (failed !== null)
@@ -155,116 +146,54 @@ export default component HomePage()
                                 }
                             } }
                         />
-                    </Match>
+                        </Match>
 
-                    <Match when={ true }>
-                        <Card class="flex flex-col items-center gap-2 p-8 text-center">
+                        <Match when={ true }>
+                            <Card class="flex flex-col items-center gap-2 p-8 text-center">
                             { icon(WifiOff, 'size-8 text-faint') }
-                            <p class="text-sm font-medium text-muted">{ t().home.disconnected }</p>
-                            <p class="text-xs text-faint">{ t().home.noServerSelected }</p>
-                        </Card>
+                                <p class="text-sm font-medium text-muted">{ t().home.disconnected }</p>
+                                <p class="text-xs text-faint">{ t().home.noServerSelected }</p>
+                            </Card>
 
-                        <Button
-                            label={ t().home.connectFastest }
-                            leading={ Zap }
-                            block={ true }
-                            disabled={ rows().length === 0 }
-                            onPress={ () => void connection.connectFastest(rows().map((row) => row.id)) }
+                            <Button
+                                label={ t().home.connectFastest }
+                                leading={ Zap }
+                                block={ true }
+                                disabled={ rows().length === 0 }
+                                onPress={ () => void connection.connectFastest(rows().map((row) => row.id)) }
                         />
-                    </Match>
-                </Switch>
+                        </Match>
+                    </Switch>
 
-                <Show when={ !viewport.isWide() && candidates().length > 0 }>
-                    <section class="flex flex-col gap-3">
-                        <SectionHeading glyph={ Repeat } label={ t().home.switchServer } />
-                        { candidateList(candidates(), connection.activeId(), health, connectTo) }
-                    </section>
-                </Show>
-            </div>
-        </section>
+                    <Show when={ !viewport.isWide() && candidates().length > 0 }>
+                        <section class="flex flex-col gap-3">
+                            <SectionHeading glyph={ Repeat } label={ t().home.switchServer } />
 
-        <Show when={ viewport.isWide() && candidates().length > 0 }>
-            <aside class="flex h-full min-h-0 w-80 shrink-0 flex-col border-s border-border">
-                <div class="glass-bar shrink-0 border-b border-border px-4 py-4">
-                    <span class="text-sm font-semibold text-text">{ t().home.switchServer }</span>
+                            <CandidateList
+                                rows={ candidates() }
+                                activeId={ connection.activeId() }
+                                onTap={ connectTo }
+                            />
+                        </section>
+                    </Show>
                 </div>
+            </section>
 
-                <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-                    { candidateList(candidates(), connection.activeId(), health, connectTo) }
-                </div>
-            </aside>
-        </Show>
-    </div>
+            <Show when={ viewport.isWide() && candidates().length > 0 }>
+                <aside class="flex h-full min-h-0 w-80 shrink-0 flex-col border-s border-border">
+                    <div class="glass-bar shrink-0 border-b border-border px-4 py-4">
+                        <span class="text-sm font-semibold text-text">{ t().home.switchServer }</span>
+                    </div>
+
+                    <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+                        <CandidateList
+                            rows={ candidates() }
+                            activeId={ connection.activeId() }
+                            onTap={ connectTo }
+                        />
+                    </div>
+                </aside>
+            </Show>
+        </div>
     </div>
 }
-
-/** One tappable candidate row: flag, name, host:port, latency badge. */
-const candidateList = (
-    list: ReturnType<ReturnType<typeof useConfigs>['rows']>,
-    activeId: string | null,
-    health: ReturnType<typeof useHealth>,
-    onTap: (id: string) => void
-): HTMLElement =>
-{
-    const wrap = document.createElement('div');
-
-    wrap.className = 'flex flex-col gap-1.5';
-
-    for (const row of list)
-    {
-        const latencyMs = health.latencyOf(row.id);
-        const tone = LATENCY_TONE[bucketFor(latencyMs)] ?? '';
-
-        const button = document.createElement('button');
-
-        button.type = 'button';
-        button.className = 'flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-start transition-colors '
-            + (row.id === activeId
-                ? 'border-accent bg-accent-soft'
-                : 'border-border bg-surface hover:border-border-strong hover:bg-elevated');
-        button.onclick = () => onTap(row.id);
-
-        const flagCls = flagIcon(row.country);
-
-        if (flagCls)
-        {
-            const flag = document.createElement('span');
-
-            flag.className = `${ flagCls } flag-row shrink-0`;
-            button.appendChild(flag);
-        }
-
-        const info = document.createElement('div');
-
-        info.className = 'flex min-w-0 flex-1 flex-col';
-
-        const name = document.createElement('span');
-
-        name.className = 'truncate text-sm font-medium text-text';
-        name.textContent = row.name;
-        info.appendChild(name);
-
-        const address = document.createElement('span');
-
-        address.className = 'readout truncate text-xs text-faint';
-        address.dir = 'ltr';
-        address.textContent = `${ row.host }:${ row.port }`;
-        info.appendChild(address);
-
-        button.appendChild(info);
-
-        if (latencyMs !== undefined)
-        {
-            const latency = document.createElement('span');
-
-            latency.className = `readout shrink-0 text-xs font-medium ${ tone }`;
-            latency.dir = 'ltr';
-            latency.textContent = `${ latencyMs }ms`;
-            button.appendChild(latency);
-        }
-
-        wrap.appendChild(button);
-    }
-
-    return wrap;
-};

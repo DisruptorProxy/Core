@@ -148,6 +148,8 @@ export const vi: Strings =
         empty: 'Chọn cách chia lưu lượng giữa proxy và kết nối trực tiếp.',
         subtitle: 'Quyết định thứ gì đi qua proxy, thứ gì đi thẳng.',
         presets: 'Chế độ',
+        customName: 'Tùy chỉnh',
+        customDesc: 'Các quy tắc bạn tự viết.',
         bypassCountry: 'Bỏ qua theo quốc gia',
         bypassCountryHint: 'Chọn nơi bạn ở: trang web và IP của quốc gia đó đi thẳng, mọi thứ khác qua proxy.',
         countryModeLabel: 'Chế độ định tuyến',

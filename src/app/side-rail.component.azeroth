@@ -1,4 +1,4 @@
-import { For, Link, createSelector, useRoute } from 'azerothjs';
+import { For, Link, useRoute } from 'azerothjs';
 
 import { useLocale } from '../stores/locale';
 
@@ -24,7 +24,8 @@ export default component SideRail()
     const { t } = useLocale();
 
     const location = useRoute(router);
-    const isActive = createSelector(() => location().pathname);
+
+    selector isActive = location().pathname;
 
     <nav
         class="glass-bar hidden w-56 shrink-0 border-e border-border md:flex md:flex-col md:gap-1 md:p-3"

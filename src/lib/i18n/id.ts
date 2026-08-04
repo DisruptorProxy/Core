@@ -148,6 +148,8 @@ export const id: Strings =
         empty: 'Pilih cara membagi lalu lintas antara proxy dan sambungan langsung.',
         subtitle: 'Tentukan mana yang lewat proxy dan mana yang langsung.',
         presets: 'Mode',
+        customName: 'Kustom',
+        customDesc: 'Aturan yang Anda tulis sendiri.',
         bypassCountry: 'Lewati per negara',
         bypassCountryHint: 'Pilih lokasi Anda: situs dan IP negara itu tetap langsung, sisanya lewat proxy.',
         countryModeLabel: 'Mode perutean',

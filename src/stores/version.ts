@@ -3,6 +3,7 @@ import { createSignal, createStore } from 'azerothjs';
 import { getVersion } from '@tauri-apps/api/app';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { check as checkUpdate, type Update } from '@tauri-apps/plugin-updater';
+import { bootstrap } from './bootstrap';
 
 /**
  * The version this bundle was built from (package.json, bumped by scripts/release.mjs).
@@ -128,7 +129,7 @@ export const useVersion = createStore(() =>
         }
     };
 
-    void loadCurrent();
+    bootstrap('version', loadCurrent);
 
     return {
         current,

@@ -148,6 +148,8 @@ export const tr: Strings =
         empty: 'Trafiğin vekil ile doğrudan bağlantı arasında nasıl bölüneceğini seçin.',
         subtitle: 'Neyin vekilden geçeceğine, neyin doğrudan kalacağına karar verin.',
         presets: 'Modlar',
+        customName: 'Özel',
+        customDesc: 'Kendi yazdığınız kurallar.',
         bypassCountry: 'Ülkeye göre atla',
         bypassCountryHint: 'Bulunduğunuz yeri seçin: o ülkenin siteleri ve IP’leri doğrudan kalır, geri kalan her şey vekilden geçer.',
         countryModeLabel: 'Yönlendirme modu',

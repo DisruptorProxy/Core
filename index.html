@@ -4,6 +4,10 @@
         <meta charset="UTF-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 
+        <title>Disruptor Proxy</title>
+        <meta name="description" content="A proxy client for Windows, Linux, macOS and Android, built on Xray-core."/>
+
+        <link rel="icon" href="/src/assets/logo-icon.png"/>
         <link rel="stylesheet" href="/src/styles.css" />
 
         <!-- Resolve theme and direction before first paint. Applying them from the
@@ -20,7 +24,11 @@
                 const locale = localStorage.getItem('disruptor-proxy.locale') ?? 'en';
 
                 document.documentElement.lang = locale;
-                document.documentElement.dir = locale === 'fa' ? 'rtl' : 'ltr';
+                // Must list every RTL locale in RTL_LOCALES (src/stores/locale.ts). Missing one
+                // here does not mis-render the app - the store corrects `dir` once the bundle
+                // runs - it flashes the wrong direction first, which is what this script exists
+                // to prevent.
+                document.documentElement.dir = locale === 'fa' || locale === 'ar' ? 'rtl' : 'ltr';
             })();
         </script>
 

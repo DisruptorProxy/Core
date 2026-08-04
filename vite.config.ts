@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { azeroth } from '@azerothjs/compiler';
 
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -18,6 +18,14 @@ export default defineConfig(async () => ({
     define: { __APP_VERSION__: JSON.stringify(version) },
     plugins: [azeroth(), tailwindcss()],
     clearScreen: false,
+    test:
+    {
+        // Components render against a DOM; the pure lib/ specs do not care either way,
+        // and one environment keeps the suite from needing per-file annotations.
+        environment: 'happy-dom',
+        include: ['tests/**/*.spec.ts'],
+        setupFiles: ['tests/setup.ts']
+    },
     server:
     {
         port: 1420,

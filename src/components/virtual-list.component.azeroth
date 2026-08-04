@@ -30,6 +30,11 @@ interface VirtualListProps<T>
  *
  * `startIndex`/`endIndex` are number memos, so scrolling within the current window produces
  * the same range and nothing downstream re-runs - the equality guard the old list relied on.
+ *
+ * Deliberately on `createSignal`/`createMemo` rather than the `state`/`derived` keywords:
+ * this component is generic, and lowering the memos through the keyword form collapses `T`
+ * to `unknown`, so `keyOf`, `heightOf` and `children` stop type-checking against the item.
+ * Every non-generic component in the tree uses the keywords.
  */
 export default component VirtualList<T>(props: VirtualListProps<T>)
 {

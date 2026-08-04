@@ -93,7 +93,7 @@ export default component RuleEditor(props: RuleEditorProps)
                         { (mt) =>
                             <button
                                 type="button"
-                                aria-pressed={ type === mt }
+                                aria-pressed={ type === mt ? 'true' : 'false' }
                                 class={ () => 'flex min-h-9 items-center justify-between gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors '
                                     + (type === mt
                                         ? 'border-accent bg-accent text-accent-ink hover:bg-accent-hover'

@@ -68,7 +68,7 @@ export default component SettingsPage()
                                 { (code) =>
                                     <button
                                         type="button"
-                                        aria-pressed={ locale() === code }
+                                        aria-pressed={ locale() === code ? 'true' : 'false' }
                                         class={ () => 'flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors '
                                             + (locale() === code
                                                 ? 'border-accent bg-accent text-accent-ink hover:bg-accent-hover'

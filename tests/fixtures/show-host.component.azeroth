@@ -1,0 +1,38 @@
+import { Show } from 'azerothjs';
+
+import EagerChild from './eager-child.component.azeroth';
+
+interface Report
+{
+    errors: string[];
+}
+
+interface ShowHostProps
+{
+    /** Null until the work finishes, exactly like the import sheet's `lastReport`. */
+    report: Report | null;
+    /** The sheet gates on its own flag as well, so `when` reads TWO sources. */
+    done: boolean;
+}
+
+/** The import sheet's shape, reduced to the two things that matter. */
+export default component ShowHost(props: ShowHostProps)
+{
+    <div>
+        { /* The import sheet has exactly this pair: one Show tears its branch DOWN on the
+             same flip that builds the other's. */ }
+        <Show when={ !props.done }>
+            <span>form</span>
+        </Show>
+
+        <Show when={ props.done ? props.report : null }>
+            {
+                (report: () => Report) =>
+                <>
+                    <EagerChild report={ report() } />
+                    <span>after</span>
+                </>
+            }
+        </Show>
+    </div>
+}

@@ -1,0 +1,70 @@
+import { For, Show } from 'azerothjs';
+
+import type { ConfigRow } from '../../lib/db/repo';
+import { bucketFor } from '../../lib/health/score';
+
+import { useHealth } from '../../stores/health';
+
+import { flagIcon } from '../../components/flag';
+
+interface CandidateListProps
+{
+    /** Ranked candidates to offer, already limited and in display order. */
+    rows: ConfigRow[];
+    /** The connected server, highlighted in place rather than moved to the top. */
+    activeId: string | null;
+    onTap: (id: string) => void;
+}
+
+const TONE: Record<string, string> =
+{
+    good: 'text-good',
+    fair: 'text-fair',
+    poor: 'text-poor',
+    unknown: 'text-faint'
+};
+
+const ROW = 'flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-start transition-colors';
+
+/**
+ * The "switch server" list: one tappable row per candidate, showing flag, name,
+ * host:port and the measured latency. Rendered on the Connect screen below the
+ * gate on a phone, and in the servers side panel on a wide window, so the two
+ * placements cannot drift.
+ */
+export default component CandidateList(props: CandidateListProps)
+{
+    const health = useHealth();
+
+    <div class="flex flex-col gap-1.5">
+        <For each={ props.rows } key={ (row) => row.id }>
+        { (row) =>
+            <button
+                type="button"
+                class={ `${ ROW } ${ row.id === props.activeId
+                    ? 'border-accent bg-accent-soft'
+                    : 'border-border bg-surface hover:border-border-strong hover:bg-elevated' }` }
+                onClick={ () => props.onTap(row.id) }
+            >
+                { /* An unknown or malformed country code yields '', which is the sentinel
+                     for "draw no flag" - not a missing-image box. */ }
+                <Show when={ flagIcon(row.country) }>
+                    { (cls: () => string) => <span class={ `${ cls() } flag-row shrink-0` }></span> }
+                </Show>
+
+                <div class="flex min-w-0 flex-1 flex-col">
+                    <span class="truncate text-sm font-medium text-text">{ row.name }</span>
+                    <span class="readout truncate text-xs text-faint" dir="ltr">{ `${ row.host }:${ row.port }` }</span>
+                </div>
+
+                <Show when={ health.latencyOf(row.id) !== undefined }>
+                    <span
+                        class={ `readout shrink-0 text-xs font-medium ${ TONE[bucketFor(health.latencyOf(row.id))] ?? '' }` }
+                        dir="ltr"
+                    >{ `${ health.latencyOf(row.id) }ms` }</span>
+                </Show>
+            </button>
+        }
+        </For>
+    </div>
+}

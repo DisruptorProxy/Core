@@ -42,7 +42,7 @@ export default component LatencyCell(props: LatencyCellProps)
 
         <Show
             when={ props.stats()?.ewmaMs !== undefined }
-            fallback={ () => untestedNode(props.untested) }
+            fallback={ <p class="text-sm text-faint">{ props.untested }</p> }
         >
             <div class="flex items-baseline justify-between gap-2">
                 <span class={ `readout text-xl font-semibold ${ tone() }` }>{ props.stats()?.ewmaMs }ms</span>
@@ -59,14 +59,3 @@ export default component LatencyCell(props: LatencyCellProps)
         </Show>
     </div>
 }
-
-/** The untested placeholder, built imperatively for the Show fallback. */
-const untestedNode = (message: string): HTMLElement =>
-{
-    const element = document.createElement('p');
-
-    element.className = 'text-sm text-faint';
-    element.textContent = message;
-
-    return element;
-};

@@ -154,6 +154,8 @@ export interface Strings
         empty: string;
         subtitle: string;
         presets: string;
+        customName: string;
+        customDesc: string;
         bypassCountry: string;
         bypassCountryHint: string;
         countryModeLabel: string;

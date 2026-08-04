@@ -15,6 +15,17 @@ import Titlebar from './titlebar.component.azeroth';
 import { installTray } from './tray';
 
 /**
+ * Writes a caught render error to the console and renders nothing. Returns null so it
+ * can sit in the fallback's markup, which is the one place with the error in hand.
+ */
+const reportCrash = (error: unknown): null =>
+{
+    console.error('[disruptor-proxy] screen crashed:', error);
+
+    return null;
+};
+
+/**
  * App shell: a rail on wide screens, a bottom bar on phones, and the routed
  * screen in between. The theme and locale stores are instantiated here so the
  * document's `dir`, `lang` and theme class are owned from mount; the subscriptions
@@ -48,8 +59,14 @@ export default component Shell()
             { /* No titlebar on mobile, so the content clears the status bar / notch itself. */ }
             <main class="relative min-w-0 flex-1 overflow-hidden" class:pt-safe={ platform.isMobile() }>
                 <ErrorBoundary
-                    fallback={ (_error, reset) =>
+                    fallback={ (error, reset) =>
                         <div class="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
+                            { /* The boundary is the ONLY place a render crash surfaces: it is caught
+                                 synchronously, so it never reaches window.onerror and never reaches the
+                                 console on its own. Dropping `error` here made every crash in this app
+                                 unreportable - the user sees a friendly screen and the developer sees
+                                 nothing at all. */ }
+                            { reportCrash(error) }
                             <p class="text-lg font-semibold text-text">{ t().app.crashTitle }</p>
                             <p class="max-w-xs text-sm leading-relaxed text-muted">{ t().app.crashHint }</p>
                             <div class="w-full max-w-40">

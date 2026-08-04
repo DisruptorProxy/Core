@@ -148,6 +148,8 @@ export const zh: Strings =
         empty: '选择流量如何在代理与直连之间分配。',
         subtitle: '决定哪些走代理、哪些保持直连。',
         presets: '模式',
+        customName: '自定义',
+        customDesc: '你自己编写的规则。',
         bypassCountry: '按国家绕行',
         bypassCountryHint: '选择你所在的国家：该国的网站和 IP 保持直连，其余全部走代理。',
         countryModeLabel: '路由模式',

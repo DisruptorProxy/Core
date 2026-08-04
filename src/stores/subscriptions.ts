@@ -18,6 +18,7 @@ import type { UpdateRequest, WorkerResponse } from '../workers/parse-worker';
 import { useConfigs } from './configs';
 
 import { dueForUpdate } from '../components/relative-time';
+import { bootstrap } from './bootstrap';
 
 /** How often the scheduler wakes to check for due subscriptions. */
 const SCHEDULER_TICK_MS = 60_000;
@@ -244,7 +245,7 @@ export const useSubscriptions = createStore(() =>
 
     // Load, then immediately catch up anything that went stale while the app was
     // closed - the moment a user reopens Disruptor Proxy, overdue sources refresh.
-    void refresh().then(() => runDue());
+    bootstrap('subscriptions', () => refresh().then(() => runDue()));
 
     return {
         subs,

@@ -95,17 +95,17 @@ export default component RoutingPage()
     };
 
     <div class="h-full">
-    <Screen title={ t().routing.title } subtitle={ t().routing.subtitle }>
-        <div class="flex flex-col gap-6 px-5 py-6">
-            <section class="flex flex-col gap-3">
-                <SectionHeading glyph={ Route } label={ t().routing.presets } />
+        <Screen title={ t().routing.title } subtitle={ t().routing.subtitle }>
+            <div class="flex flex-col gap-6 px-5 py-6">
+                <section class="flex flex-col gap-3">
+                    <SectionHeading glyph={ Route } label={ t().routing.presets } />
 
-                <div class="grid grid-cols-2 gap-2">
-                    <For each={ PRESET_IDS } key={ (id) => id }>
+                    <div class="grid grid-cols-2 gap-2">
+                        <For each={ PRESET_IDS } key={ (id) => id }>
                         { (id) =>
                             <button
                                 type="button"
-                                aria-pressed={ routing.profileId() === id }
+                                aria-pressed={ routing.profileId() === id ? 'true' : 'false' }
                                 class={ () => 'flex flex-col gap-1 rounded-2xl border p-3 text-start transition-colors '
                                     + (routing.profileId() === id
                                         ? 'border-accent bg-accent hover:bg-accent-hover'
@@ -124,33 +124,59 @@ export default component RoutingPage()
                                 </span>
                             </button>
                         }
-                    </For>
-                </div>
-            </section>
+                        </For>
 
-            <section class="flex flex-col gap-3">
-                <SectionHeading glyph={ Flag } label={ t().routing.bypassCountry } />
+                        { /* Only once there is something to go back TO. Picking a preset or a
+                             country replaces the visible rules, so without this the user's own
+                             rules would look destroyed even though they are only stashed. */ }
+                        <Show when={ (routing.customRules()?.length ?? 0) > 0 }>
+                            <button
+                                type="button"
+                                aria-pressed={ routing.profileId() === 'custom' ? 'true' : 'false' }
+                                class={ () => 'flex flex-col gap-1 rounded-2xl border p-3 text-start transition-colors '
+                                    + (routing.profileId() === 'custom'
+                                        ? 'border-accent bg-accent hover:bg-accent-hover'
+                                        : 'border-border bg-surface hover:border-border-strong hover:bg-elevated') }
+                                onClick={ () => routing.useCustom() }
+                            >
+                                <span class={ () => 'flex items-center gap-1.5 text-sm font-semibold '
+                                    + (routing.profileId() === 'custom' ? 'text-accent-ink' : 'text-text') }>
+                                    { t().routing.customName }
+                                    <Show when={ routing.profileId() === 'custom' }>
+                                        { icon(Check, 'size-3.5 shrink-0') }
+                                    </Show>
+                                </span>
+                                <span class={ () => 'text-[11px] leading-snug ' + (routing.profileId() === 'custom' ? 'text-accent-ink/80' : 'text-muted') }>
+                                    { t().routing.customDesc }
+                                </span>
+                            </button>
+                        </Show>
+                    </div>
+                </section>
+
+                <section class="flex flex-col gap-3">
+                    <SectionHeading glyph={ Flag } label={ t().routing.bypassCountry } />
 
                 { /* Its own full-width row, not a cramped slot in the heading: the two mode
                      labels are long in some locales (Persian "دور زدن") and need the room to
                      stay legible with equal segments. */ }
-                <Segmented
-                    label={ t().routing.countryModeLabel }
-                    options={ countryModeOptions }
-                    value={ routing.countryMode() }
-                    onSelect={ (value) => routing.setMode(value as CountryMode) }
+                    <Segmented
+                        label={ t().routing.countryModeLabel }
+                        options={ countryModeOptions }
+                        value={ routing.countryMode() }
+                        onSelect={ (value) => routing.setMode(value as CountryMode) }
                 />
 
-                <p class="text-[11px] text-faint">
+                    <p class="text-[11px] text-faint">
                     { routing.countryMode() === 'smart' ? t().routing.countryModeSmartHint : t().routing.bypassCountryHint }
-                </p>
+                    </p>
 
-                <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
-                    <For each={ COUNTRIES } key={ (code) => code }>
+                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+                        <For each={ COUNTRIES } key={ (code) => code }>
                         { (code) =>
                             <button
                                 type="button"
-                                aria-pressed={ countryActive(code) }
+                                aria-pressed={ countryActive(code) ? 'true' : 'false' }
                                 class={ () => 'flex items-center gap-2 rounded-xl border px-3 py-2.5 text-start transition-colors '
                                     + (countryActive(code)
                                         ? 'border-accent bg-accent hover:bg-accent-hover'
@@ -166,22 +192,22 @@ export default component RoutingPage()
                                 </Show>
                             </button>
                         }
-                    </For>
-                </div>
-            </section>
+                        </For>
+                    </div>
+                </section>
 
-            <section class="flex flex-col gap-3">
-                <SectionHeading
-                    glyph={ ListFilter }
-                    label={ t().routing.rulesHeader }
-                    badge={ () =>
+                <section class="flex flex-col gap-3">
+                    <SectionHeading
+                        glyph={ ListFilter }
+                        label={ t().routing.rulesHeader }
+                        badge={ () =>
                         <Show when={ routing.profileId() === 'custom' }>
                             <span class="shrink-0 rounded-md border border-border px-1.5 py-0.5 text-[10px] font-medium normal-case text-muted">
                                 { t().routing.presetCustomName }
                             </span>
                         </Show>
                     }
-                    trailing={ () =>
+                        trailing={ () =>
                         <button
                             type="button"
                             class="flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium text-muted hover:bg-elevated press"
@@ -193,10 +219,10 @@ export default component RoutingPage()
                     }
                 />
 
-                <p class="text-[11px] text-faint">{ t().routing.rulesHint }</p>
+                    <p class="text-[11px] text-faint">{ t().routing.rulesHint }</p>
 
-                <ol class="flex flex-col gap-2">
-                    <For each={ routing.rules() } key={ (rule) => rule.id }>
+                    <ol class="flex flex-col gap-2">
+                        <For each={ routing.rules() } key={ (rule) => rule.id }>
                         { (rule) =>
                             <li class={ 'flex items-center gap-2 rounded-xl border px-3 py-2.5 '
                                 + (describeRule(rule, t()).isFinal ? 'border-dashed border-border-strong bg-transparent' : 'border-border bg-surface') }>
@@ -224,17 +250,17 @@ export default component RoutingPage()
                                 </Show>
                             </li>
                         }
-                    </For>
-                </ol>
-            </section>
-        </div>
-    </Screen>
+                        </For>
+                    </ol>
+                </section>
+            </div>
+        </Screen>
 
-    <RuleEditor
-        open={ () => editorOpen }
-        initial={ () => editing }
-        onClose={ () => editorOpen = false }
-        onSubmit={ (type, value, action) => submit(type, value, action) }
+        <RuleEditor
+            open={ () => editorOpen }
+            initial={ () => editing }
+            onClose={ () => editorOpen = false }
+            onSubmit={ (type, value, action) => submit(type, value, action) }
     />
     </div>
 }

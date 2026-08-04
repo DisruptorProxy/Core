@@ -4,6 +4,7 @@ import { deleteConfigs, loadRows, setFavorite } from '../lib/db/repo';
 import type { ConfigRow } from '../lib/db/repo';
 
 import type { ImportReport, ImportRequest, WorkerResponse } from '../workers/parse-worker';
+import { bootstrap } from './bootstrap';
 
 interface ImportState
 {
@@ -129,7 +130,7 @@ export const useConfigs = createStore(() =>
             worker.postMessage(request);
         });
 
-    void refresh();
+    bootstrap('configs', refresh);
 
     return {
         rows,

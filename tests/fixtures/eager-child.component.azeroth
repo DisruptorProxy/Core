@@ -1,0 +1,22 @@
+interface Report
+{
+    errors: string[];
+}
+
+interface EagerChildProps
+{
+    report: Report;
+}
+
+/**
+ * Stands in for ImportReport: dereferences its prop through a `derived`, which lowers
+ * to a memo that pulls at construction. A parent that only guarantees the prop is
+ * non-null WHILE MOUNTED is not enough for this shape - the read happens as the branch
+ * is built.
+ */
+export default component EagerChild(props: EagerChildProps)
+{
+    derived count = props.report.errors.length;
+
+    <p>errors: { count }</p>
+}

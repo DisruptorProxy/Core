@@ -37,6 +37,12 @@ const heightOf = (item: ListItem): number =>
     }
 };
 
+// These two build DOM by hand because they cannot do otherwise: markup is only legal in a
+// component BODY, and VirtualList's `children` contract is `(item) => HTMLElement`, so a
+// helper called from that callback has no markup available to it. Promoting either to a
+// real component would cost a file per empty div. Everywhere the element lands in a prop
+// instead (a Show fallback, say), markup is the better form and is used.
+
 /** A row whose data is momentarily gone renders as empty space, not a crash. */
 const placeholder = (): HTMLElement => document.createElement('div');
 

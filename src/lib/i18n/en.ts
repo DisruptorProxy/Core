@@ -148,6 +148,8 @@ export const en: Strings =
         empty: 'Choose how traffic is split between the proxy and your direct connection.',
         subtitle: 'Decide what goes through the proxy and what stays direct.',
         presets: 'Modes',
+        customName: 'Custom',
+        customDesc: 'The rules you wrote yourself.',
         bypassCountry: 'Bypass a country',
         bypassCountryHint: 'Pick where you are: that country’s sites and IPs stay direct, everything else goes through the proxy.',
         countryModeLabel: 'Routing mode',

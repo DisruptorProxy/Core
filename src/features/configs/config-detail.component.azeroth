@@ -43,9 +43,19 @@ export default component ConfigDetail()
     };
     const isSwitching = (): boolean => connection.switching();
 
+    { /* Two different "no config" states: nothing selected at all gets the empty panel,
+         while a selected-but-not-yet-loaded config gets nothing rather than a flash of it. */ }
     <Show
         when={ config() }
-        fallback={ () => detail.openId() === null ? emptyState(t().detail.emptyTitle, t().detail.emptyHint) : null }
+        fallback={
+            <Show when={ detail.openId() === null }>
+                <div class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+                    { icon(Server, 'size-8 text-faint') }
+                    <p class="text-sm font-medium text-muted">{ t().detail.emptyTitle }</p>
+                    <p class="max-w-52 text-xs text-faint">{ t().detail.emptyHint }</p>
+                </div>
+            </Show>
+        }
     >
         { (config) =>
         <div class="flex flex-col gap-4">
@@ -166,26 +176,3 @@ export default component ConfigDetail()
         }
     </Show>
 }
-
-/** The "nothing selected" state shown in the wide side panel. */
-const emptyState = (title: string, hint: string): HTMLElement =>
-{
-    const wrap = document.createElement('div');
-
-    wrap.className = 'flex h-full flex-col items-center justify-center gap-3 px-6 text-center';
-    wrap.appendChild(icon(Server, 'size-8 text-faint'));
-
-    const heading = document.createElement('p');
-
-    heading.className = 'text-sm font-medium text-muted';
-    heading.textContent = title;
-    wrap.appendChild(heading);
-
-    const sub = document.createElement('p');
-
-    sub.className = 'max-w-52 text-xs text-faint';
-    sub.textContent = hint;
-    wrap.appendChild(sub);
-
-    return wrap;
-};

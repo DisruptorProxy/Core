@@ -73,9 +73,11 @@ export default component SubscriptionUsage(props: SubscriptionUsageProps)
 
     <div class="flex h-full flex-col justify-center gap-1.5 border-b border-border/60 bg-elevated/20 px-5 text-[11px]">
         <div class="flex items-baseline justify-between gap-2">
+            { /* An empty span, not nothing: it holds the start of the flex row so the
+                 sibling on the right keeps its position before the first update lands. */ }
             <Show
                 when={ sub()?.lastUpdatedAt }
-                fallback={ () => document.createElement('span') }
+                fallback={ <span></span> }
             >
                 { (updatedAt) =>
                     <span class="text-faint">{ t().subscriptions.updatedAgo(relativeTime(updatedAt(), t())) }</span>

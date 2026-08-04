@@ -6,7 +6,15 @@ import { useLocale } from '../../stores/locale';
 
 interface ImportReportProps
 {
-    report: Report;
+    /**
+     * Nullable although the caller renders this inside a `<Show>` on the same value:
+     * the narrowed accessor a Show value-callback hands down has been observed
+     * returning its null seed while the branch is being built, so a component that
+     * dereferences the prop as it is constructed crashes the screen. Tolerating null
+     * here costs one guard and is self-healing - the prop is reactive, so the real
+     * report arrives a beat later and the panel fills in.
+     */
+    report: Report | null;
 }
 
 const CELL = 'flex flex-col gap-1 rounded-xl border border-border bg-surface px-3 py-2';
@@ -24,52 +32,54 @@ export default component ImportReport(props: ImportReportProps)
 {
     const { t } = useLocale();
 
-    derived hasErrors = props.report.errors.length > 0;
-
-    <div class="flex flex-col gap-3">
-        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <div class={ CELL }>
-                <span class={ `${ VALUE } text-good` }>{ props.report.added }</span>
-                <span class={ LABEL }>{ t().importing.added }</span>
-            </div>
-
-            <div class={ CELL }>
-                <span class={ VALUE }>{ props.report.duplicates }</span>
-                <span class={ LABEL }>{ t().importing.duplicates }</span>
-            </div>
-
-            <div class={ CELL }>
-                <span class={ VALUE } class:text-fair={ hasErrors }>{ props.report.errors.length }</span>
-                <span class={ LABEL }>{ t().importing.invalid }</span>
-            </div>
-
-            <div class={ CELL }>
-                <span class={ VALUE }>{ props.report.elapsedMs }ms</span>
-                <span class={ LABEL }>{ t().importing.elapsed }</span>
-            </div>
-        </div>
-
-        <p class="text-xs leading-relaxed text-muted">{ t().importing.duplicatesHint }</p>
-
-        <Show when={ hasErrors }>
-            <details class="rounded-xl border border-border bg-surface">
-                <summary class="cursor-pointer px-3 py-2 text-xs font-medium text-fair">
-                    { t().importing.invalidDetail } ({ props.report.errors.length })
-                </summary>
-
-                <div class="flex max-h-48 flex-col gap-1 overflow-y-auto border-t border-border px-3 py-2">
-                    <For each={ props.report.errors.slice(0, 100) } key={ (error) => error.line }>
-                        { (error) =>
-                            <div class="flex flex-col gap-0.5 py-1">
-                                <span class="text-[11px] font-medium text-muted">
-                                    { t().importing.lineLabel(error.line) } — { error.reason }
-                                </span>
-                                <span class="readout truncate text-[11px] text-faint" dir="ltr">{ error.snippet }</span>
-                            </div>
-                        }
-                    </For>
+    <Show when={ props.report }>
+    { (report: () => Report) =>
+        <div class="flex flex-col gap-3">
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div class={ CELL }>
+                    <span class={ `${ VALUE } text-good` }>{ report().added }</span>
+                    <span class={ LABEL }>{ t().importing.added }</span>
                 </div>
-            </details>
-        </Show>
-    </div>
+
+                <div class={ CELL }>
+                    <span class={ VALUE }>{ report().duplicates }</span>
+                    <span class={ LABEL }>{ t().importing.duplicates }</span>
+                </div>
+
+                <div class={ CELL }>
+                    <span class={ VALUE } class:text-fair={ report().errors.length > 0 }>{ report().errors.length }</span>
+                    <span class={ LABEL }>{ t().importing.invalid }</span>
+                </div>
+
+                <div class={ CELL }>
+                    <span class={ VALUE }>{ report().elapsedMs }ms</span>
+                    <span class={ LABEL }>{ t().importing.elapsed }</span>
+                </div>
+            </div>
+
+            <p class="text-xs leading-relaxed text-muted">{ t().importing.duplicatesHint }</p>
+
+            <Show when={ report().errors.length > 0 }>
+                <details class="rounded-xl border border-border bg-surface">
+                    <summary class="cursor-pointer px-3 py-2 text-xs font-medium text-fair">
+                        { t().importing.invalidDetail } ({ report().errors.length })
+                    </summary>
+
+                    <div class="flex max-h-48 flex-col gap-1 overflow-y-auto border-t border-border px-3 py-2">
+                        <For each={ report().errors.slice(0, 100) } key={ (error) => error.line }>
+                            { (error) =>
+                                <div class="flex flex-col gap-0.5 py-1">
+                                    <span class="text-[11px] font-medium text-muted">
+                                        { t().importing.lineLabel(error.line) } - { error.reason }
+                                    </span>
+                                    <span class="readout truncate text-[11px] text-faint" dir="ltr">{ error.snippet }</span>
+                                </div>
+                            }
+                        </For>
+                    </div>
+                </details>
+            </Show>
+        </div>
+    }
+    </Show>
 }

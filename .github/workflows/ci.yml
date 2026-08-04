@@ -36,6 +36,11 @@ jobs:
             -   name: Check (typecheck + lint)
                 run: npm run check
 
+            # Runs before the build: a failing parser or config builder should stop the job
+            # at the cheap step, not after a full bundle.
+            -   name: Test
+                run: npm test
+
             -   name: Build
                 run: npm run build
 

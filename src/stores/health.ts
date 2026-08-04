@@ -7,6 +7,7 @@ import { foldStats, score } from '../lib/health/score';
 
 import type { PingMode, PingResult } from '../features/connection/engine/port';
 import { startProbeSession } from '../features/connection/engine/probe';
+import { bootstrap } from './bootstrap';
 
 interface TestState
 {
@@ -253,7 +254,7 @@ export const useHealth = createStore(() =>
         setTestState(IDLE);
     };
 
-    void load();
+    bootstrap('health', load);
 
     return {
         records,

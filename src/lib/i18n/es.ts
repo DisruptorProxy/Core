@@ -148,6 +148,8 @@ export const es: Strings =
         empty: 'Elige cómo repartir el tráfico entre el proxy y tu conexión directa.',
         subtitle: 'Decide qué pasa por el proxy y qué va directo.',
         presets: 'Modos',
+        customName: 'Personalizado',
+        customDesc: 'Las reglas que escribiste tú mismo.',
         bypassCountry: 'Omitir un país',
         bypassCountryHint: 'Elige dónde estás: los sitios e IP de ese país van directos, todo lo demás pasa por el proxy.',
         countryModeLabel: 'Modo de enrutamiento',
