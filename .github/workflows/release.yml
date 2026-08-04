@@ -32,12 +32,17 @@ name: Release
 # Every secret below is OPTIONAL - the workflow degrades instead of failing, so a fork or a
 # repo with nothing configured still cuts a complete draft release. What each one buys:
 #
-#   TAURI_SIGNING_PRIVATE_KEY           base64 of the whole `.key` file `tauri signer
+#   TAURI_SIGNING_PRIVATE_KEY           the RAW TEXT of the `.key` file `tauri signer
 #                                        generate` wrote, INCLUDING its `untrusted comment:`
-#                                        first line. Without it the installer ships with no
-#                                        .sig and the release has no latest.json, so the
-#                                        auto-updater will not offer it.
-#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password.
+#                                        first line. Do NOT base64 it - the file is already
+#                                        base64, and encoding it again fails the build with
+#                                        "Missing encoded key in secret key". Without this
+#                                        secret the installer ships with no .sig and the
+#                                        release has no latest.json, so the auto-updater
+#                                        will not offer it.
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password. Leave the secret unset only if the key
+#                                        was generated with no password; a wrong or missing
+#                                        one fails with "Wrong password for that key".
 #   ANDROID_KEYSTORE_BASE64             base64 of the release keystore. Without it the APK
 #   ANDROID_KEYSTORE_PASSWORD            is unsigned, and Android refuses to install it.
 #   ANDROID_KEY_ALIAS
