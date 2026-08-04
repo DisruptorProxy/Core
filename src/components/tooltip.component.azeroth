@@ -1,0 +1,138 @@
+import { Portal, Show, onCleanup } from 'azerothjs';
+import type { Child } from 'azerothjs';
+
+/**
+ * A tooltip for icon-only controls: pointer hover and KEYBOARD focus reveal it, a touch tap
+ * does not - a hover-less device gets nothing, and the control's own `aria-label` speaks there.
+ *
+ * The bubble is PORTALED to the body and positioned `fixed` from the trigger's rect, because a
+ * z-index only orders siblings inside its own stacking context. Rendered in place, the previous
+ * CSS-only tooltip sat UNDER the next card however high its z-index went: `.glass` and
+ * `.glass-bar` carry a `backdrop-filter`, and that creates a stacking context, so the number was
+ * never the lever. It was also clipped outright inside the server list, whose `overflow-hidden`
+ * makes a clip box the pseudo-element could not escape. Leaving the subtree is the only fix.
+ *
+ * The bubble is `aria-hidden`: every trigger already carries the same string as its accessible
+ * name, so exposing it again would announce it twice. It is a visual affordance, not content.
+ */
+export default component Tooltip(props: { label: string; align?: 'center' | 'end'; children?: Child })
+{
+    state open = false;
+    state below = false;
+    state left = 0;
+    state top = 0;
+
+    let wrap: HTMLElement | null = null;
+    let bubble: HTMLElement | null = null;
+
+    // Read per event rather than captured once: a value resolved at setup would pin the answer
+    // for this element's whole life, and the window can move between displays.
+    const hoverable = (): boolean =>
+        typeof matchMedia !== 'undefined' && matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+    // Focus opens it for KEYBOARD focus only, decided from the interaction that caused the
+    // focus rather than from `:focus-visible`. A pointer press immediately before means a click
+    // or a tap: the mouse already has hover, and a touch should get nothing.
+    let viaPointer = false;
+
+    const openOnFocus = (): void =>
+    {
+        if (viaPointer)
+        {
+            viaPointer = false;
+
+            return;
+        }
+
+        open = true;
+    };
+
+    /**
+     * Anchors the bubble in viewport coordinates: flipped below when there is no room above,
+     * and its centre clamped so a control near either edge cannot push the bubble off-screen.
+     * Re-runs on scroll and resize because a fixed bubble does not follow its trigger.
+     */
+    const place = (): void =>
+    {
+        if (wrap === null || typeof window === 'undefined')
+        {
+            return;
+        }
+
+        const rect = wrap.getBoundingClientRect();
+        const half = (bubble?.getBoundingClientRect().width ?? 0) / 2;
+        const min = 8 + half;
+        const max = Math.max(min, window.innerWidth - 8 - half);
+
+        left = props.align === 'end'
+            ? Math.min(Math.max(rect.right - half, min), max)
+            : Math.min(Math.max(rect.left + rect.width / 2, min), max);
+
+        // Flip against the TRIGGER's own box, not a fixed viewport threshold: what matters is
+        // whether the bubble fits above this control, wherever the control happens to sit.
+        below = rect.top < 44;
+        top = below ? rect.bottom + 6 : rect.top - 6;
+    };
+
+    effect
+    {
+        if (!open || typeof window === 'undefined')
+        {
+            return;
+        }
+
+        // Twice: once now for the flip and a coarse centre, then after paint when the bubble
+        // has a measurable width and the clamp can be exact.
+        place();
+
+        const frame = requestAnimationFrame(place);
+        const onKey = (event: KeyboardEvent): void =>
+        {
+            // Escape dismisses a tooltip without moving focus (WCAG 1.4.13).
+            if (event.key === 'Escape')
+            {
+                open = false;
+            }
+        };
+
+        window.addEventListener('resize', place);
+        // Capture phase: this app scrolls in inner containers, not on the window.
+        document.addEventListener('scroll', place, true);
+        document.addEventListener('keydown', onKey);
+
+        cleanup
+        {
+            cancelAnimationFrame(frame);
+            window.removeEventListener('resize', place);
+            document.removeEventListener('scroll', place, true);
+            document.removeEventListener('keydown', onKey);
+        }
+    }
+
+    onCleanup(() => { open = false; });
+
+    <span
+        class="relative inline-flex"
+        ref={ (element: HTMLElement) => { wrap = element; } }
+        onPointerDown={ () => { viaPointer = true; } }
+        onMouseEnter={ () => { if (hoverable()) { open = true; } } }
+        onMouseLeave={ () => open = false }
+        onFocusIn={ openOnFocus }
+        onFocusOut={ () => { viaPointer = false; open = false; } }
+    >
+        { props.children }
+
+        <Show when={ open }>
+            <Portal>
+                <span
+                    class={ `pointer-events-none fixed z-[100] whitespace-nowrap rounded-lg border border-border bg-elevated px-2 py-1 text-xs leading-none text-text shadow-[var(--g-shadow)] ${ below ? '-translate-x-1/2' : '-translate-x-1/2 -translate-y-full' }` }
+                    style={ `left:${ left }px;top:${ top }px` }
+                    ref={ (element: HTMLElement) => { bubble = element; } }
+                    aria-hidden="true"
+                >
+                    { props.label }
+                </span>
+            </Portal>
+        </Show>
+    </span>
+}

@@ -12,6 +12,7 @@ import { useSubscriptions } from '../../stores/subscriptions';
 
 import { icon } from '../../components/icon';
 import { isStale } from '../../components/relative-time';
+import Tooltip from '../../components/tooltip.component.azeroth';
 
 interface GroupHeaderProps
 {
@@ -124,11 +125,12 @@ export default component GroupHeader(props: GroupHeaderProps)
             <span class="truncate text-sm font-semibold text-text">{ name }</span>
 
             <Show when={ hasActive() }>
-                <span
-                    class="size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_8px_rgba(0,191,122,0.5)]"
-                    data-tip={ t().servers.activeHere }
-                    aria-label={ t().servers.activeHere }
-                ></span>
+                <Tooltip label={ t().servers.activeHere }>
+                    <span
+                        class="size-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_8px_rgba(0,191,122,0.5)]"
+                        aria-label={ t().servers.activeHere }
+                    ></span>
+                </Tooltip>
             </Show>
 
             <span class="readout ms-auto shrink-0 ps-2 text-xs text-muted">{ countLabel }</span>
@@ -137,24 +139,29 @@ export default component GroupHeader(props: GroupHeaderProps)
         <Show when={ sub() }>
             { (record) =>
             <div class="flex shrink-0 items-center gap-1">
-                <button
-                    type="button"
-                    class={ ICON_BTN }
-                    aria-label={ t().subscriptions.update }
-                    data-tip={ t().subscriptions.update }
-                    disabled={ subscriptions.isUpdating(record().id) }
-                    onClick={ () => void subscriptions.update(record().id) }
-                >
-                    { icon(RefreshCw, subscriptions.isUpdating(record().id) ? 'size-4 animate-spin' : 'size-4') }
-                </button>
+                <Tooltip label={ t().subscriptions.update }>
+                    <button
+                        type="button"
+                        class={ ICON_BTN }
+                        aria-label={ t().subscriptions.update }
+                        disabled={ subscriptions.isUpdating(record().id) }
+                        onClick={ () => void subscriptions.update(record().id) }
+                    >
+                        { icon(RefreshCw, subscriptions.isUpdating(record().id) ? 'size-4 animate-spin' : 'size-4') }
+                    </button>
+                </Tooltip>
 
-                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.editTitle } data-tip={ t().subscriptions.editTitle } onClick={ () => props.onEdit(record()) }>
-                    { icon(Pencil, 'size-4') }
-                </button>
+                <Tooltip label={ t().subscriptions.editTitle }>
+                    <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.editTitle } onClick={ () => props.onEdit(record()) }>
+                        { icon(Pencil, 'size-4') }
+                    </button>
+                </Tooltip>
 
-                <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.delete } data-tip={ t().subscriptions.delete } onClick={ () => props.onDelete(record()) }>
-                    { icon(Trash2, 'size-4') }
-                </button>
+                <Tooltip label={ t().subscriptions.delete }>
+                    <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.delete } onClick={ () => props.onDelete(record()) }>
+                        { icon(Trash2, 'size-4') }
+                    </button>
+                </Tooltip>
             </div>
             }
         </Show>

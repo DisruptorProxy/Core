@@ -10,6 +10,7 @@ import { useLocale } from '../../stores/locale';
 
 import { flagIcon } from '../../components/flag';
 import { icon } from '../../components/icon';
+import Tooltip from '../../components/tooltip.component.azeroth';
 
 const TILE = 'flex flex-col items-center gap-0.5 rounded-xl border border-border bg-surface px-2 py-2.5';
 const TILE_KEY = 'text-[11px] text-muted';
@@ -48,11 +49,11 @@ export default component ConnectionStatus()
                 </span>
             </div>
 
+            <Tooltip label={ t().status.refreshIp }>
             <button
                 type="button"
                 class={ IP_BOX }
                 aria-label={ t().status.refreshIp }
-                data-tip={ t().status.refreshIp }
                 disabled={ connection.exitIpLoading() }
                 onClick={ () => void connection.refreshExitIp() }
             >
@@ -67,6 +68,7 @@ export default component ConnectionStatus()
                         : connection.exitIp() ?? '—' }
                 </span>
             </button>
+            </Tooltip>
 
             <div class="grid grid-cols-3 gap-2">
                 <div class={ TILE }>

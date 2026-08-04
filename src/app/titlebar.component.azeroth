@@ -5,6 +5,7 @@ import { useLocale } from '../stores/locale';
 import { useWindowMode } from '../stores/window-mode';
 
 import { icon } from '../components/icon';
+import Tooltip from '../components/tooltip.component.azeroth';
 
 import logoUrl from '../assets/logo-icon.png';
 
@@ -50,40 +51,40 @@ export default component Titlebar()
 
         { /* The controls sit hard against the window's right edge and the app never
              scrolls sideways, so a centred tooltip on them is clipped by the frame -
-             the longer the translation, the more of it is lost. `data-tip-align="end"`
+             the longer the translation, the more of it is lost. The `align="end"`
              hangs them inward from the control instead, which stays inside the window
              in every locale. */ }
         <div class="flex items-center gap-1">
-            <button
-                type="button"
-                class={ CTRL + ' hover:bg-elevated hover:text-text' }
-                aria-label={ t().app.minimizeWindow }
-                data-tip={ t().app.minimizeWindow }
-                data-tip-align="end"
-                onClick={ () => minimize() }
-            >
-                { icon(Minus, 'size-4') }
-            </button>
-            <button
-                type="button"
-                class={ CTRL + ' hover:bg-elevated hover:text-text' }
-                aria-label={ windowMode.mode() === 'compact' ? t().app.expandWindow : t().app.shrinkWindow }
-                data-tip={ windowMode.mode() === 'compact' ? t().app.expandWindow : t().app.shrinkWindow }
-                data-tip-align="end"
-                onClick={ () => windowMode.toggle() }
-            >
-                { icon(windowMode.mode() === 'compact' ? Maximize2 : Minimize2, 'size-4 animate-icon-swap') }
-            </button>
-            <button
-                type="button"
-                class={ CTRL + ' hover:bg-poor hover:text-white' }
-                aria-label={ t().app.hideWindow }
-                data-tip={ t().app.hideWindow }
-                data-tip-align="end"
-                onClick={ () => hide() }
-            >
-                { icon(X, 'size-4') }
-            </button>
+            <Tooltip label={ t().app.minimizeWindow } align="end">
+                <button
+                    type="button"
+                    class={ CTRL + ' hover:bg-elevated hover:text-text' }
+                    aria-label={ t().app.minimizeWindow }
+                    onClick={ () => minimize() }
+                >
+                    { icon(Minus, 'size-4') }
+                </button>
+            </Tooltip>
+            <Tooltip label={ windowMode.mode() === 'compact' ? t().app.expandWindow : t().app.shrinkWindow } align="end">
+                <button
+                    type="button"
+                    class={ CTRL + ' hover:bg-elevated hover:text-text' }
+                    aria-label={ windowMode.mode() === 'compact' ? t().app.expandWindow : t().app.shrinkWindow }
+                    onClick={ () => windowMode.toggle() }
+                >
+                    { icon(windowMode.mode() === 'compact' ? Maximize2 : Minimize2, 'size-4 animate-icon-swap') }
+                </button>
+            </Tooltip>
+            <Tooltip label={ t().app.hideWindow } align="end">
+                <button
+                    type="button"
+                    class={ CTRL + ' hover:bg-poor hover:text-white' }
+                    aria-label={ t().app.hideWindow }
+                    onClick={ () => hide() }
+                >
+                    { icon(X, 'size-4') }
+                </button>
+            </Tooltip>
         </div>
     </div>
 }

@@ -13,6 +13,7 @@ import Button from '../../components/button.component.azeroth';
 import Card from '../../components/card.component.azeroth';
 import { flagIcon } from '../../components/flag';
 import { icon } from '../../components/icon';
+import Tooltip from '../../components/tooltip.component.azeroth';
 
 import LatencyCell from './latency-cell.component.azeroth';
 
@@ -100,17 +101,18 @@ export default component ConfigDetail(props: ConfigDetailProps)
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-medium text-muted">{ t().detail.health }</span>
 
-                    <button
-                        type="button"
-                        class={ PING_BUTTON }
-                        aria-label={ t().detail.ping }
-                        data-tip={ t().detail.ping }
-                        disabled={ detail.pinging() || !canConnect(config().protocol) }
-                        onClick={ () => void detail.pingNow() }
-                    >
-                        { icon(Activity, detail.pinging() ? 'size-3.5 animate-pulse' : 'size-3.5') }
-                        <span>{ detail.pinging() ? t().detail.pinging : t().detail.ping }</span>
-                    </button>
+                    <Tooltip label={ t().detail.ping }>
+                        <button
+                            type="button"
+                            class={ PING_BUTTON }
+                            aria-label={ t().detail.ping }
+                            disabled={ detail.pinging() || !canConnect(config().protocol) }
+                            onClick={ () => void detail.pingNow() }
+                        >
+                            { icon(Activity, detail.pinging() ? 'size-3.5 animate-pulse' : 'size-3.5') }
+                            <span>{ detail.pinging() ? t().detail.pinging : t().detail.ping }</span>
+                        </button>
+                    </Tooltip>
                 </div>
 
                 <LatencyCell label={ t().ping.proxyLabel } stats={ () => detail.record()?.proxy } untested={ t().detail.untested } successLabel={ t().detail.successRate } />

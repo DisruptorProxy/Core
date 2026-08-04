@@ -5,6 +5,7 @@ import { humanizeError } from '../../lib/health/humanize-error';
 import { bucketFor } from '../../lib/health/score';
 
 import Sparkline from '../../components/sparkline.component.azeroth';
+import Tooltip from '../../components/tooltip.component.azeroth';
 
 const LATENCY_TONE: Record<string, string> =
 {
@@ -46,7 +47,7 @@ export default component LatencyCell(props: LatencyCellProps)
         >
             <div class="flex items-baseline justify-between gap-2">
                 <span class={ `readout text-xl font-semibold ${ tone() }` }>{ props.stats()?.ewmaMs }ms</span>
-                <span class="readout text-xs text-muted" data-tip={ props.successLabel }>{ Math.round((props.stats()?.successRate ?? 0) * 100) }%</span>
+                <Tooltip label={ props.successLabel }><span class="readout text-xs text-muted">{ Math.round((props.stats()?.successRate ?? 0) * 100) }%</span></Tooltip>
             </div>
 
             <div class={ tone() }>

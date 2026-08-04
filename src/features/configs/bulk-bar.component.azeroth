@@ -6,6 +6,7 @@ import { useSelection } from '../../stores/selection';
 import { useToast } from '../../stores/toast';
 
 import { icon } from '../../components/icon';
+import Tooltip from '../../components/tooltip.component.azeroth';
 
 interface BulkBarProps
 {
@@ -60,15 +61,16 @@ export default component BulkBar(props: BulkBarProps)
                 { t().servers.selectedLabel(selection.count()) }
             </span>
 
-            <button
-                type="button"
-                class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface press"
-                aria-label={ t().servers.selectAll }
-                data-tip={ t().servers.selectAll }
-                onClick={ () => selection.selectMany(props.visibleIds()) }
-            >
-                { icon(CheckCheck, 'size-5') }
-            </button>
+            <Tooltip label={ t().servers.selectAll }>
+                <button
+                    type="button"
+                    class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface press"
+                    aria-label={ t().servers.selectAll }
+                    onClick={ () => selection.selectMany(props.visibleIds()) }
+                >
+                    { icon(CheckCheck, 'size-5') }
+                </button>
+            </Tooltip>
 
             <button
                 type="button"

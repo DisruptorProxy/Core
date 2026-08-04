@@ -23,6 +23,7 @@ import Button from '../components/button.component.azeroth';
 import EmptyState from '../components/empty-state.component.azeroth';
 import { icon } from '../components/icon';
 import Sheet from '../components/sheet.component.azeroth';
+import Tooltip from '../components/tooltip.component.azeroth';
 
 import BulkBar from '../features/configs/bulk-bar.component.azeroth';
 import ConfigDetail from '../features/configs/config-detail.component.azeroth';
@@ -253,29 +254,31 @@ export default component ServersPage()
                      title. A live test shows its progress in the subtitle above. */ }
                         <Show when={ !selection.active() }>
                             <div class="flex shrink-0 items-center gap-2">
-                                <button
-                                    type="button"
-                                    class={ ICON_BTN }
-                                    aria-label={ t().importing.openAction }
-                                    data-tip={ t().importing.openAction }
-                                    onClick={ () => importOpen = true }
-                                >
-                            { icon(Download, 'size-4') }
-                                </button>
+                                <Tooltip label={ t().importing.openAction }>
+                                    <button
+                                        type="button"
+                                        class={ ICON_BTN }
+                                        aria-label={ t().importing.openAction }
+                                        onClick={ () => importOpen = true }
+                                    >
+                                        { icon(Download, 'size-4') }
+                                    </button>
+                                </Tooltip>
 
-                                <button
-                                    type="button"
-                                    class={ `${ ICON_BTN } relative` }
-                                    aria-label={ t().servers.actions }
-                                    data-tip={ t().servers.actions }
-                                    onClick={ () => actionsOpen = true }
-                                >
-                            { icon(SlidersHorizontal, 'size-4') }
+                                <Tooltip label={ t().servers.actions }>
+                                    <button
+                                        type="button"
+                                        class={ `${ ICON_BTN } relative` }
+                                        aria-label={ t().servers.actions }
+                                        onClick={ () => actionsOpen = true }
+                                    >
+                                        { icon(SlidersHorizontal, 'size-4') }
 
-                                    <Show when={ isTesting }>
-                                        <span class="absolute end-1.5 top-1.5 size-2 animate-pulse rounded-full bg-accent" aria-hidden="true"></span>
-                                    </Show>
-                                </button>
+                                        <Show when={ isTesting }>
+                                            <span class="absolute end-1.5 top-1.5 size-2 animate-pulse rounded-full bg-accent" aria-hidden="true"></span>
+                                        </Show>
+                                    </button>
+                                </Tooltip>
                             </div>
                         </Show>
                     </div>
@@ -359,15 +362,16 @@ export default component ServersPage()
                             <div class="glass-bar flex shrink-0 items-center gap-2 border-b border-border px-4 py-4">
                                 <span class="min-w-0 flex-1 truncate text-sm font-semibold text-text">{ detail.config()?.name ?? '' }</span>
 
-                                <button
-                                    type="button"
-                                    class="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-elevated hover:text-text press"
-                                    aria-label={ t().common.dismiss }
-                                    data-tip={ t().common.dismiss }
-                                    onClick={ () => detail.close() }
-                                >
-                        { icon(X, 'size-4') }
-                                </button>
+                                <Tooltip label={ t().common.dismiss }>
+                                    <button
+                                        type="button"
+                                        class="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-elevated hover:text-text press"
+                                        aria-label={ t().common.dismiss }
+                                        onClick={ () => detail.close() }
+                                    >
+                                        { icon(X, 'size-4') }
+                                    </button>
+                                </Tooltip>
                             </div>
                         </Show>
 
