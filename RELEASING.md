@@ -89,6 +89,15 @@ installed — so the first version a user can update *to* is the one after their
 | --- | --- |
 | `TAURI_SIGNING_PRIVATE_KEY` | The updater signing key — the base64 contents of the `.key` file exactly as `tauri signer generate` wrote it. Do not reformat or re-encode it. |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | The password entered when the key was generated. |
+| `WINDOWS_CERTIFICATE` | **Not set yet.** base64 of an Authenticode code-signing `.pfx`. When present, the workflow imports it and Tauri signs both `disruptor-proxy.exe` and the installer. |
+| `WINDOWS_CERTIFICATE_PASSWORD` | Its password. Leave unset if the `.pfx` has none. |
+
+Authenticode signing is a *different* trust system from the updater key above: the updater
+key stops a tampered update, while the certificate is what stops SmartScreen warning on
+every download and what removes the last real ingredient of the
+`Trojan:Win32/Bearfoos.B!ml` false positive (see the README). Until it is set, releases go
+out unsigned and the workflow says so with a warning annotation rather than failing.
+[SignPath Foundation](https://signpath.org/) issues free certificates to OSS projects.
 
 The release itself is published by the default `GITHUB_TOKEN`; no PAT is needed now that
 everything lands on this repo. (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,

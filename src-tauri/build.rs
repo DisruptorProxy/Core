@@ -14,9 +14,12 @@ fn main() {
             .default_permission(tauri_build::DefaultPermissionRule::AllowAllCommands),
     );
 
-    // manifest.xml requests `asInvoker` (no forced elevation), so it's safe to embed
-    // in dev builds too - only app-xray.exe self-elevates, via ShellExecuteExW at connect
-    // time, not the app.
+    // manifest.xml requests `requireAdministrator`, and that is embedded in dev builds
+    // too on purpose: the manifest is what makes the core launchable as a plain child
+    // process, so a dev build without it could not bring the tunnel up at all. The cost
+    // is that `npm run desktop` needs a terminal that is already elevated - Windows
+    // refuses to CreateProcess a requireAdministrator exe from an unelevated parent
+    // (error 740) rather than prompting, so cargo would just fail to launch it.
     #[cfg(windows)]
     {
         attributes = attributes.windows_attributes(

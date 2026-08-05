@@ -34,6 +34,12 @@
     {
         "active": true,
         "targets": "all",
+        "publisher": "Disruptor Proxy",
+        "homepage": "https://github.com/DisruptorProxy/Core",
+        "copyright": "Copyright (c) Disruptor Proxy contributors",
+        "license": "MIT",
+        "shortDescription": "A proxy client built on Xray-core.",
+        "longDescription": "Disruptor Proxy is an open-source proxy client for Windows, Linux, and Android, built on Xray-core.",
         "resources":
         [
             "assets/*"
@@ -48,7 +54,7 @@
         {
             "nsis":
             {
-                "installMode": "currentUser"
+                "installMode": "perMachine"
             }
         }
     },

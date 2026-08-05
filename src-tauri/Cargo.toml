@@ -35,18 +35,11 @@ rustls = { version = "0.23", default-features = false, features = [ "ring" ] }
 jni = "0.22"
 libc = "0.2"
 
-[target.'cfg(windows)'.dependencies]
-windows = { version = "0.62", features = [
-    "Win32_Foundation",
-    # Not for the registry: as of windows 0.62 `ShellExecuteExW` and `SHELLEXECUTEINFOW`
-    # are gated behind this feature, and the elevated core launch in
-    # `platform/windows.rs` needs both. Removing it because nothing here touches the
-    # registry compiles on 0.61 and then fails on 0.62.
-    "Win32_System_Registry",
-    "Win32_System_Threading",
-    "Win32_UI_Shell",
-    "Win32_UI_WindowsAndMessaging",
-] }
+# No `windows` crate on Windows any more. It was here for `ShellExecuteExW` ("runas"),
+# which elevated the core when the app itself ran unelevated. The app now requests
+# `requireAdministrator` in its manifest, so `platform/windows.rs` spawns the core with
+# plain `std::process::Command` and needs nothing from Win32 beyond `CommandExt`'s
+# creation flags, which std provides.
 
 [profile.dev]
 incremental = true

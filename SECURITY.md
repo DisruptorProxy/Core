@@ -36,9 +36,12 @@ Reports that matter most here:
   it as connected, or that leaks DNS, or that survives a disconnect.
 - **Credential exposure** - server credentials, subscription URLs, or REALITY keys being
   written to logs, error text, crash output, or anywhere on disk they should not be.
-- **The elevated path** - the Rust host launches the core with elevated privileges to open
-  the TUN adapter. Anything that turns that into arbitrary code execution or privilege
-  escalation is high severity.
+- **The elevated path** - the core needs administrator rights to open the TUN adapter and
+  rewrite the route table. On Windows the whole app runs elevated (its manifest requests
+  `requireAdministrator`) and the core inherits that; on Linux the host elevates the core
+  alone through `pkexec`. Anything that turns either into arbitrary code execution or
+  privilege escalation is high severity - and on Windows that now includes anything the
+  *frontend* can reach, since the webview's host process is the elevated one.
 - **Update integrity** - anything that lets an unsigned or substituted build be accepted by
   the auto-updater.
 

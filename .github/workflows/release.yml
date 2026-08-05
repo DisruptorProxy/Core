@@ -47,6 +47,13 @@ name: Release
 #   ANDROID_KEYSTORE_PASSWORD            is unsigned, and Android refuses to install it.
 #   ANDROID_KEY_ALIAS
 #   ANDROID_KEY_PASSWORD
+#   WINDOWS_CERTIFICATE                 base64 of an Authenticode code-signing .pfx, and
+#   WINDOWS_CERTIFICATE_PASSWORD         its password. Without them the app and installer
+#                                        ship UNSIGNED: SmartScreen warns on every
+#                                        download and Defender's ML classifier has flagged
+#                                        such builds as Trojan:Win32/Bearfoos.B!ml. This is
+#                                        the only durable fix for both; nothing in the code
+#                                        substitutes for it.
 #
 # The default GITHUB_TOKEN publishes the release; no cross-repo PAT is involved.
 
@@ -253,6 +260,10 @@ jobs:
         # continue-on-error, so it satisfies `needs` whether or not it produced an APK.
         needs: [ guard, linux, android ]
         runs-on: windows-latest
+        # `secrets` cannot be referenced from a step `if:`, but `env` can - so the signing
+        # step below gates on this rather than on secrets.* directly.
+        env:
+            WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
         steps:
             # fetch-depth: 0 alone is not enough for git-cliff: actions/checkout fetches with
             # --no-tags, so without fetch-tags it sees only the tag being built and treats the
@@ -290,6 +301,45 @@ jobs:
                     Write-Host "--- release notes ---"
                     Write-Host $body
 
+            # Authenticode signing, and the one thing that actually clears Windows'
+            # reputation systems. An unsigned installer trips SmartScreen on every
+            # download, and an unsigned elevated binary is a large part of why Defender's
+            # ML classifier flagged builds as Trojan:Win32/Bearfoos.B!ml (see the README).
+            # The minisign key elsewhere in this workflow signs the *updater manifest* -
+            # a different trust system entirely, and no substitute for this.
+            #
+            # Optional like every other secret here: with no certificate the build is
+            # exactly what it was before, just unsigned.
+            #
+            #   WINDOWS_CERTIFICATE           base64 of the .pfx / .p12 code-signing cert
+            #   WINDOWS_CERTIFICATE_PASSWORD  its password; unset if the file has none
+            -   name: Import the code-signing certificate
+                if: env.WINDOWS_CERTIFICATE != ''
+                env:
+                    WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+                shell: pwsh
+                run: |
+                    $ErrorActionPreference = 'Stop'
+
+                    # The runner is ephemeral, but the file still goes away as soon as the
+                    # certificate is in the store - it is the private key.
+                    $pfx = Join-Path $env:RUNNER_TEMP 'code-signing.pfx'
+                    [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
+
+                    $import = @{ FilePath = $pfx; CertStoreLocation = 'Cert:\CurrentUser\My' }
+                    if ($env:WINDOWS_CERTIFICATE_PASSWORD)
+                    {
+                        $import.Password = ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
+                    }
+
+                    $cert = Import-PfxCertificate @import
+                    Remove-Item $pfx -Force
+
+                    # Tauri signs both the app exe and the installer when it is handed a
+                    # thumbprint; it finds signtool.exe from the Windows SDK itself.
+                    "WINDOWS_CERTIFICATE_THUMBPRINT=$($cert.Thumbprint)" >> $env:GITHUB_ENV
+                    Write-Host "Imported $($cert.Subject), expires $($cert.NotAfter.ToString('yyyy-MM-dd'))"
+
             # NSIS only - the MSI is not built.
             #
             # createUpdaterArtifacts is FALSE in tauri.conf.json so that a build needs no
@@ -318,8 +368,17 @@ jobs:
                     fi
 
                     echo "Updater key present - building signed updater artifacts."
-                    npm run tauri build -- --bundles nsis \
-                        --config '{"bundle":{"createUpdaterArtifacts":true}}'
+
+                    config='{"bundle":{"createUpdaterArtifacts":true}}'
+
+                    if [ -n "$WINDOWS_CERTIFICATE_THUMBPRINT" ]; then
+                        echo "Code-signing certificate present - signing the app and the installer."
+                        config="{\"bundle\":{\"createUpdaterArtifacts\":true,\"windows\":{\"certificateThumbprint\":\"$WINDOWS_CERTIFICATE_THUMBPRINT\",\"digestAlgorithm\":\"sha256\",\"timestampUrl\":\"http://timestamp.digicert.com\"}}}"
+                    else
+                        echo "::warning::No WINDOWS_CERTIFICATE secret - this installer is UNSIGNED. SmartScreen will warn on download and Defender may flag it. See the README."
+                    fi
+
+                    npm run tauri build -- --bundles nsis --config "$config"
 
             # The .deb and .apk, staged by their own jobs. merge-multiple drops them into
             # ./release-assets alongside the Windows ones, and the pattern makes a missing

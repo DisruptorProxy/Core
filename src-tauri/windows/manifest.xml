@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-  <!-- Disruptor Proxy itself runs as a normal user. Creating the WinTUN adapter and
-       changing the system route table both require administrator rights, but only
-       app-xray.exe needs them - it is launched with its own "runas" elevation
-       (ShellExecuteExW) on demand instead of elevating the whole app. -->
+  <!-- Disruptor Proxy runs elevated, start to finish. Creating the WinTUN adapter and
+       rewriting the system route table both require administrator rights, so the core
+       has to run elevated no matter what; the only question is how it gets there.
+       Elevating the app itself (one UAC prompt at launch) rather than the core on demand
+       is what lets `platform/windows.rs` spawn the core as an ordinary child process.
+       The alternative - which this replaced - was a "runas" ShellExecuteExW launch of a
+       PowerShell wrapper dropped into app data, because "runas" cannot redirect a child's
+       stdio. That shape (unsigned exe in %LOCALAPPDATA% -> writes a .ps1 -> runs it
+       elevated with -ExecutionPolicy Bypass -WindowStyle Hidden -> spawns a hidden
+       binary) is indistinguishable from a dropper to a behavioural classifier, and
+       Defender's ML flagged release builds as Trojan:Win32/Bearfoos.B!ml for it. -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>
-        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
       </requestedPrivileges>
     </security>
   </trustInfo>

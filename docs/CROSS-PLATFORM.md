@@ -18,16 +18,22 @@ platforms get built. (For *releasing*, see `RELEASING.md`.)
 **Rust — one dispatch, one lifecycle contract.** `src-tauri/src/platform/` holds a
 platform-dispatched backend (`mod.rs` selects by `#[cfg]`):
 
-- `windows.rs` — elevate via `ShellExecuteExW` "runas" + an elevated PowerShell wrapper.
+- `windows.rs` — the app itself runs elevated (`windows/manifest.xml` requests
+  `requireAdministrator`), so the core is a plain `std::process::Command` child that
+  inherits those rights. It used to be the opposite — an unelevated app that elevated the
+  core alone through `ShellExecuteExW` "runas", which needed a PowerShell wrapper dropped
+  into app data because "runas" cannot redirect a child's stdio. That shape is what
+  Defender's ML classifier flagged as `Trojan:Win32/Bearfoos.B!ml`; see the README.
 - `unix.rs` — Linux. It still carries `cfg(target_os = "macos")` branches in
   `elevate_run`/`elevate_kill` (`osascript` instead of `pkexec`), left over from when
   macOS was a target; nothing builds them now.
 - `unsupported.rs` — honest stubs so the crate compiles on every target.
 
 All portable commands (probes, subscription fetch, geo download, config writing) stay in
-`lib.rs`. Every real backend honours the same **stop-file + bounded-wait + verified-kill**
-contract: signal the elevated wrapper, wait ≤ `STOP_TIMEOUT`, then force-kill and *verify*
-nothing survives — so disconnect never hangs and never lies about being disconnected.
+`lib.rs`. Every real backend honours the same **bounded-wait + verified-kill** contract:
+stop the core (Windows kills its own child directly; Linux still signals through its
+elevated helper), wait ≤ `STOP_TIMEOUT`, then force-kill and *verify* nothing survives —
+so disconnect never hangs and never lies about being disconnected.
 
 **Frontend — one seam, platform-gated chrome.** `src/features/connection/engine/port.ts`
 (`ConnectionService`) is the single seam; `src/stores/platform.ts` (backed by the Rust
@@ -46,7 +52,10 @@ linux]`).
 
 ## Building & verifying
 
-- **Windows:** `npm run desktop-build`.
+- **Windows:** `npm run desktop-build`. Running the dev app (`npm run desktop`) needs an
+  **elevated terminal**: the binary is manifested `requireAdministrator`, and Windows fails
+  `CreateProcess` on such an exe from an unelevated parent (error 740) instead of prompting,
+  so cargo cannot launch it. Building does not need elevation, only running.
 - **Linux:** `node scripts/fetch-core.mjs` → `sudo apt install libwebkit2gtk-4.1-dev
   libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev` →
   `npm run tauri build -- --bundles deb`. Needs `pkexec`/polkit at runtime.
@@ -57,6 +66,9 @@ linux]`).
 
 ### Known runtime risks
 - **Linux:** requires `pkexec`/polkit; ship `.deb` + AppImage.
+- **Windows:** one UAC prompt at launch, every launch — the app is elevated as a whole, so
+  there is nothing to prompt for at connect time any more. The trade is that the webview's
+  host process runs elevated too (see `SECURITY.md`), and that the installer is per-machine.
 
 ---
 

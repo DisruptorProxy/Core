@@ -63,6 +63,12 @@ npm run tauri dev
 APIs no-op outside the desktop shell - fine for UI work, not for anything touching the proxy engine,
 geo files, the tray, or the updater.
 
+> **On Windows, run that from an elevated terminal.** The app is manifested
+> `requireAdministrator` (it opens the WinTUN adapter and rewrites the route table itself), and
+> Windows *fails* `CreateProcess` for such an exe from an unelevated parent - error 740 - rather
+> than showing a UAC prompt. So `cargo`/`tauri dev` cannot launch it from a normal shell. Compiling
+> needs no elevation; only running does.
+
 ## Configuration
 
 Copy `.env.example` to `.env`. Every variable the frontend reads is listed there and typed in
@@ -155,29 +161,53 @@ What that produces and what it depends on:
 - CI proves the Linux and Windows bundles on every push to main, and assembles the Android APK
   best-effort. The signed public release is cut by the tag-triggered `release.yml`.
 
-### Windows SmartScreen and antivirus
+### Windows: administrator rights, SmartScreen, and antivirus
 
-Windows Defender may flag a build as `Trojan:Win32/Bearfoos.B!ml` or similar. The `!ml` suffix
-means a machine-learning heuristic fired, not that anything matched a known signature.
+**The app runs as administrator.** Its manifest requests `requireAdministrator`, so Windows shows
+one UAC prompt at launch and the whole process - including the Xray core it spawns - runs elevated.
+That is not optional gold-plating: creating the WinTUN adapter and rewriting the system route table
+require those rights, so *something* has to be elevated. Two consequences worth knowing: the webview
+host process is elevated too (see `SECURITY.md`), and the installer is **per-machine**, into
+`Program Files`.
 
-Nothing about that is surprising, and it is worth being straight about why. To a behavioural
-classifier this app looks like a dropper: it is an **unsigned** binary that installs per-user, spawns
-a bundled child executable (`app-xray.exe`), asks for elevation through the UAC `runas` verb, loads
-a TUN driver (`wintun.dll`), and rewrites the system routing table. Every one of those is a real
-thing the app does, and the combination is what a proxy client *is*.
+Up to **1.8.2** it worked the other way around - the app ran unelevated and elevated only the core,
+via `ShellExecuteExW`'s `runas` verb. Because `runas` cannot redirect a child's stdio, that needed a
+PowerShell wrapper written into `%APPDATA%` and launched with `-ExecutionPolicy Bypass
+-WindowStyle Hidden`, which then spawned the core hidden. Users on those versions got a UAC prompt
+on every connect instead of one at launch.
 
-The only durable fix is an **Authenticode code-signing certificate**, which this project does not
-have yet. The minisign key in `tauri.conf.json` signs the *updater manifest* so the client will not
-install a tampered update - it does nothing for SmartScreen or Defender, which are a different
-trust system entirely. Until a certificate is in place:
+**Why Defender flagged it.** Builds up to 1.8.2 were detected as `Trojan:Win32/Bearfoos.B!ml`. The
+`!ml` suffix means a machine-learning heuristic fired - nothing matched a known signature. It is not
+mysterious which behaviour did it: an **unsigned** binary, installed under `%LOCALAPPDATA%`, writing
+a `.ps1` into app data and running it elevated with `-ExecutionPolicy Bypass -WindowStyle Hidden`,
+which spawns a hidden child, loads a TUN driver (`wintun.dll`), and rewrites the routing table. Read
+as a sequence, that *is* the textbook dropper chain, and every classifier in the world is trained on
+it. From 1.8.3 the first four are gone: no dropped script, no `powershell.exe`, no `runas`, no
+`%LOCALAPPDATA%` install. The core is now spawned directly as a child process.
 
+**Signing is still the durable fix**, and this project does not have a certificate yet. The release
+workflow is already wired for one - set the `WINDOWS_CERTIFICATE` / `WINDOWS_CERTIFICATE_PASSWORD`
+secrets and every build is signed and timestamped; with them unset it builds unsigned exactly as
+before. Note that the minisign key in `tauri.conf.json` signs the *updater manifest*, so a tampered
+update is rejected; it does nothing for SmartScreen or Defender, which are a different trust system.
+An EV certificate clears SmartScreen immediately, an OV one accumulates reputation over time, and
+[SignPath Foundation](https://signpath.org/) grants free certificates to open-source projects.
+
+If a build is still flagged:
+
+- Report it to Microsoft at [the WDSI submission page](https://www.microsoft.com/en-us/wdsi/filesubmission)
+  as a **false positive** ("Software developer" → incorrectly detected). Determinations usually come
+  back within a day or two, and clear the detection for every user, not just the reporter.
 - Verify the download against the checksums on the release, and build from source if you would
   rather not trust a binary at all.
-- False positives can be reported to Microsoft at
-  [the WDSI submission page](https://www.microsoft.com/en-us/wdsi/filesubmission).
 
-An EV certificate clears SmartScreen immediately; an OV certificate accumulates reputation over
-time. Neither is free, and neither should be worked around by other means.
+Nothing here is worked around by other means - no instructions to add exclusion folders, and no
+attempt to make the app harder for a scanner to inspect.
+
+> **Upgrading from 1.8.2 or earlier:** the install location moves from `%LOCALAPPDATA%` to
+> `Program Files`, and the per-machine installer cannot see the old per-user install to replace it -
+> so uninstall the old copy from Add/Remove Programs once. Servers and settings are untouched either
+> way: they live in app data, not the install folder.
 
 ## Releasing
 
