@@ -32,54 +32,50 @@ export default component ImportReport(props: ImportReportProps)
 {
     const { t } = useLocale();
 
-    <Show when={ props.report }>
-    { (report: () => Report) =>
+    <Show when={ props.report } let={ report }>
         <div class="flex flex-col gap-3">
             <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 <div class={ CELL }>
-                    <span class={ `${ VALUE } text-good` }>{ report().added }</span>
+                    <span class={ `${ VALUE } text-good` }>{ report.added }</span>
                     <span class={ LABEL }>{ t().importing.added }</span>
                 </div>
 
                 <div class={ CELL }>
-                    <span class={ VALUE }>{ report().duplicates }</span>
+                    <span class={ VALUE }>{ report.duplicates }</span>
                     <span class={ LABEL }>{ t().importing.duplicates }</span>
                 </div>
 
                 <div class={ CELL }>
-                    <span class={ VALUE } class:text-fair={ report().errors.length > 0 }>{ report().errors.length }</span>
+                    <span class={ VALUE } class:text-fair={ report.errors.length > 0 }>{ report.errors.length }</span>
                     <span class={ LABEL }>{ t().importing.invalid }</span>
                 </div>
 
                 <div class={ CELL }>
-                    <span class={ VALUE }>{ report().elapsedMs }ms</span>
+                    <span class={ VALUE }>{ report.elapsedMs }ms</span>
                     <span class={ LABEL }>{ t().importing.elapsed }</span>
                 </div>
             </div>
 
             <p class="text-xs leading-relaxed text-muted">{ t().importing.duplicatesHint }</p>
 
-            <Show when={ report().errors.length > 0 }>
+            <Show when={ report.errors.length > 0 }>
                 <details class="rounded-xl border border-border bg-surface">
                     <summary class="cursor-pointer px-3 py-2 text-xs font-medium text-fair">
-                        { t().importing.invalidDetail } ({ report().errors.length })
+                        { t().importing.invalidDetail } ({ report.errors.length })
                     </summary>
 
                     <div class="flex max-h-48 flex-col gap-1 overflow-y-auto border-t border-border px-3 py-2">
-                        <For each={ report().errors.slice(0, 100) } key={ (error) => error.line }>
-                            { (error) =>
-                                <div class="flex flex-col gap-0.5 py-1">
-                                    <span class="text-[11px] font-medium text-muted">
+                        <For each={ report.errors.slice(0, 100) } key={ (error) => error.line } let={ error }>
+                            <div class="flex flex-col gap-0.5 py-1">
+                                <span class="text-[11px] font-medium text-muted">
                                         { t().importing.lineLabel(error.line) } - { error.reason }
-                                    </span>
-                                    <span class="readout truncate text-[11px] text-faint" dir="ltr">{ error.snippet }</span>
-                                </div>
-                            }
+                                </span>
+                                <span class="readout truncate text-[11px] text-faint" dir="ltr">{ error.snippet }</span>
+                            </div>
                         </For>
                     </div>
                 </details>
             </Show>
         </div>
-    }
     </Show>
 }

@@ -102,8 +102,7 @@ export default component RoutingPage()
                     <SectionHeading glyph={ Route } label={ t().routing.presets } />
 
                     <div class="grid grid-cols-2 gap-2">
-                        <For each={ PRESET_IDS } key={ (id) => id }>
-                        { (id) =>
+                        <For each={ PRESET_IDS } key={ (id) => id } let={ id }>
                             <button
                                 type="button"
                                 aria-pressed={ routing.profileId() === id ? 'true' : 'false' }
@@ -124,7 +123,6 @@ export default component RoutingPage()
                                     { presetDesc(id, t()) }
                                 </span>
                             </button>
-                        }
                         </For>
 
                         { /* Only once there is something to go back TO. Picking a preset or a
@@ -173,8 +171,7 @@ export default component RoutingPage()
                     </p>
 
                     <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
-                        <For each={ COUNTRIES } key={ (code) => code }>
-                        { (code) =>
+                        <For each={ COUNTRIES } key={ (code) => code } let={ code }>
                             <button
                                 type="button"
                                 aria-pressed={ countryActive(code) ? 'true' : 'false' }
@@ -192,7 +189,6 @@ export default component RoutingPage()
                                     <span class="ms-auto shrink-0 text-accent-ink">{ icon(Check, 'size-4') }</span>
                                 </Show>
                             </button>
-                        }
                         </For>
                     </div>
                 </section>
@@ -223,8 +219,7 @@ export default component RoutingPage()
                     <p class="text-[11px] text-faint">{ t().routing.rulesHint }</p>
 
                     <ol class="flex flex-col gap-2">
-                        <For each={ routing.rules() } key={ (rule) => rule.id }>
-                        { (rule) =>
+                        <For each={ routing.rules() } key={ (rule) => rule.id } let={ rule }>
                             <li class={ 'flex items-center gap-2 rounded-xl border px-3 py-2.5 '
                                 + (describeRule(rule, t()).isFinal ? 'border-dashed border-border-strong bg-transparent' : 'border-border bg-surface') }>
                                 <span class="min-w-0 flex-1 truncate text-sm text-text">{ describeRule(rule, t()).subject }</span>
@@ -261,7 +256,6 @@ export default component RoutingPage()
                                     </div>
                                 </Show>
                             </li>
-                        }
                         </For>
                     </ol>
                 </section>

@@ -78,10 +78,8 @@ export default component SubscriptionUsage(props: SubscriptionUsageProps)
             <Show
                 when={ sub()?.lastUpdatedAt }
                 fallback={ <span></span> }
-            >
-                { (updatedAt) =>
-                    <span class="text-faint">{ t().subscriptions.updatedAgo(relativeTime(updatedAt(), t())) }</span>
-                }
+                let={ updatedAt }>
+                <span class="text-faint">{ t().subscriptions.updatedAgo(relativeTime(updatedAt, t())) }</span>
             </Show>
 
             <div class="flex items-baseline gap-3">

@@ -33,41 +33,40 @@ export default component ConnectionStatus()
     const { t } = useLocale();
     const connection = useConnection();
 
-    <Show when={ connection.activeConfig() }>
-        { (activeConfig) =>
+    <Show when={ connection.activeConfig() } let={ activeConfig }>
         <div class="flex flex-col gap-3">
             <div class="flex flex-col items-center gap-0.5 text-center">
                 <div class="flex min-w-0 max-w-full items-center gap-2">
-                    <Show when={ flagIcon(activeConfig().country) }>
-                        <span class={ `${ flagIcon(activeConfig().country) } flag-detail` }></span>
+                    <Show when={ flagIcon(activeConfig.country) }>
+                        <span class={ `${ flagIcon(activeConfig.country) } flag-detail` }></span>
                     </Show>
-                    <span class="truncate text-sm font-semibold text-text">{ activeConfig().name }</span>
+                    <span class="truncate text-sm font-semibold text-text">{ activeConfig.name }</span>
                 </div>
 
                 <span class="readout max-w-full truncate text-xs text-faint" dir="ltr">
-                    { activeConfig().host }:{ activeConfig().port }
+                    { activeConfig.host }:{ activeConfig.port }
                 </span>
             </div>
 
             <Tooltip label={ t().status.refreshIp }>
-            <button
-                type="button"
-                class={ IP_BOX }
-                aria-label={ t().status.refreshIp }
-                disabled={ connection.exitIpLoading() }
-                onClick={ () => void connection.refreshExitIp() }
-            >
-                <span class="flex items-center gap-1.5">
+                <button
+                    type="button"
+                    class={ IP_BOX }
+                    aria-label={ t().status.refreshIp }
+                    disabled={ connection.exitIpLoading() }
+                    onClick={ () => void connection.refreshExitIp() }
+                >
+                    <span class="flex items-center gap-1.5">
                     { icon(Globe, connection.exitIpLoading() ? 'size-3.5 text-muted animate-pulse' : 'size-3.5 text-muted') }
-                    <span class={ TILE_KEY }>{ t().status.exitIp }</span>
-                </span>
+                        <span class={ TILE_KEY }>{ t().status.exitIp }</span>
+                    </span>
 
-                <span class="readout text-sm font-semibold text-text" dir="ltr">
+                    <span class="readout text-sm font-semibold text-text" dir="ltr">
                     { connection.exitIpLoading() && connection.exitIp() === null
                         ? '…'
                         : connection.exitIp() ?? '—' }
-                </span>
-            </button>
+                    </span>
+                </button>
             </Tooltip>
 
             <div class="grid grid-cols-3 gap-2">
@@ -94,6 +93,5 @@ export default component ConnectionStatus()
                 </span>
             </div>
         </div>
-        }
     </Show>
 }

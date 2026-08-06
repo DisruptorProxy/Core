@@ -136,34 +136,32 @@ export default component GroupHeader(props: GroupHeaderProps)
             <span class="readout ms-auto shrink-0 ps-2 text-xs text-muted">{ countLabel }</span>
         </button>
 
-        <Show when={ sub() }>
-            { (record) =>
+        <Show when={ sub() } let={ record }>
             <div class="flex shrink-0 items-center gap-1">
                 <Tooltip label={ t().subscriptions.update }>
                     <button
                         type="button"
                         class={ ICON_BTN }
                         aria-label={ t().subscriptions.update }
-                        disabled={ subscriptions.isUpdating(record().id) }
-                        onClick={ () => void subscriptions.update(record().id) }
+                        disabled={ subscriptions.isUpdating(record.id) }
+                        onClick={ () => void subscriptions.update(record.id) }
                     >
-                        { icon(RefreshCw, subscriptions.isUpdating(record().id) ? 'size-4 animate-spin' : 'size-4') }
+                        { icon(RefreshCw, subscriptions.isUpdating(record.id) ? 'size-4 animate-spin' : 'size-4') }
                     </button>
                 </Tooltip>
 
                 <Tooltip label={ t().subscriptions.editTitle }>
-                    <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.editTitle } onClick={ () => props.onEdit(record()) }>
+                    <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.editTitle } onClick={ () => props.onEdit(record) }>
                         { icon(Pencil, 'size-4') }
                     </button>
                 </Tooltip>
 
                 <Tooltip label={ t().subscriptions.delete }>
-                    <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.delete } onClick={ () => props.onDelete(record()) }>
+                    <button type="button" class={ ICON_BTN } aria-label={ t().subscriptions.delete } onClick={ () => props.onDelete(record) }>
                         { icon(Trash2, 'size-4') }
                     </button>
                 </Tooltip>
             </div>
-            }
         </Show>
     </div>
 }

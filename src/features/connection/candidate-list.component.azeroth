@@ -37,8 +37,7 @@ export default component CandidateList(props: CandidateListProps)
     const health = useHealth();
 
     <div class="flex flex-col gap-1.5">
-        <For each={ props.rows } key={ (row) => row.id }>
-        { (row) =>
+        <For each={ props.rows } key={ (row) => row.id } let={ row }>
             <button
                 type="button"
                 class={ `${ ROW } ${ row.id === props.activeId
@@ -48,8 +47,8 @@ export default component CandidateList(props: CandidateListProps)
             >
                 { /* An unknown or malformed country code yields '', which is the sentinel
                      for "draw no flag" - not a missing-image box. */ }
-                <Show when={ flagIcon(row.country) }>
-                    { (cls: () => string) => <span class={ `${ cls() } flag-row shrink-0` }></span> }
+                <Show when={ flagIcon(row.country) } let={ cls }>
+                    <span class={ `${ cls } flag-row shrink-0` }></span>
                 </Show>
 
                 <div class="flex min-w-0 flex-1 flex-col">
@@ -64,7 +63,6 @@ export default component CandidateList(props: CandidateListProps)
                     >{ `${ health.latencyOf(row.id) }ms` }</span>
                 </Show>
             </button>
-        }
         </For>
     </div>
 }

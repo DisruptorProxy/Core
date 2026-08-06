@@ -39,19 +39,19 @@ export default component SideRail()
             </div>
         </div>
 
-        <For each={ NAV_ITEMS } key={ (item) => item.path }>
-            { (item) =>
+        <For each={ NAV_ITEMS } key={ (item) => item.path } let={ item }>
+            <div class="contents">
                 <Link
                     to={ item.path }
                     router={ router }
                     class={ () => `${ ITEM } ${ isActive(item.path)
-                        ? 'bg-accent-soft text-accent'
-                        : 'text-muted hover:bg-elevated hover:text-text' }` }
+                            ? 'bg-accent-soft text-accent'
+                            : 'text-muted hover:bg-elevated hover:text-text' }` }
                 >
-                    { icon(item.glyph, 'size-[18px]') }
-                    { item.label(t()) }
+                        { icon(item.glyph, 'size-[18px]') }
+                        { item.label(t()) }
                 </Link>
-            }
+            </div>
         </For>
     </nav>
 }

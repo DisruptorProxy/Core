@@ -89,23 +89,21 @@ export default component RuleEditor(props: RuleEditorProps)
             <div class="flex flex-col gap-1.5">
                 <span class="text-xs font-medium text-muted">{ t().routing.matchType }</span>
                 <div class="grid grid-cols-2 gap-1.5">
-                    <For each={ EDITABLE_TYPES } key={ (mt) => mt }>
-                        { (mt) =>
-                            <button
-                                type="button"
-                                aria-pressed={ type === mt ? 'true' : 'false' }
-                                class={ () => 'flex min-h-9 items-center justify-between gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors '
+                    <For each={ EDITABLE_TYPES } key={ (mt) => mt } let={ mt }>
+                        <button
+                            type="button"
+                            aria-pressed={ type === mt ? 'true' : 'false' }
+                            class={ () => 'flex min-h-9 items-center justify-between gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors '
                                     + (type === mt
                                         ? 'border-accent bg-accent text-accent-ink hover:bg-accent-hover'
                                         : 'border-border bg-surface text-text hover:border-border-strong hover:bg-elevated') }
-                                onClick={ () => type = mt }
-                            >
-                                <span class="truncate">{ typeLabel(mt) }</span>
-                                <Show when={ type === mt }>
+                            onClick={ () => type = mt }
+                        >
+                            <span class="truncate">{ typeLabel(mt) }</span>
+                            <Show when={ type === mt }>
                                     { icon(Check, 'size-3.5 shrink-0') }
-                                </Show>
-                            </button>
-                        }
+                            </Show>
+                        </button>
                     </For>
                 </div>
             </div>

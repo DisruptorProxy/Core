@@ -25,14 +25,11 @@ export default component ShowHost(props: ShowHostProps)
             <span>form</span>
         </Show>
 
-        <Show when={ props.done ? props.report : null }>
-            {
-                (report: () => Report) =>
-                <>
-                    <EagerChild report={ report() } />
-                    <span>after</span>
+        <Show when={ props.done ? props.report : null } let={ report }>
+            <>
+                <EagerChild report={ report } />
+                <span>after</span>
                 </>
-            }
         </Show>
     </div>
 }

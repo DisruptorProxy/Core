@@ -191,14 +191,11 @@ export default component ImportSheet(props: ImportSheetProps)
                 />
             </Show>
 
-            <Show when={ done ? configs.lastReport() : null }>
-                {
-                    (report) =>
-                    <>
-                        <ImportReport report={ report() } />
-                        <Button label={ t().common.close } variant="ghost" block={ true } onPress={ props.onClose } />
+            <Show when={ done ? configs.lastReport() : null } let={ report }>
+                <>
+                    <ImportReport report={ report } />
+                    <Button label={ t().common.close } variant="ghost" block={ true } onPress={ props.onClose } />
                     </>
-                }
             </Show>
 
             <input

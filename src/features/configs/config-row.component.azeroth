@@ -193,10 +193,8 @@ export default component ConfigRow(props: ConfigRowProps)
                 { icon(Star, 'size-4 text-fair') }
             </Show>
 
-            <For each={ props.row.tags.slice(0, 1) } key={ (tag) => tag }>
-                { (tag) =>
-                    <span class={ `${ BADGE } border-border text-muted` }>{ tag }</span>
-                }
+            <For each={ props.row.tags.slice(0, 1) } key={ (tag) => tag } let={ tag }>
+                <span class={ `${ BADGE } border-border text-muted` }>{ tag }</span>
             </For>
 
             <span class={ `${ BADGE } uppercase ${ props.row.security === 'reality' ? REALITY_BADGE : PROTOCOL_BADGE[props.row.protocol] ?? 'border-border text-muted' }` }>

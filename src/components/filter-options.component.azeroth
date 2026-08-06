@@ -281,25 +281,23 @@ export default component FilterOptions(props: FilterOptionsProps)
         >
             <div class="relative" style:height={ `${ filtered().length * ROW }px` }>
                 <div class="absolute inset-x-0 top-0" style:transform={ `translateY(${ first() * ROW }px)` }>
-                    <For each={ visible() } key={ (option) => option.value }>
-                        { (option, index) =>
-                            <div
-                                id={ `${ props.id }-opt-${ first() + index }` }
-                                class={ `${ OPTION } ${ first() + index === active ? 'bg-elevated' : '' }` }
-                                role="option"
-                                aria-selected={ props.selected(option.value) ? 'true' : 'false' }
-                                onClick={ () => props.onChoose(option.value) }
-                                onPointerMove={ () => active = first() + index }
-                            >
-                                <span class={ props.selected(option.value) ? 'truncate font-medium text-accent' : 'truncate text-text' }>
+                    <For each={ visible() } key={ (option) => option.value } let={ option } index={ index }>
+                        <div
+                            id={ `${ props.id }-opt-${ first() + index }` }
+                            class={ `${ OPTION } ${ first() + index === active ? 'bg-elevated' : '' }` }
+                            role="option"
+                            aria-selected={ props.selected(option.value) ? 'true' : 'false' }
+                            onClick={ () => props.onChoose(option.value) }
+                            onPointerMove={ () => active = first() + index }
+                        >
+                            <span class={ props.selected(option.value) ? 'truncate font-medium text-accent' : 'truncate text-text' }>
                                     { option.label }
-                                </span>
+                            </span>
 
-                                <Show when={ props.selected(option.value) }>
+                            <Show when={ props.selected(option.value) }>
                                     { icon(Check, 'size-4 shrink-0 text-accent') }
-                                </Show>
-                            </div>
-                        }
+                            </Show>
+                        </div>
                     </For>
                 </div>
             </div>

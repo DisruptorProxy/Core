@@ -163,12 +163,10 @@ export default component VirtualList<T>(props: VirtualListProps<T>)
     >
         <div class="relative w-full" style:height={ `${ totalSize() }px` }>
             <div class="absolute inset-x-0 top-0" style:transform={ `translateY(${ offsetY() }px)` }>
-                <For each={ windowItems } key={ (item) => props.keyOf(item) }>
-                    { (item) =>
-                        <div style:height={ `${ props.heightOf(item) }px` }>
+                <For each={ windowItems } key={ (item) => props.keyOf(item) } let={ item }>
+                    <div style:height={ `${ props.heightOf(item) }px` }>
                             { props.children(item) }
-                        </div>
-                    }
+                    </div>
                 </For>
             </div>
         </div>

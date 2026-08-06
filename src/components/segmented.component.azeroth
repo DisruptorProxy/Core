@@ -48,20 +48,18 @@ export default component Segmented(props: SegmentedProps)
     >
         <div class="g-seg-thumb" aria-hidden="true"></div>
 
-        <For each={ props.options } key={ (option) => option.value }>
-            { (option) =>
-                <button
-                    type="button"
-                    role="radio"
-                    aria-checked={ props.value === option.value ? 'true' : 'false' }
-                    class={ `${ OPTION } ${ props.value === option.value
+        <For each={ props.options } key={ (option) => option.value } let={ option }>
+            <button
+                type="button"
+                role="radio"
+                aria-checked={ props.value === option.value ? 'true' : 'false' }
+                class={ `${ OPTION } ${ props.value === option.value
                         ? 'text-accent-ink'
                         : 'text-muted hover:text-text' }` }
-                    onClick={ () => props.onSelect(option.value) }
-                >
+                onClick={ () => props.onSelect(option.value) }
+            >
                     { option.label() }
-                </button>
-            }
+            </button>
         </For>
     </div>
 }

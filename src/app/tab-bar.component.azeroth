@@ -29,19 +29,17 @@ export default component TabBar()
         aria-label={ t().app.name }
     >
         <ul class="flex">
-            <For each={ NAV_ITEMS } key={ (item) => item.path }>
-                { (item) =>
-                    <li class="flex-1">
-                        <Link
-                            to={ item.path }
-                            router={ router }
-                            class={ () => `${ ITEM } ${ isActive(item.path) ? 'text-accent' : 'text-muted' }` }
-                        >
+            <For each={ NAV_ITEMS } key={ (item) => item.path } let={ item }>
+                <li class="flex-1">
+                    <Link
+                        to={ item.path }
+                        router={ router }
+                        class={ () => `${ ITEM } ${ isActive(item.path) ? 'text-accent' : 'text-muted' }` }
+                    >
                             { icon(item.glyph, 'size-5') }
                             { item.label(t()) }
-                        </Link>
-                    </li>
-                }
+                    </Link>
+                </li>
             </For>
         </ul>
     </nav>

@@ -264,19 +264,17 @@ export default component ConfigEditor(props: ConfigEditorProps)
                     <div class={ ROW }>
                         <span class={ LABEL }>{ t().detail.protocol }</span>
                         <div class="flex flex-wrap gap-1.5">
-                            <For each={ PROTOCOLS } key={ (id) => id }>
-                        { (id) =>
-                            <button
-                                type="button"
-                                aria-pressed={ server.values().protocol === id ? 'true' : 'false' }
-                                class={ () => `${ CHIP } uppercase ${ server.values().protocol === id
+                            <For each={ PROTOCOLS } key={ (id) => id } let={ id }>
+                                <button
+                                    type="button"
+                                    aria-pressed={ server.values().protocol === id ? 'true' : 'false' }
+                                    class={ () => `${ CHIP } uppercase ${ server.values().protocol === id
                                     ? 'border-accent bg-accent text-accent-ink'
                                     : 'border-border text-text hover:bg-elevated' }` }
-                                onClick={ () => server.setValue('protocol', id) }
-                            >
+                                    onClick={ () => server.setValue('protocol', id) }
+                                >
                                 { id }
-                            </button>
-                        }
+                                </button>
                             </For>
                         </div>
                     </div>
@@ -313,19 +311,17 @@ export default component ConfigEditor(props: ConfigEditorProps)
                         <div class={ ROW }>
                             <span class={ LABEL }>{ t().detail.transport }</span>
                             <div class="flex flex-wrap gap-1.5">
-                                <For each={ TRANSPORTS } key={ (id) => id }>
-                            { (id) =>
-                                <button
-                                    type="button"
-                                    aria-pressed={ server.values().transport === id ? 'true' : 'false' }
-                                    class={ () => `${ CHIP } ${ server.values().transport === id
+                                <For each={ TRANSPORTS } key={ (id) => id } let={ id }>
+                                    <button
+                                        type="button"
+                                        aria-pressed={ server.values().transport === id ? 'true' : 'false' }
+                                        class={ () => `${ CHIP } ${ server.values().transport === id
                                         ? 'border-accent bg-accent text-accent-ink'
                                         : 'border-border text-text hover:bg-elevated' }` }
-                                    onClick={ () => server.setValue('transport', id) }
-                                >
+                                        onClick={ () => server.setValue('transport', id) }
+                                    >
                                     { id }
-                                </button>
-                            }
+                                    </button>
                                 </For>
                             </div>
                         </div>
@@ -335,19 +331,17 @@ export default component ConfigEditor(props: ConfigEditorProps)
                         <div class={ ROW }>
                             <span class={ LABEL }>{ t().detail.security }</span>
                             <div class="flex flex-wrap gap-1.5">
-                                <For each={ SECURITIES } key={ (id) => id }>
-                            { (id) =>
-                                <button
-                                    type="button"
-                                    aria-pressed={ server.values().security === id ? 'true' : 'false' }
-                                    class={ () => `${ CHIP } ${ server.values().security === id
+                                <For each={ SECURITIES } key={ (id) => id } let={ id }>
+                                    <button
+                                        type="button"
+                                        aria-pressed={ server.values().security === id ? 'true' : 'false' }
+                                        class={ () => `${ CHIP } ${ server.values().security === id
                                         ? 'border-accent bg-accent text-accent-ink'
                                         : 'border-border text-text hover:bg-elevated' }` }
-                                    onClick={ () => server.setValue('security', id) }
-                                >
+                                        onClick={ () => server.setValue('security', id) }
+                                    >
                                     { id }
-                                </button>
-                            }
+                                    </button>
                                 </For>
                             </div>
                         </div>

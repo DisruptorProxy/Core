@@ -64,24 +64,22 @@ export default component SettingsPage()
                         </div>
 
                         <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                            <For each={ LOCALES } key={ (code) => code }>
-                                { (code) =>
-                                    <button
-                                        type="button"
-                                        aria-pressed={ locale() === code ? 'true' : 'false' }
-                                        class={ () => 'flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors '
+                            <For each={ LOCALES } key={ (code) => code } let={ code }>
+                                <button
+                                    type="button"
+                                    aria-pressed={ locale() === code ? 'true' : 'false' }
+                                    class={ () => 'flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold transition-colors '
                                             + (locale() === code
                                                 ? 'border-accent bg-accent text-accent-ink hover:bg-accent-hover'
                                                 : 'border-border bg-surface text-text hover:border-border-strong hover:bg-elevated') }
-                                        onClick={ () => setLocale(code) }
-                                    >
-                                        <span class={ `${ flagIcon(LOCALE_COUNTRY[code]) } flag-row shrink-0` }></span>
+                                    onClick={ () => setLocale(code) }
+                                >
+                                    <span class={ `${ flagIcon(LOCALE_COUNTRY[code]) } flag-row shrink-0` }></span>
                                         { LOCALE_LABELS[code] }
-                                        <Show when={ locale() === code }>
+                                    <Show when={ locale() === code }>
                                             { icon(Check, 'size-4 shrink-0') }
-                                        </Show>
-                                    </button>
-                                }
+                                    </Show>
+                                </button>
                             </For>
                         </div>
                     </div>
