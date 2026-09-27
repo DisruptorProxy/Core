@@ -33,7 +33,7 @@
         "@tauri-apps/api": "^2.11.1",
         "@tauri-apps/plugin-process": "^2.3.1",
         "@tauri-apps/plugin-updater": "^2.10.1",
-        "azerothjs": "2.0.0-beta.2",
+        "azerothjs": "2.1.0",
         "flag-icons": "^7.5.0",
         "lucide": "^1.27.0",
         "tailwindcss": "^4.3.2"
