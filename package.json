@@ -50,7 +50,7 @@
         "@tauri-apps/cli": "^2.11.4",
         "eslint": "^10.7.0",
         "globals": "^17.8.0",
-        "happy-dom": "^20.0.0",
+        "happy-dom": "^21.0.4",
         "husky": "^9.1.7",
         "jiti": "^2.7.0",
         "typescript": "~6.0.2",
